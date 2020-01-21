@@ -13,6 +13,7 @@ Iconic Memory:
 MRI:
 - Instructions covered by mirror in scanner, need to make the more centered.
 - Change name of output files to match bids format: sub-01_sess-01_task-rsa_run-01.tsv
+- RSA task - make sure all responses are being logged, so also false alarms, this is important for the nuisance regressor.
 
 
 Setup USB forp: 
