@@ -1,6 +1,8 @@
 # letter_color_mri
 RSA and iconic memory paradigm - reading in color 
 
+Link to project proposal form: https://project-proposal.dccn.nl/Form/31#Funding
+
 TO DO: 
 <br> 13-06-2019 after pilot #2
 <br>
