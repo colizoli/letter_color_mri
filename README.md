@@ -10,12 +10,14 @@ Iconic Memory:
 - First trial of each block starts too fast
 - Slow down trials (ITIs)
 - Check visual angle Nicolas' paper, cubicle 1
-- Chin rest
+- DONE Chin rest (in closet next to cubile)
 
 MRI:
-- Instructions covered by mirror in scanner, need to make the more centered.
-- Change name of output files to match bids format: sub-01_sess-01_task-rsa_run-01.tsv
-- RSA task - make sure all responses are being logged, so also false alarms, this is important for the nuisance regressor.
+- Check timing of stimuli on dummy scanner
+- How to transfer participant colors from behavior to MRI? If use same lists, make sure we get same colors for every participant number.
+- DONE Instructions covered by mirror in scanner, need to make the more centered.
+- DONE Change name of output files to match bids format: sub-01_sess-01_task-rsa_run-01.tsv
+- DONE RSA task - make sure all responses are being logged, so also false alarms, this is important for the nuisance regressor.
 
 
 Setup USB forp: 
