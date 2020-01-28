@@ -7,9 +7,9 @@ TO DO:
 <br> 13-06-2019 after pilot #2
 <br>
 Iconic Memory: 
-- First trial of each block starts too fast
-- Slow down trials (ITIs)
-- Check visual angle Nicolas' paper, cubicle 1
+- TRY DIRECTLY IN LAB - First trial of each block starts too fast
+- DONE Slow down trials (ITIs)
+- DONE Check visual angle Nicolas' paper, cubicle 1
 - DONE Chin rest (in closet next to cubile)
 
 MRI:
