@@ -8,6 +8,7 @@ TO DO:
 <br>
 Iconic Memory: 
 - TRY DIRECTLY IN LAB - First trial of each block starts too fast
+- Output bids format (Olympia)
 - DONE Slow down trials (ITIs)
 - DONE Check visual angle Nicolas' paper, cubicle 1
 - DONE Chin rest (in closet next to cubile)
