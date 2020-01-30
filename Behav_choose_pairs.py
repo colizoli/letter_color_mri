@@ -178,7 +178,7 @@ if subject_ID:
     # G2
     else: # save elsewhere in 'prefs' folder
         subject_yoked = subject_ID-100
-        pref_dir = os.path.join(cwd,'prefs','sub-{}'.format(subject_ID))  # system independent
+        pref_dir = os.path.join(cwd,'LogFiles','sub-{}'.format(subject_ID),'sess-{}'.format(session),'behav')  # system independent
         if not os.path.isdir(pref_dir):
             os.makedirs(pref_dir)
         output_filename = os.path.join(pref_dir,'sub-{}_prefs_{}.tsv'.format(subject_ID,timestr ))
