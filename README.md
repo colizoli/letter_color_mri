@@ -8,14 +8,14 @@ TO DO:
 <br>
 Iconic Memory: 
 - TRY DIRECTLY IN LAB - First trial of each block starts too fast
-- Output bids format (Olympia)
+- DONE Output bids format (Olympia)
 - DONE Slow down trials (ITIs)
 - DONE Check visual angle Nicolas' paper, cubicle 1
 - DONE Chin rest (in closet next to cubile)
 
 MRI:
 - Check timing of stimuli on dummy scanner
-- How to transfer participant colors from behavior to MRI? If use same lists, make sure we get same colors for every participant number.
+- How to transfer participant colors from behavior to MRI? I think Github...?
 - DONE Instructions covered by mirror in scanner, need to make the more centered.
 - DONE Change name of output files to match bids format: sub-01_sess-01_task-rsa_run-01.tsv
 - DONE RSA task - make sure all responses are being logged, so also false alarms, this is important for the nuisance regressor.
