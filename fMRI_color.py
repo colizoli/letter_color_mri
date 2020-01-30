@@ -64,7 +64,7 @@ if subject_ID:
     ## output file name with time stamp prevents any overwriting of data
     timestr = time.strftime("%Y%m%d-%H%M%S") 
     # bids format    
-    output_filename = os.path.join(logfile_dir,'sub-{}_sess-{}_task-colors_run-{}_events_{}.tsv'.format(subject_ID,session,run,timestr))
+    output_filename = os.path.join(logfile_dir,'sub-{}_sess-{}_task-colorsloc_run-{}_events_{}.tsv'.format(subject_ID,session,run,timestr))
  
     cols = ['subject',
               'session',
