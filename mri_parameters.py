@@ -59,7 +59,7 @@ def waitForTrigger(clock,):
 # BOLD baseline timing (in seconds)
 t_baseline  = 12   # 12 sec  
 
-scnWidth, scnHeight =  (1024,768) #(1280, 1024) # dummy scanner settings
+scnWidth, scnHeight = (1920,1080) # MRI BOLDscreen, # (1024,768) MRI stim computer, #(1280, 1024) # dummy scanner settings
 screen_width        = 53.5 # centimeters
 screen_dist         = 70.0
 
