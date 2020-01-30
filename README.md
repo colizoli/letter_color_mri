@@ -14,8 +14,9 @@ Iconic Memory:
 - DONE Chin rest (in closet next to cubile)
 
 MRI:
-- Check timing of stimuli on dummy scanner
-- How to transfer participant colors from behavior to MRI? I think Github...?
+- Check psychopy and internet connection on normal experiment mode
+- DONE Check timing of stimuli on dummy scanner
+- DONE How to transfer participant colors from behavior to MRI? upload Google drive folder /colors/
 - DONE Instructions covered by mirror in scanner, need to make the more centered.
 - DONE Change name of output files to match bids format: sub-01_sess-01_task-rsa_run-01.tsv
 - DONE RSA task - make sure all responses are being logged, so also false alarms, this is important for the nuisance regressor.
