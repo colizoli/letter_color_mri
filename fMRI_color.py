@@ -96,6 +96,8 @@ if subject_ID:
     
     
     # Set conditions and stimulus list
+    if not np.mod(subject_ID,2): # counterbalance color-black order
+        p.blocks_color.reverse()
     blocks          = p.blocks_color*p.reps_loc # total number of blocks
     trials          = p.trials_loc              # per block
     if debug_mode:
@@ -137,9 +139,9 @@ if subject_ID:
         for t in range(trials):        
             # Define stimuli and variables according to block type
             this_word           = symbols.loc[t][0]
-            if condition == p.blocks_color[0]:  # color
+            if condition == 'Color':  # color
                 this_color      = np.array(colors.loc[t])
-            elif condition == p.blocks_color[1]:  # black
+            elif condition == 'Black':  # black
                 this_color      = np.array([0,0,0]    )   
                             
             #Show fixation cross

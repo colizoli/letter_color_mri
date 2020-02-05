@@ -96,6 +96,8 @@ if subject_ID:
     clock       = core.Clock()
     
     # Set conditions and stimulus list
+    if np.mod(subject_ID,2): # counterbalance letter-symbol order
+        p.blocks_letter.reverse()
     blocks          = p.blocks_letter*p.reps_loc # total number of blocks
     trials          = p.trials_loc              # per block
     if debug_mode:
@@ -136,13 +138,13 @@ if subject_ID:
         for t in range(trials):        
             # Define stimuli and variables according to block type
             this_word          = letters.loc[t][0]
-            if condition == p.blocks_letter[0]:     # letter
-                this_font      = p.fonts_letter[0]
+            if condition == 'Letter':     # letter
+                this_font      = p.fonts_letter
                 this_size      = 1                  # scaling of fonts
                 this_pos       = 0.0                # y position of font
                 
-            elif condition == p.blocks_letter[1]:   # symbol
-                this_font      = p.fonts_letter[1] 
+            elif condition == 'Symbol':   # symbol
+                this_font      = p.fonts_symbol
                 this_size      = p.ss
                 this_pos       = p.sp               # y position of fonts
                 

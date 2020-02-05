@@ -4,10 +4,11 @@
 PARAMETERS - Letters, counterbalancing, behavioral lab
 General parameters and stimuli
 """
-# Behavioral lab 
+# Behavioral lab (DCCN cubicles measured 4 Feb 2020)
+# visual angle calculator: https://elvers.us/perception/visualAngle/
 scnWidth, scnHeight = (1920, 1080)
-screen_width        = 53.5 # centimeters
-screen_dist         = 70.0
+screen_width        = 53.5 # centimeters 
+screen_dist         = 55.0
 white               = [255,255,255] # background screen color
 grey                = [128,128,128]
 black               = [0,0,0] # background screen color
@@ -46,8 +47,6 @@ letter_sets_lower_8_IM = [
 ]
 
 letter_sets_IM_PRACTICE = ['A','B','C','D','E','F','G','H']
-# ['1','2','3','4','5','6','7','8'] # practice set
-
 
 trained_colors = [
     [0,163,228],
@@ -65,6 +64,36 @@ trained_colors = [
     [9,181,172]
 ]
 
+## ICONIC MEMORY TASK
+cue             = '*' # red asterisk, should it be uncolored?
+pos_pol         = [0,45,90,135,180,225,270,315] # positions in degrees
 
+#Sizes
+letter_size     = 1.2 #size letters. paper says 1.2 degrees of visual angle (measured 6-7 mm = 0.6-0.7 degrees)
+eccen           = 5.2 #eccentricity. paper says 5.2 degrees of visual angle (need to measure)
+cue_size        = 0.8 # size of asterisk cue. paper says 0.1, we think it is too small so we did 0.8, but changed back to 0.1 for replication (measured 3mm = .31 degrees)
+##text_size       = 0.7 #0.05 # arbitrary
+text_size       = 28 # in pix
+fixcross_size   = 1 # in deg (measured 5mm)
+y_shift_up      = 2
 
+# INTEGRATE DISTANCE WITH THE MONITOR SOMWHERE: 73 cm according to paper
+#Other colors:
+cue_target_color    = black  #'black' # target cue in red, holder cue in black
+cue_holder_color    = [200,200,200] #gp.grey #'grey'
+background_color    = white #'white' # code??
+instructions_color  = black #'grey'
+letters_color       = black # all black
 
+# Timing
+read_time             = 3
+fix_time              = 1 #1000ms
+letters_time          = 0.1# 0.1#0.500#0.100 #100ms, presentation of the letters array
+cue_time              = 1.5 #Cues remain 
+max_response_duration = 4 #they click on the letter they think it was cued
+endtrial_time         = 1.5 #0.05 #50ms, fix cross disappears here. This is the ITI that was 0.8 and from piloting we want to make slower. Try 1.5 s?
+
+square_fillcolor    = cue_holder_color
+square_vertices     = ((-30, -30), (30, -30), (30, 30),(-30,30))
+square_positions    = [(-150,-350), (-50,-350), (50,-350), (150,-350),
+                    (-150,-450),(-50,-450),(50,-450),(150,-450)]

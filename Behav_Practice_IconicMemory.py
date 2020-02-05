@@ -12,8 +12,7 @@ import numpy as np
 import os, time # for paths and data
 import pandas as pd
 from IPython import embed as shell
-import general_parameters as gp # for letter sets, counterbalancing
-import mri_parameters as p # letter conditions, counterbalancing
+import general_parameters as gp # for letter sets, counterbalancing, iconic memory parameters
 
 ######################################################
 ##################### PARAMETERS #####################
@@ -35,40 +34,38 @@ session = int(g.data[1])
 # subject_ID = 1
 # session = 1
 
-# Stimuli
-cue             = '*' # red asterisk, should it be uncolored?
-pos_pol         = [0,45,90,135,180,225,270,315] # positions in degrees
+## see general_parameters.py
+cue             = p.cue
+pos_pol         = p.pos_pol
 
 #Sizes
-letter_size     = 1.2 #0.2#1.2 #1.2 degrees of visual angle
-eccen           = 5.2 #eccentricity of 5.2 degrees of visual angle
-cue_size        = 0.1 # PAPER 0.1 degrees of visual angle
-text_size       = 0.7 #0.05 # arbitrary
-text_size       = 28 # in pix
-fixcross_size   = 1 # in deg
-y_shift_up = 2
+letter_size     = p.letter_size
+eccen           = p.eccen 
+cue_size        = p.cue_size 
+text_size       = p.text_size
+fixcross_size   = p.fixcross_size
+y_shift_up      = p.y_shift_up
 
+# INTEGRATE DISTANCE WITH THE MONITOR SOMWHERE: 73 cm according to paper
 #Other colors:
-cue_target_color    = gp.black  #'black' # target cue in red, holder cue in black
-cue_holder_color    = [200,200,200] #gp.grey #'grey'
-background_color    = gp.white #'white' # code??
-instructions_color  = gp.black #'grey'
-letters_color       = gp.black # all black
-
+cue_target_color    = p.cue_target_color
+cue_holder_color    = p.cue_holder_color
+background_color    = p.background_color
+instructions_color  = p.instructions_color
+letters_color       = p.letters_color
 
 # Timing
-read_time             = 3
-fix_time              = 1 #1000ms
-letters_time          = 0.1# 0.1#0.500#0.100 #100ms, presentation of the letters array
-cue_time              = 1.5 #Cues remain 
-max_response_duration = 4 #they click on the letter they think it was cued
-endtrial_time         = 1.5 #in the actual task this is 0.8, so justa  bit slower here. fix cross disappears here. 
+read_time             = p.read_time
+fix_time              = p.fix_time
+letters_time          = p.letters_time
+cue_time              = p.cue_time
+max_response_duration = p.max_response_duration
+endtrial_time         = p.endtrial_time
 
 # Response buttons values
-square_fillcolor = cue_holder_color
-square_vertices = ((-30, -30), (30, -30), (30, 30),(-30,30))
-square_positions = [(-150,-350), (-50,-350), (50,-350), (150,-350),
-                    (-150,-450),(-50,-450),(50,-450),(150,-450)]
+square_fillcolor = p.square_fillcolor
+square_vertices  = p.square_vertices
+square_positions = p.square_positions
 
 ######################################################
 ###################### TEXTS ########################
@@ -78,7 +75,7 @@ welcome_txt = "PRACTICE Sensory Memory Test\
 \n\nAt the beginning of each trial, you see a cross [+] in the center of the screen, always maintain fixation there.\
 \nThen, 8 letters arranged on a circle are presented for a very brief time. Please, remain fixating your eyes at the [+] while this happens!\
 \nOnce the letters disappear, one of the 8 letter locations is indicated with a small black asterisk.\
-\n The other locations are marked with a grey asterisk (ignore them).\
+\nThe other locations are marked with a grey asterisk (ignore them).\
 \n\nYour task is to remember which letter was presented at the location cued with a black asterisk.\
 \nTo give your answer, a letter panel appears in the lower part of the screen.\
 \nYou can use the mouse to click on the letter you think was presented in the cued location.\
@@ -96,11 +93,9 @@ end_txt = "Well done! You finished the practice round. Please, call the experime
 
 if subject_ID:
     #Set-up window:    
-#    mon = monitors.Monitor('myMac15', width=gp.screen_width, distance=gp.screen_dist)
-#    mon.setSizePix((gp.scnWidth, gp.scnHeight))
-#    win = visual.Window((gp.scnWidth, gp.scnHeight),color=gp.white,colorSpace='rgb255',monitor=mon,fullscr=not debug_mode,units='deg')
-#    myMouse = event.Mouse(visible = True, win = win)
-    win = visual.Window(monitor="testMonitor", units="deg", colorSpace = 'rgb255', color=background_color, fullscr = not debug_mode) #not debug_mode) #[1920*0.8,1080*0.8]
+    mon = monitors.Monitor('behavlab', width=gp.screen_width, distance=gp.screen_dist)
+    mon.setSizePix((gp.scnWidth, gp.scnHeight))
+    win = visual.Window((gp.scnWidth, gp.scnHeight),color=background_color,colorSpace='rgb255',monitor=mon,fullscr=not debug_mode,units='deg')
     win.update()
     myMouse = event.Mouse(visible = True, win = win)
     

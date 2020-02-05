@@ -12,8 +12,7 @@ import numpy as np
 import os, time # for paths and data
 import pandas as pd
 from IPython import embed as shell
-import general_parameters as gp # for letter sets, counterbalancing
-import mri_parameters as p # letter conditions, counterbalancing
+import general_parameters as gp # for letter sets, counterbalancing, iconic memory parameters
 
 ######################################################
 ##################### PARAMETERS #####################
@@ -38,41 +37,39 @@ session = int(g.data[1])
 break_trials    = [48,48*2,48*3,192+48,192+48*2,192+48*3]
 counterbalance  = [0,0,1,1]*1000 # counter balance order letter sets, also alternate with trained/untrained sets
 # Stimuli
-cue             = '*' # red asterisk, should it be uncolored?
-pos_pol         = [0,45,90,135,180,225,270,315] # positions in degrees
+
+## see general_parameters.py
+cue             = p.cue
+pos_pol         = p.pos_pol
 
 #Sizes
-letter_size     = 1.2 #size letters. paper says 1.2 degrees of visual angle
-eccen           = 5.2 #eccentricity. paper says 5.2 degrees of visual angle
-cue_size        = 0.1 # size of asterisk cue. paper says 0.1, we think it is too small so we did 0.8, but changed back to 0.1 for replication
-text_size       = 0.7 #0.05 # arbitrary
-text_size       = 28 # in pix
-fixcross_size   = 1 # in deg
-y_shift_up = 2
+letter_size     = p.letter_size
+eccen           = p.eccen 
+cue_size        = p.cue_size 
+text_size       = p.text_size
+fixcross_size   = p.fixcross_size
+y_shift_up      = p.y_shift_up
 
 # INTEGRATE DISTANCE WITH THE MONITOR SOMWHERE: 73 cm according to paper
-
-
 #Other colors:
-cue_target_color    = gp.black  #'black' # target cue in red, holder cue in black
-cue_holder_color    = [200,200,200] #gp.grey #'grey'
-background_color    = gp.white #'white' # code??
-instructions_color  = gp.black #'grey'
-letters_color       = gp.black # all black
+cue_target_color    = p.cue_target_color
+cue_holder_color    = p.cue_holder_color
+background_color    = p.background_color
+instructions_color  = p.instructions_color
+letters_color       = p.letters_color
 
 # Timing
-read_time             = 3
-fix_time              = 1 #1000ms
-letters_time          = 0.1# 0.1#0.500#0.100 #100ms, presentation of the letters array
-cue_time              = 1.5 #Cues remain 
-max_response_duration = 4 #they click on the letter they think it was cued
-endtrial_time         = 1.5 #0.05 #50ms, fix cross disappears here. This is the ITI that was 0.8 and from piloting we want to make slower. Try 1.5 s?
+read_time             = p.read_time
+fix_time              = p.fix_time
+letters_time          = p.letters_time
+cue_time              = p.cue_time
+max_response_duration = p.max_response_duration
+endtrial_time         = p.endtrial_time
 
 # Response buttons values
-square_fillcolor = cue_holder_color
-square_vertices = ((-30, -30), (30, -30), (30, 30),(-30,30))
-square_positions = [(-150,-350), (-50,-350), (50,-350), (150,-350),
-                    (-150,-450),(-50,-450),(50,-450),(150,-450)]
+square_fillcolor = p.square_fillcolor
+square_vertices  = p.square_vertices
+square_positions = p.square_positions
 
 ######################################################
 ###################### TEXTS ########################
@@ -82,7 +79,7 @@ welcome_txt = "Sensory Memory Test\
 \n\nAt the beginning of each trial, you see a cross [+] in the center of the screen, always maintain fixation there.\
 \nThen, 8 letters arranged on a circle are presented for a very brief time. Please, remain fixating your eyes at the [+] while this happens!\
 \nOnce the letters disappear, one of the 8 letter locations is indicated with a small black asterisk.\
-\n The other locations are marked with a grey asterisk (ignore them).\
+\nThe other locations are marked with a grey asterisk (ignore them).\
 \n\nYour task is to remember which letter was presented at the location cued with a black asterisk.\
 \nTo give your answer, a letter panel appears in the lower part of the screen.\
 \nYou can use the mouse to click on the letter you think was presented in the cued location.\
@@ -136,12 +133,11 @@ if subject_ID:
               'letter_list'
           ]
     DF = pd.DataFrame(columns=header) #called DF in other script
-    
+
     #Set-up window:    
-    # mon = monitors.Monitor('myMac15', width=gp.screen_width, distance=gp.screen_dist)
-    # mon.setSizePix((gp.scnWidth, gp.scnHeight))
-    # win = visual.Window(color=gp.white,colorSpace='rgb255',monitor=mon,fullscr=not debug_mode,units='deg')
-    win = visual.Window(monitor="testMonitor", units="deg", colorSpace = 'rgb255', color=background_color, fullscr = not debug_mode) #not debug_mode) #[1920*0.8,1080*0.8]
+    mon = monitors.Monitor('behavlab', width=gp.screen_width, distance=gp.screen_dist)
+    mon.setSizePix((gp.scnWidth, gp.scnHeight))
+    win = visual.Window((gp.scnWidth, gp.scnHeight),color=background_color,colorSpace='rgb255',monitor=mon,fullscr=not debug_mode,units='deg')
     win.update()
     myMouse = event.Mouse(visible = True, win = win)
 
@@ -225,8 +221,6 @@ if subject_ID:
             breaks_counter +=1
             print('Break: ', breaks_counter)
 
-        
-                
         #### TRIALS WITHIN BLOCK LOOP ###
         for t in range(len(BTRIALS)):       
             
@@ -238,7 +232,6 @@ if subject_ID:
                 print('Break: ', breaks_counter)
                 breaks_counter +=1
                 print('Break: ', breaks_counter)
-            
             
             myMouse.setVisible(0)
             
@@ -300,11 +293,7 @@ if subject_ID:
                 
                 stim_cue.draw()
             
-#            win.flip()
-#            core.wait(cue_time) #show the cues for 2 seconds
-            
             # then show the 8 option to select with mouse
-#            fixcross.setAutoDraw(False)
             myMouse.setPos([0,-11.8]) #put the mouse in the center of the letter oannel (in deg units)
             myMouse.setVisible(1)
             for s in range(len(squares_stimholder)):
@@ -314,7 +303,6 @@ if subject_ID:
           
             win.flip()
             
-        
             # get mouse response:
             onset_time = core.getTime()
             RT = None
@@ -324,7 +312,6 @@ if subject_ID:
                 mouse_click = myMouse.getPressed()
                 mouse_click = mouse_click[0]
                 
-            
                 # For quitting earlier
                 keys = event.getKeys()
                 if keys:
@@ -343,7 +330,7 @@ if subject_ID:
                             RT = core.getTime() - onset_time  # Reaction time
                             print(RT)                    
                     #break
-                                       
+                                      
             # Blank screen
             fixcross.setAutoDraw(False)
             win.flip()
@@ -382,14 +369,12 @@ if subject_ID:
             trial_counter += 1
         
         blocknumber =+1
-    
-    
+
     # End screen for participants
     instr.setText(end_txt)
     instr.draw()
     win.flip()
     event.waitKeys()
-
 
 # Close-up  
 win.close()

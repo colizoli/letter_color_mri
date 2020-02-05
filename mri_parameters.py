@@ -93,13 +93,14 @@ VWFA localizer (not using)
 Letter localizer
 """
 blocks_letter = ['Letter','Symbol']
-fonts_letter = [gp.font_english,gp.font_hebrew]            
+fonts_letter = gp.font_english
+fonts_symbol = gp.font_hebrew     
               
 """
 Color localizer
 """
 blocks_color = ['Color','Black']
-symbols = ["A","B","C","D","E","F","G","H","I","J","K","L","M"] # present in Hebrew font
+symbols = ["A","B","C","D","E","F","G","H","J","K","L","M","N"] # present in Hebrew font (no "I" because "yud" too small)
 
 colors_RGB = [
     [163,0,228],
