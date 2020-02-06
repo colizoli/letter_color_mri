@@ -14,7 +14,7 @@ Iconic Memory:
 - DONE Chin rest (in closet next to cubile)
 
 MRI:
-- Check psychopy and internet connection on normal experiment mode
+- DONE Check psychopy and internet connection on normal experiment mode, PsychoPy only in TEST mode, internet does not always work, make sure to have everything (instructions) on a USB stick.
 - DONE Check timing of stimuli on dummy scanner
 - DONE How to transfer participant colors from behavior to MRI? upload Google drive folder /colors/
 - DONE Instructions covered by mirror in scanner, need to make the more centered.
