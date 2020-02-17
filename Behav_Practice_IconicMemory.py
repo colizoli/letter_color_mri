@@ -35,37 +35,37 @@ session = int(g.data[1])
 # session = 1
 
 ## see general_parameters.py
-cue             = p.cue
-pos_pol         = p.pos_pol
+cue             = gp.cue
+pos_pol         = gp.pos_pol
 
 #Sizes
-letter_size     = p.letter_size
-eccen           = p.eccen 
-cue_size        = p.cue_size 
-text_size       = p.text_size
-fixcross_size   = p.fixcross_size
-y_shift_up      = p.y_shift_up
+letter_size     = gp.letter_size
+eccen           = gp.eccen 
+cue_size        = gp.cue_size 
+text_size       = gp.text_size
+fixcross_size   = gp.fixcross_size
+y_shift_up      = gp.y_shift_up
 
 # INTEGRATE DISTANCE WITH THE MONITOR SOMWHERE: 73 cm according to paper
 #Other colors:
-cue_target_color    = p.cue_target_color
-cue_holder_color    = p.cue_holder_color
-background_color    = p.background_color
-instructions_color  = p.instructions_color
-letters_color       = p.letters_color
+cue_target_color    = gp.cue_target_color
+cue_holder_color    = gp.cue_holder_color
+background_color    = gp.background_color
+instructions_color  = gp.instructions_color
+letters_color       = gp.letters_color
 
 # Timing
-read_time             = p.read_time
-fix_time              = p.fix_time
-letters_time          = p.letters_time
-cue_time              = p.cue_time
-max_response_duration = p.max_response_duration
-endtrial_time         = p.endtrial_time
+read_time             = gp.read_time
+fix_time              = gp.fix_time
+letters_time          = gp.letters_time
+cue_time              = gp.cue_time
+max_response_duration = gp.max_response_duration
+endtrial_time         = gp.endtrial_time
 
 # Response buttons values
-square_fillcolor = p.square_fillcolor
-square_vertices  = p.square_vertices
-square_positions = p.square_positions
+square_fillcolor = gp.square_fillcolor
+square_vertices  = gp.square_vertices
+square_positions = gp.square_positions
 
 ######################################################
 ###################### TEXTS ########################
