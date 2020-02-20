@@ -7,6 +7,7 @@ TO DO:
 <br> 13-06-2019 after pilot #2
 <br>
 Consistency:
+- Add session
 - Get rid of double entries
 - Open window directly on top of previous window
 - Check button formatting on Windows machine
