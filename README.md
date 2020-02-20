@@ -6,6 +6,11 @@ Link to project proposal form: https://project-proposal.dccn.nl/Form/31#Funding
 TO DO: 
 <br> 13-06-2019 after pilot #2
 <br>
+Consistency:
+- Get rid of double entries
+- Open window directly on top of previous window
+- Check button formatting on Windows machine
+
 Iconic Memory: 
 - TRY DIRECTLY IN LAB - First trial of each block starts too fast
 - DONE Output bids format (Olympia)
