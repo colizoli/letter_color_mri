@@ -6,6 +6,9 @@ Link to project proposal form: https://project-proposal.dccn.nl/Form/31#Funding
 TO DO: 
 <br> 13-06-2019 after pilot #2
 <br>
+<br>
+- How to transfer colors from behavioral lab to MRI computer?
+
 Consistency:
 - DONE Check button formatting on Windows machine (looks very different on a Mac, but working)
 
