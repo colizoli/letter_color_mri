@@ -7,7 +7,7 @@ TO DO:
 <br> 13-06-2019 after pilot #2
 <br>
 Consistency:
-- Check button formatting on Windows machine
+- DONE Check button formatting on Windows machine (looks very different on a Mac, but working)
 
 Iconic Memory: 
 - TRY DIRECTLY IN LAB - First trial of each block starts too fast
