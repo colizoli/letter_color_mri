@@ -5,6 +5,7 @@ Letter-color Consistency test
 O.Colizoli 2020
 Each letter of the alphabet in random order x 2
 Color wheel opens at a randomized color on each trial (but does not turn)
+Python 2..7
 """
 # data saved in ~/LogFiles/sub-XXX
 
@@ -23,18 +24,24 @@ from tkinter.colorchooser import askcolor
 # Get subject number (command line)
 try:
     subject_ID = raw_input("subject number: ")  # Python 2
+    session = raw_input("Session: ")
 except:
     subject_ID = input("subject number: ")
+    subject_ID = input("Session: ")
 subject_ID = int(subject_ID)
+session    = int(session)
 
 ## Create LogFile folder cwd/LogFiles
 cwd = os.getcwd()
 logfile_dir = os.path.join(cwd,'LogFiles','sub-{}'.format(subject_ID)) 
 if not os.path.isdir(logfile_dir):
     os.makedirs(logfile_dir)
-output_alphabet = os.path.join(logfile_dir,'sub-{}_consistency.csv'.format(subject_ID))
+timestr = time.strftime("%Y%m%d-%H%M%S") 
+output_alphabet = os.path.join(logfile_dir,'sub-{}_sess-{}_task-consistency_events_{}.tsv'.format(subject_ID,session,timestr))
 
 alphabet = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
+alphabet = ['A','B','C']
+
 REPS = 2 # number of times to repeat whole alphabet
 
 RGBS = [] # save output
@@ -42,9 +49,19 @@ L = '2'  # place holder
 
 class Test():
     def __init__(self):
-        self.root = tk.Tk()
-        self.root.geometry('400x200')
         self.counter = 1
+        self.root = tk.Tk()
+        self.root.title("Choose your color!")
+        # always put in same location
+        w = 400 # width for the Tk root
+        h = 200 # height for the Tk root
+        # get screen width and height
+        ws = self.root.winfo_screenwidth() # width of the screen
+        hs = self.root.winfo_screenheight() # height of the screen
+        # calculate x and y coordinates for the Tk root window
+        x = (ws/6) - (w/6)
+        y = (hs/6) - (h/6)
+        self.root.geometry('%dx%d+%d+%d' % (w, h, x, y))
         self.open1 = tk.Button(self.root, text='Pick a color:', bg="blue", command=self.pick_a_color, font=('Helvetica', '36'),padx=5, pady=5)
         self.open1.pack(fill=tk.X, expand=False)    
         self.letter = tk.Label(self.root, text=L, font=("Helvetica", 90))
@@ -52,11 +69,11 @@ class Test():
         self.root.mainloop()
         
     def quit(self):
+        RGBS.append( [L ,self.RGB, self.HEX] )
         self.root.destroy()
             
     def pick_a_color(self,):        
         self.RGB,self.HEX = askcolor((random.randint(0,255), random.randint(0,255), random.randint(0,255)), parent=None, title='Pick a color: {}'.format(L) )
-        RGBS.append( [L ,self.RGB, self.HEX] )
         self.letter.configure(fg = self.HEX)
         if self.counter:
             exit_button = tk.Button(self.root, bg="blue",text='FINISHED', command=self.quit, font=('Helvetica', '28'))
