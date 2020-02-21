@@ -15,21 +15,54 @@ import numpy as np
 import pandas as pd
 import os, time  # for paths and data
 from IPython import embed as shell
-try:
-    import Tkinter as tk
-except:
-    import tkinter as tk
-from tkinter.colorchooser import askcolor
+import Tkinter as tk # py27
+from tkColorChooser import askcolor
 
-# Get subject number (command line)
-try:
-    subject_ID = raw_input("subject number: ")  # Python 2
-    session = raw_input("Session: ")
-except:
-    subject_ID = input("subject number: ")
-    subject_ID = input("Session: ")
-subject_ID = int(subject_ID)
-session    = int(session)
+# Get subject number via tkinter (command line doesn't work in PsychoPy)
+subject_ID = []
+session = []
+## INPUT WINDOW
+class GetInput():
+    def __init__(self):
+        self.root2 = tk.Tk()
+        self.root2.title("Subject and Session")
+        # always put in same location
+        w = 400 # width for the Tk root
+        h = 200 # height for the Tk root
+        # get screen width and height
+        ws = self.root2.winfo_screenwidth() # width of the screen
+        hs = self.root2.winfo_screenheight() # height of the screen
+        # calculate x and y coordinates for the Tk root window
+        x = (ws/6) - (w/6)
+        y = (hs/6) - (h/6)
+        self.root2.geometry('%dx%d+%d+%d' % (w, h, x, y))
+        # Subject
+        self.e = tk.Entry(self.root2)
+        self.e.insert(0, 'Subject Number')
+        self.e.pack()
+        self.e.focus_set()
+        # Session
+        self.e2 = tk.Entry(self.root2)
+        self.e2.insert(0, 'Session')
+        self.e2.pack()
+        self.e2.focus_set()
+        
+        b = tk.Button(self.root2,text='OK',command=self.get_input)
+        b.pack(side='bottom')
+        
+        self.root2.mainloop()
+        
+    def get_input(self):
+        subj_str = self.e.get() 
+        sess_str = self.e2.get()
+        subject_ID.append(subj_str)
+        session.append(sess_str)
+        self.root2.destroy()
+        
+## ASK INPUT
+app = GetInput()   # subject and session
+subject_ID = int(subject_ID[0])
+session = int(session[0])
 
 ## Create LogFile folder cwd/LogFiles
 cwd = os.getcwd()
@@ -39,6 +72,7 @@ if not os.path.isdir(logfile_dir):
 timestr = time.strftime("%Y%m%d-%H%M%S") 
 output_alphabet = os.path.join(logfile_dir,'sub-{}_sess-{}_task-consistency_events_{}.tsv'.format(subject_ID,session,timestr))
 
+### CONSISTENCY TASK ###
 alphabet = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
 alphabet = ['A','B','C']
 
@@ -51,10 +85,10 @@ class Test():
     def __init__(self):
         self.counter = 1
         self.root = tk.Tk()
-        self.root.title("Choose your color!")
+        self.root.title("Subject {} Session {}".format(subject_ID, session))
         # always put in same location
         w = 400 # width for the Tk root
-        h = 200 # height for the Tk root
+        h = 300 # height for the Tk root
         # get screen width and height
         ws = self.root.winfo_screenwidth() # width of the screen
         hs = self.root.winfo_screenheight() # height of the screen
@@ -62,30 +96,33 @@ class Test():
         x = (ws/6) - (w/6)
         y = (hs/6) - (h/6)
         self.root.geometry('%dx%d+%d+%d' % (w, h, x, y))
-        self.open1 = tk.Button(self.root, text='Pick a color:', bg="blue", command=self.pick_a_color, font=('Helvetica', '36'),padx=5, pady=5)
+        self.open1 = tk.Button(self.root, text='Pick a color:', command=self.pick_a_color, font=('Helvetica', '36'),padx=5, pady=5)
         self.open1.pack(fill=tk.X, expand=False)    
         self.letter = tk.Label(self.root, text=L, font=("Helvetica", 90))
         self.letter.pack()
         self.root.mainloop()
         
     def quit(self):
-        RGBS.append( [L ,self.RGB, self.HEX] )
+        RGBS.append( [L ,self.RGB, self.HEX, abc] )
         self.root.destroy()
             
     def pick_a_color(self,):        
         self.RGB,self.HEX = askcolor((random.randint(0,255), random.randint(0,255), random.randint(0,255)), parent=None, title='Pick a color: {}'.format(L) )
         self.letter.configure(fg = self.HEX)
         if self.counter:
-            exit_button = tk.Button(self.root, bg="blue",text='FINISHED', command=self.quit, font=('Helvetica', '28'))
+            exit_button = tk.Button(self.root, text='FINISHED', command=self.quit, font=('Helvetica', '28'))
             exit_button.pack()
             self.counter = 0
         self.root.mainloop()
-# MAIN LOOP       
+
+# MAIN LOOP        
+abc = 1 # round
 for R in np.arange(REPS):
     random.shuffle(alphabet) 
     # Open a new GUI per letter        
     for L in alphabet:      
         app = Test()
+    abc+=1
 
 ####################################
 ## SAVE OUTPUT & determine conditions
@@ -93,13 +130,36 @@ print(RGBS)
 
 # Save colors
 DFS = pd.DataFrame(RGBS)
-DFS.columns = ["letter","rgb","hex"]
+DFS.columns = ["letter","rgb","hex","choice"]
 DFS['subject'] = np.repeat(subject_ID,len(DFS))
 DFS['r']            = [c[0] for c in DFS['rgb']]
 DFS['g']            = [c[1] for c in DFS['rgb']]
 DFS['b']            = [c[2] for c in DFS['rgb']]
 DFS.to_csv(output_alphabet) # save all alphabet/preferences for both groups (also in case it goes wrong)
 print('consistency test - success!')
+
+
+##### OUTPUT FIGURE WITH COLORS #####
+# Sort and show letters x 2 side by side
+del tk  # py27
+del askcolor
+import matplotlib.pyplot as plt # doesn't work together with tkinter
+import seaborn as sns
+fig = plt.figure(figsize=(10,5))
+
+# Sort so the same letters go side by side for each choice
+DFS.sort_values(by=['choice', 'letter'],inplace=True)
+DFS.reset_index(inplace=True)
+for i,A in enumerate(alphabet):
+    ax = fig.add_subplot(6,5,i+1)
+    ax.text(0.5, 0.5, DFS['letter'][i], color=DFS['hex'][i],fontsize=18)
+    ax.text(0.25, 0.5, DFS['letter'][i+len(alphabet)], color=DFS['hex'][i+len(alphabet)],fontsize=18)
+    ax.set_axis_off()    
+
+sns.despine(offset=10, trim=True)
+plt.tight_layout()
+fig.savefig(os.path.join(cwd,'LogFiles','sub-{}'.format(subject_ID),'sub-{}_colors.pdf'.format(subject_ID)))
+print('success: sub-{}_colors.pdf'.format(subject_ID))
 
     
     
