@@ -73,8 +73,8 @@ timestr = time.strftime("%Y%m%d-%H%M%S")
 output_alphabet = os.path.join(logfile_dir,'sub-{}_sess-{}_task-consistency_events_{}.tsv'.format(subject_ID,session,timestr))
 
 ### CONSISTENCY TASK ###
-alphabet = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
-alphabet = ['A','B','C']
+alphabet = ['a','b','c','d','e','f','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
+alphabet = ['a','b','c']
 
 REPS = 2 # number of times to repeat whole alphabet
 
@@ -98,7 +98,7 @@ class Test():
         self.root.geometry('%dx%d+%d+%d' % (w, h, x, y))
         self.open1 = tk.Button(self.root, text='Pick a color:', command=self.pick_a_color, font=('Helvetica', '36'),padx=5, pady=5)
         self.open1.pack(fill=tk.X, expand=False)    
-        self.letter = tk.Label(self.root, text=L, font=("Helvetica", 90))
+        self.letter = tk.Label(self.root, bg='white', text=L, font=("Helvetica", 90))
         self.letter.pack()
         self.root.mainloop()
         
@@ -107,6 +107,7 @@ class Test():
         self.root.destroy()
             
     def pick_a_color(self,):        
+        # GET COLOR CHOOSER NOT OPEN ON TOP OF ROOT
         self.RGB,self.HEX = askcolor((random.randint(0,255), random.randint(0,255), random.randint(0,255)), parent=None, title='Pick a color: {}'.format(L) )
         self.letter.configure(fg = self.HEX)
         if self.counter:
@@ -148,7 +149,9 @@ import seaborn as sns
 fig = plt.figure(figsize=(10,5))
 
 # Sort so the same letters go side by side for each choice
-DFS.sort_values(by=['choice', 'letter'],inplace=True)
+#DFS.sort_values(by=['choice', 'letter'],inplace=True)
+DFS = DFS.sort(['choice', 'letter'])
+
 DFS.reset_index(inplace=True)
 for i,A in enumerate(alphabet):
     ax = fig.add_subplot(6,5,i+1)
