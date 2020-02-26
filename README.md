@@ -7,7 +7,7 @@ TO DO:
 <br> 13-06-2019 after pilot #2
 <br>
 <br>
-- How to transfer colors from behavioral lab to MRI computer?
+- How to transfer colors from behavioral lab to MRI computer? EMAIL
 
 Consistency:
 - DONE Check button formatting on Windows machine (looks very different on a Mac, but working)
