@@ -69,13 +69,11 @@ cue             = '*' # red asterisk, should it be uncolored?
 pos_pol         = [0,45,90,135,180,225,270,315] # positions in degrees
 
 #Sizes
-letter_size     = 1.75#1.65 #size letters. paper says 1.2 degrees of visual angle (measured 6-7 mm = 0.6-0.7 degrees)
-eccen           = 5.2 #eccentricity. paper says 5.2 degrees of visual angle (measure 5cm = 5.1 deg)
-cue_size        = 0.6#0.27 gives 0.1cm(=0.1deg real) # size of asterisk cue. paper says 0.1, we think it is too small so we did 0.8, but changed back to 0.1 for replication
-#cue_size_png    = 0.1 #(too small, try 0.2)
-##text_size       = 0.7 #0.05 # arbitrary
+letter_size     = 1.75# 1.75 degrees in code correspond to 1.15-1.17cm on the screen which are real 1.2 degrees (like paper)
+eccen           = 5.2 # 5.2 degrees in code correspond to 5 cm on the screen which are real 5.2 degrees (like paper)
+cue_size        = 0.6 # 0.6 degrees in code correspond to 0.18-0.2 cm on the screen which are real 0.2 degrees (like paper 0.1 x2 cause too small)
 text_size       = 28 # in pix
-fixcross_size   = 2.1 # paper is 1 in deg , needs to be 0.96 cm on screen (given 55cm distance)
+fixcross_size   = 2.1 # 2.1 degrees in code correspond to 0.97 cm on the screen which are real 1 degrees
 y_shift_up      = 2
 
 # INTEGRATE DISTANCE WITH THE MONITOR SOMWHERE: 73 cm according to paper
@@ -89,7 +87,7 @@ letters_color       = black # all black
 # Timing
 read_time             = 3
 fix_time              = 1 #1000ms
-letters_time          = 5#0.1# 0.1#0.500#0.100 #100ms, presentation of the letters array
+letters_time          = 0.1# 0.1#0.500#0.100 #100ms, presentation of the letters array
 cue_time              = 1.5 #Cues remain 
 max_response_duration = 4 #they click on the letter they think it was cued
 endtrial_time         = 1.5 #0.05 #50ms, fix cross disappears here. This is the ITI that was 0.8 and from piloting we want to make slower. Try 1.5 s?
