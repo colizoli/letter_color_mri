@@ -47,6 +47,14 @@ class GetInput():
         self.e2.pack()
         self.e2.focus_set()
         
+        txt='If each letter of the alphabet\
+        \nwere to have a unique color,\
+        \nwhat color would it have?\
+        \n\nThere are no right or wrong answers.'
+        # instructions
+        self.instr = tk.Label(self.root2, bg='white', text=txt, font=("Helvetica", 14))
+        self.instr.pack()
+        
         b = tk.Button(self.root2,text='OK',command=self.get_input)
         b.pack(side='bottom')
         
