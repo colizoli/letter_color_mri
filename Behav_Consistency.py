@@ -82,7 +82,7 @@ output_alphabet = os.path.join(logfile_dir,'sub-{}_sess-{}_task-consistency_even
 
 ### CONSISTENCY TASK ###
 alphabet = ['a','b','c','d','e','f','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
-alphabet = ['a','b','c']
+#alphabet = ['a','b','c']
 
 REPS = 2 # number of times to repeat whole alphabet
 
