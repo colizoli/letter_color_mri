@@ -7,13 +7,13 @@ TO DO:
 <br> 13-06-2019 after pilot #2
 <br>
 <br>
-- How to transfer colors from behavioral lab to MRI computer? EMAIL
+- DONE How to transfer colors from behavioral lab to MRI computer? >> EMAIL
 
 Consistency:
 - DONE Check button formatting on Windows machine (looks very different on a Mac, but working)
 
 Iconic Memory: 
-- TRY DIRECTLY IN LAB - First trial of each block starts too fast
+- DONE First trial of each block starts too fast
 - DONE Output bids format (Olympia)
 - DONE Slow down trials (ITIs)
 - DONE Check visual angle Nicolas' paper, cubicle 1
