@@ -74,7 +74,7 @@ session = int(session[0])
 
 ## Create LogFile folder cwd/LogFiles
 cwd = os.getcwd()
-logfile_dir = os.path.join(cwd,'LogFiles','sub-{}'.format(subject_ID)) 
+logfile_dir = os.path.join(cwd,'LogFiles','sub-{}'.format(subject_ID),'sess-{}'.format(session),'behav') 
 if not os.path.isdir(logfile_dir):
     os.makedirs(logfile_dir)
 timestr = time.strftime("%Y%m%d-%H%M%S") 
@@ -171,11 +171,8 @@ for i,A in enumerate(alphabet):
 
 sns.despine(offset=10, trim=True)
 plt.tight_layout()
-fig.savefig(os.path.join(cwd,'LogFiles','sub-{}'.format(subject_ID),'sub-{}_colors.pdf'.format(subject_ID)))
-print('success: sub-{}_colors.pdf'.format(subject_ID))
+fig.savefig(os.path.join(cwd,'LogFiles','sub-{}'.format(subject_ID),'sess-{}'.format(session),'behav','sub-{}_sess-{}_colors.pdf'.format(subject_ID,session)))
+print('success: sub-{}_sess-{}_colors.pdf'.format(subject_ID,session))
 
-    
-    
-    
     
     
