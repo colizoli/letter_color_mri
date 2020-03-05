@@ -157,8 +157,10 @@ import seaborn as sns
 fig = plt.figure(figsize=(10,5))
 
 # Sort so the same letters go side by side for each choice
-#DFS.sort_values(by=['choice', 'letter'],inplace=True)
-DFS = DFS.sort(['choice', 'letter'])
+try:
+    DFS.sort_values(by=['choice', 'letter'],inplace=True)
+except:
+    DFS = DFS.sort(['choice', 'letter'])
 
 DFS.reset_index(inplace=True)
 for i,A in enumerate(alphabet):
