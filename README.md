@@ -3,6 +3,8 @@ RSA and iconic memory paradigm - reading in color
 
 Link to project proposal form: https://project-proposal.dccn.nl/Form/31#Funding
 
+PsychoPy: standalone versions https://github.com/psychopy/psychopy/releases/tag/1.84.2
+
 TO DO: 
 <br> 13-06-2019 after pilot #2
 <br>
