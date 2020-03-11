@@ -74,7 +74,7 @@ welcome_txt = "PRACTICE Sensory Memory Test\
 \nThis task is about remembering which letter was presented at which location of the screen.\
 \n\nAt the beginning of each trial, you see a cross [+] in the center of the screen, always maintain fixation there.\
 \nThen, 8 letters arranged on a circle are presented for a very brief time. Please, remain fixating your eyes at the [+] while this happens!\
-\nOnce the letters disappear, one of the 8 letter locations is indicated with a small black asterisk.\
+\nOnce the letters disappear, one of the 8 letter locations is indicated with a small black asterisk [*].\
 \nThe other locations are marked with a grey asterisk (ignore them).\
 \n\nYour task is to remember which letter was presented at the location cued with a black asterisk.\
 \nTo give your answer, a letter panel appears in the lower part of the screen.\
