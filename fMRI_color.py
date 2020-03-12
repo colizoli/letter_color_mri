@@ -32,7 +32,7 @@ welcome_txt = "You will see a series of symbols presented on screen.\
 \n\nMaintain eye-fixation at the center of the screen at all times\
 \n(even when there are no symbols).\
 \n\nLay as still as possible for the duration of the scan session\
-(that includes between scans!)\
+\n(that includes between scans!)\
 \n\n[Waiting for scanner...]"
 
 #########################################
