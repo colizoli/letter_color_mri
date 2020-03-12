@@ -14,7 +14,7 @@ from psychopy import core, visual, event, gui, monitors
 import random
 import numpy as np
 import pandas as pd
-from IPython import embed as shell
+#from IPython import embed as shell
 import mri_parameters as p # see for timing, stimuli and parameters
 import general_parameters as gp # for letter sets, counterbalancing
 
