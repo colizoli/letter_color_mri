@@ -81,7 +81,7 @@ timestr = time.strftime("%Y%m%d-%H%M%S")
 output_alphabet = os.path.join(logfile_dir,'sub-{}_sess-{}_task-consistency_events_{}.tsv'.format(subject_ID,session,timestr))
 
 ### CONSISTENCY TASK ###
-alphabet = ['a','b','c','d','e','f','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
+alphabet = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
 #alphabet = ['a','b','c']
 
 REPS = 2 # number of times to repeat whole alphabet
