@@ -173,8 +173,9 @@ if subject_ID:
         if not os.path.isdir(logfile_dir_g2): 
             os.makedirs(logfile_dir_g2)
             
-        output_filename = os.path.join(logfile_dir,'sub-{}_colors_{}.tsv'.format(subject_ID,timestr ))
-        output_filename_g2 = os.path.join(logfile_dir_g2,'sub-{}_colors_{}.tsv'.format(subject_ID+100,timestr )) # G2 gets G1's colors
+        # no time stamp because extra something to delete when scanning...
+        output_filename = os.path.join(logfile_dir,'sub-{}_colors.tsv'.format(subject_ID ))
+        output_filename_g2 = os.path.join(logfile_dir_g2,'sub-{}_colors.tsv'.format(subject_ID+100 )) # G2 gets G1's colors
     # G2
     else: # save elsewhere in 'prefs' folder
         subject_yoked = subject_ID-100
