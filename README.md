@@ -9,7 +9,7 @@ TO DO:
 <br> 13-06-2019 after pilot #2
 <br>
 <br>
-- DONE How to transfer colors from behavioral lab to MRI computer? >> EMAIL
+- DONE How to transfer colors from behavioral lab to MRI computer? >> Filezilla DCCN (Email is something goes wrong)
 
 Consistency:
 - DONE Check button formatting on Windows machine (looks very different on a Mac, but working)
