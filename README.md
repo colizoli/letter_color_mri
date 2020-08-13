@@ -12,7 +12,7 @@ Instructions researcher: https://docs.google.com/document/d/1hwT6s0I0_pDNHR-lzS_
 <br>
 - PsychoPy only in WINDOWS TEST ENVIRONMENT mode, internet does not always work, make sure to have everything (instructions) on a USB stick.
 
-
+<br><br>
 Iconic Memory: 
 - Turn off lights!
 - Chin rest in closet next to cubile 1
