@@ -8,8 +8,8 @@ PsychoPy: standalone versions https://github.com/psychopy/psychopy/releases/tag/
 Instructions researcher: https://docs.google.com/document/d/1hwT6s0I0_pDNHR-lzS_r88YBOxosGWczPCNQL988zfs/edit?usp=sharing
 
 <br>
-<br>
 - How to transfer colors from behavioral lab to MRI computer? >> Filezilla DCCN (Email or USB if something goes wrong)
+<br>
 - PsychoPy only in WINDOWS TEST ENVIRONMENT mode, internet does not always work, make sure to have everything (instructions) on a USB stick.
 
 
