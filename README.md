@@ -5,31 +5,20 @@ Link to project proposal form: https://project-proposal.dccn.nl/Form/31#Funding
 
 PsychoPy: standalone versions https://github.com/psychopy/psychopy/releases/tag/1.84.2
 
-TO DO: 
-<br> 13-06-2019 after pilot #2
-<br>
-<br>
-- DONE How to transfer colors from behavioral lab to MRI computer? >> Filezilla DCCN (Email is something goes wrong)
+Instructions researcher: https://docs.google.com/document/d/1hwT6s0I0_pDNHR-lzS_r88YBOxosGWczPCNQL988zfs/edit?usp=sharing
 
-Consistency:
-- DONE Check button formatting on Windows machine (looks very different on a Mac, but working)
+<br>
+<br>
+- How to transfer colors from behavioral lab to MRI computer? >> Filezilla DCCN (Email or USB if something goes wrong)
+- PsychoPy only in WINDOWS TEST ENVIRONMENT mode, internet does not always work, make sure to have everything (instructions) on a USB stick.
+
 
 Iconic Memory: 
-- DONE First trial of each block starts too fast
-- DONE Output bids format (Olympia)
-- DONE Slow down trials (ITIs)
-- DONE Check visual angle Nicolas' paper, cubicle 1
-- DONE Chin rest (in closet next to cubile)
+- Turn off lights!
+- Chin rest in closet next to cubile 1
+
 
 MRI:
-- DONE Check psychopy and internet connection on normal experiment mode, PsychoPy only in TEST mode, internet does not always work, make sure to have everything (instructions) on a USB stick.
-- DONE Check timing of stimuli on dummy scanner
-- DONE How to transfer participant colors from behavior to MRI? upload Google drive folder /colors/
-- DONE Instructions covered by mirror in scanner, need to make the more centered.
-- DONE Change name of output files to match bids format: sub-01_sess-01_task-rsa_run-01.tsv
-- DONE RSA task - make sure all responses are being logged, so also false alarms, this is important for the nuisance regressor.
-
-
-Setup USB forp: 
+Setup USB forp buttons
 <br> 1) push button autoconfig > USB > key 12345
 <br> 2) plug USB cabel from FORP to stimulus PC (2nd to right usb hole)
