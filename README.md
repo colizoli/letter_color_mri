@@ -22,3 +22,5 @@ MRI:
 Setup USB forp buttons
 <br> 1) push button autoconfig > USB > key 12345
 <br> 2) plug USB cabel from FORP to stimulus PC (2nd to right usb hole)
+<br>
+<br>fMRI trigger = keyboard input '5'
