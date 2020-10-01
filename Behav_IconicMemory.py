@@ -11,13 +11,13 @@ import random
 import numpy as np
 import os, time # for paths and data
 import pandas as pd
-from IPython import embed as shell
+#from IPython import embed as shell
 import general_parameters as gp # for letter sets, counterbalancing, iconic memory parameters
 
 ######################################################
 ##################### PARAMETERS #####################
 ######################################################
-debug_mode = False
+debug_mode = True
 
 ## load CSV file for balancing stimuli
 trials_IM = pd.read_csv(os.path.join('stimuli','trials_IconicMemory.csv'))
@@ -211,6 +211,7 @@ if subject_ID:
             BTRIALS = BTRIALS.iloc[0:3,:] # just get first X trials
         
         # Break between blocks
+        print(blocknumber)
         if blocknumber > 1:
             instr.setText(break_block_txt.format(breaks_counter))
             instr.draw()
@@ -219,10 +220,10 @@ if subject_ID:
             event.waitKeys()
             print('Break: ', breaks_counter)
             breaks_counter +=1
-            print('Break: ', breaks_counter)
+            #print('Break: ', breaks_counter)
 
         #### TRIALS WITHIN BLOCK LOOP ###
-        for t in range(len(BTRIALS)):       
+        for t in range(len(BTRIALS)):   
             
             if trial_counter in break_trials:
                 instr.setText(break_txt.format(breaks_counter))
@@ -231,7 +232,7 @@ if subject_ID:
                 event.waitKeys()
                 print('Break: ', breaks_counter)
                 breaks_counter +=1
-                print('Break: ', breaks_counter)
+                #print('Break: ', breaks_counter)
             
             myMouse.setVisible(0)
             
@@ -368,7 +369,7 @@ if subject_ID:
             DF.to_csv(output_filename,sep='\t')
             trial_counter += 1
         
-        blocknumber =+1
+        blocknumber += 1
 
     # End screen for participants
     instr.setText(end_txt)
