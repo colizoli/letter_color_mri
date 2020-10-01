@@ -15,7 +15,7 @@ import pandas as pd
 from IPython import embed as shell
 import general_parameters as gp # letter conditions, counterbalancing
 
-debug_mode = True
+debug_mode = False
 
 #########################################
 ################# TEXTS #################
