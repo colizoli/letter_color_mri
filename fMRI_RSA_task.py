@@ -175,7 +175,7 @@ if subject_ID:
         this_color_condition = ALL_TRIALS['color_condition'][t]
         if this_answer: # ODDBALL
             # Check letter or number?
-            if int(ALL_TRIALS['letter_idx'][t]) > 26: # NUMBER
+            if this_letter_condition == 'number': # NUMBER
                 this_letter = oddball_numbers[random.randint(0, 8)]  # choose random 1-9
             else:
                 this_letter = letters[random.randint(0,25)] # choose random letter from whole alphabet
