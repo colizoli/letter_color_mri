@@ -17,28 +17,34 @@ module load Python/3.6.3-foss-2017b
 """
 
 # TO DO:
+# Trim ends of RSA runs - sometimes scanner stops early, sometimes late
+# sess-1 to ses-mri01 ?
+# consider individual configs for subjects at bids level? Can specifiy which run is which localizer, and ignore bad scans (using series numbers?)
 
 import os, subprocess, sys
 import shutil as sh
-import multiecho_combination as me
+# import multiecho_combination as me
 import nibabel as nib
 from IPython import embed as shell
 
-home_dir = '/nfs/colizoli/LetterColor'
-analysis_dir = os.path.join(home_dir, 'analysis')
-source_dir = os.path.join(home_dir, 'source') 
-deriv_dir = os.path.join(home_dir,'derivatives')
+##########################
+home_dir = '/Users/olympiacolizoli/Aeneas/mountpoint6/'
+##########################
+analysis_dir = os.path.join(home_dir, 'analysis') # scripts + configuration files for BIDS
+raw_dir = os.path.join(home_dir, 'raw') # DCCN project storage folder 'raw', directly imported from scanner (don't change!)
+source_dir = os.path.join(home_dir, 'source') # NIFTI versions of DICOM files for processing
+deriv_dir = os.path.join(home_dir,'derivatives') # Processed data
     
 def dicom2bids(subject, session, config):
     """ Converts MRI data from dicom to nifti format, then structures them according to the bids standard. 
     Takes about 15 minutes per session.
     Requirements:
-        dcm2niix (apt get install dcm2niix)
+        dcm2niix (conda install -c conda-forge dcm2niix)
         dcm2bids (python -m pip install dcm2bids) 
     """
 
-    DICOM_DIR = os.path.join(source_dir,'dicom', subject, session)
-    CONFIG_FILE  = os.path.join(analysis_dir, config)
+    DICOM_DIR = os.path.join(raw_dir, subject, session) #/Users/olympiacolizoli/Aeneas/mountpoint6/raw
+    CONFIG_FILE  = os.path.join(analysis_dir, 'config', config)
     OUTPUT_DIR = os.path.join(source_dir, 'nifti', subject, session)
     # Create folder structure if not yet existing
     if not os.path.isdir(os.path.join(source_dir, 'nifti')):
@@ -131,49 +137,15 @@ def prepare_fmap(subject, session, echo_tdiff):
     print('success: prepare_fmap')
 
 
-def combine_echoes(subject, session, task, run, overwrite=False):
-    """ TODO: Need to fix python version issue on lisa... either install as command line tool, or import packages to python3
-    calling this tool from command line: https://github.com/dangom/multiecho
-    run on TRIMMED echos if removing first N volumes for scanner stabilization
-    JSON files need to match echo paths (so don't delete them)
-    only runs in python 3.6
-    """
-
-    algorithm = 'te' # use echo time weighting, flat maps 
-
-    output_name = os.path.join(deriv_dir,subj,session,'func','{}_task-{}_run-{}_bold.nii.gz'.format(subj,task,run))
-    # Skip already combined images, in case it's rerun due to memory errors on some combines
-    if not overwrite:
-        if os.path.isfile(output_name):
-            print('skipping subject {}, session {}, task {}, run {}'.format(subj,session,task,run))
-            return
-    
-    this_run = os.path.join(deriv_dir,subj,session,'func','{}_task-{}_run-{}_echo-*_bold.nii.gz'.format(subj,task,run))
-    
-    # USE COMMAND LINE TOOL
-    # cmd = 'mecombine \'{}\' --algorithm \'{}\' --outputname \'{}\''.format(this_run, algorithm, output_name) # command line
-    # print(cmd)
-    # results = subprocess.run(cmd, shell=True, bufsize=0, stdout=subprocess.PIPE, stderr=subprocess.PIPE) 
-    # if results.returncode != 0:
-    #     SubjectLog.subjects[subject].log('error_combine_echoes_{}_task-{}_run-{}'.format(session, task, run), results.stderr.decode("utf-8") + results.stdout.decode("utf-8"))
-    #     return
-    
-    # USE AS PYTHON PACKAGE
-    #echoes = me.load_me_data(this_run, None) # Called from inside me_combine() anyway
-    combined, weights = me.me_combine(this_run, algorithm=algorithm) # combined returned as a nifti image with header and affine
-    nib.save(combined, output_name) # data, fname
-
-    # make sure there are no NaNs in the combined echos, zeros are generally better to work with
-    cmd = 'fslmaths {} -nan {}'.format(output_name, output_name) # command line
-    print(cmd)
-    results = subprocess.call(cmd, shell=True, bufsize=0)
-    
-     
 
 ##### RUN PREPROCESSING #####
-subjects = ['sub-503']
-sessions = ['sess-01']
-config = ['convert2bids_sub-503.json']
+# subjects = ['sub-101','sub-201','sub-102','sub-202','sub-103','sub-203','sub-104','sub-204','sub-105','sub-205','sub-106','sub-206','sub-107']
+subjects = ['sub-001']
+sessions = ['ses-mri01']
+# sessions = ['ses-mri01','ses-mri02']
+config = [ # order of localizers: LC = letters, colors; CL = colors, letters
+    'convert2bids_letter-color_main_LC.json', # sub-001  
+]
 
 
 # TR4 = 1.5
@@ -192,11 +164,10 @@ echo_tdiff = 0.00246 # seconds, difference between echo times of field map magni
 for s,subj in enumerate(subjects):
     # convert from dicom to difti, copy into derivaties to prevent overwriting
     for session in sessions:
-        dicom2bids(subj, session, config[s])
-        source_copy(subj, session) # TODO don't forget to deface!
-
-    for session in sessions:
-        bet_brains_fmap(subj,session)   # B0 unwarping needs 'tight' brain extracted magnitude images of field map, better too small than too big!
-        prepare_fmap(subj, session, echo_tdiff)  # prepares the field map image in radians/sec
-        combine_echoes(subj, session, 'rsa', 2)  # for sub-503
-    bet_brains_T1(subj) # brain extraction always check visually!
+        dicom2bids(subj, session, configs[s])
+    #     source_copy(subj, session) # TODO don't forget to deface!
+    #
+    # for session in sessions:
+    #     bet_brains_fmap(subj,session)   # B0 unwarping needs 'tight' brain extracted magnitude images of field map, better too small than too big!
+    #     prepare_fmap(subj, session, echo_tdiff)  # prepares the field map image in radians/sec
+    # bet_brains_T1(subj) # brain extraction always check visually!
