@@ -17,7 +17,7 @@ import general_parameters as gp # for letter sets, counterbalancing, iconic memo
 ######################################################
 ##################### PARAMETERS #####################
 ######################################################
-debug_mode = True
+debug_mode = False
 
 ## load CSV file for balancing stimuli
 trials_IM = pd.read_csv(os.path.join('stimuli','trials_IconicMemory.csv'))
