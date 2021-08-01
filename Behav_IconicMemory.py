@@ -116,7 +116,7 @@ if subject_ID:
         
     ## output file name with time stamp prevents any overwriting of data
     timestr = time.strftime("%Y%m%d-%H%M%S") 
-    output_filename = os.path.join(logfile_dir,'sub-{}_sess-{}_task-iconic_behav_{}.csv'.format(subject_ID,session,timestr))
+    output_filename = os.path.join(logfile_dir,'sub-{}_sess-{}_task-iconic_behav_{}.tsv'.format(subject_ID,session,timestr))
     header = ['subject',
               'session',
               'letter_set',
