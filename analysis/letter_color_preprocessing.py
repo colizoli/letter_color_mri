@@ -5,30 +5,32 @@
 letter_color_preprocessing.py
 Created by O.Colizoli, June-2019
 Last update: 11-06-2019
-Python version 3.4
+Python version 3.6
 
 The following packages need to be installed because they are called from the command line, but not imported:
-Python3.6 with https://github.com/dangom/multiecho
 dcm2niix
 dcm2bids (installed through pip)
 fsl
 
-module load Python/3.6.3-foss-2017b
 """
 
 # TO DO:
+# import subject numbers config as csv file
 # Trim ends of RSA runs - sometimes scanner stops early, sometimes late
 # sess-1 to ses-mri01 ?
 # consider individual configs for subjects at bids level? Can specifiy which run is which localizer, and ignore bad scans (using series numbers?)
+# cut physiological recordings into EPI time series
 
 import os, subprocess, sys
 import shutil as sh
 # import multiecho_combination as me
 import nibabel as nib
+import pandas as pd
 from IPython import embed as shell
 
 ##########################
-home_dir = '/Users/olympiacolizoli/Aeneas/mountpoint6/'
+# home_dir = '/Users/olympiacolizoli/Aeneas/mountpoint5/'
+home_dir = '/project/3018051.01'
 ##########################
 analysis_dir = os.path.join(home_dir, 'analysis') # scripts + configuration files for BIDS
 raw_dir = os.path.join(home_dir, 'raw') # DCCN project storage folder 'raw', directly imported from scanner (don't change!)
@@ -139,14 +141,14 @@ def prepare_fmap(subject, session, echo_tdiff):
 
 
 ##### RUN PREPROCESSING #####
-# subjects = ['sub-101','sub-201','sub-102','sub-202','sub-103','sub-203','sub-104','sub-204','sub-105','sub-205','sub-106','sub-206','sub-107']
-subjects = ['sub-001']
-sessions = ['ses-mri01']
-# sessions = ['ses-mri01','ses-mri02']
-config = [ # order of localizers: LC = letters, colors; CL = colors, letters
-    'convert2bids_letter-color_main_LC.json', # sub-001  
-]
+participants = pd.read_csv(os.path.join(analysis_dir,'participants.csv'), dtype=str)
+subjects = participants['mri_subjects']
+subjects_group = participants['subjects']
 
+# subjects = ['sub-201']
+# subjects = ['sub-211']
+# sessions = ['ses-mri02']
+sessions = ['ses-mri01','ses-mri02']
 
 # TR4 = 1.5
 # TR6 = 1.0
@@ -164,7 +166,8 @@ echo_tdiff = 0.00246 # seconds, difference between echo times of field map magni
 for s,subj in enumerate(subjects):
     # convert from dicom to difti, copy into derivaties to prevent overwriting
     for session in sessions:
-        dicom2bids(subj, session, configs[s])
+        dicom2bids('sub-{}'.format(subj), session, 'convert2bids_letter-color_main_sub-{}.json'.format(subjects_group[s]))
+        print('converting sub-{} convert2bids_letter-color_main_sub-{}.json'.format(subj,subjects_group[s]))
     #     source_copy(subj, session) # TODO don't forget to deface!
     #
     # for session in sessions:
