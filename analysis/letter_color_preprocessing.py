@@ -72,30 +72,10 @@ class preprocess_class(object):
         results = subprocess.call(cmd, shell=True, bufsize=0)
         print('converting sub-{} convert2bids_letter-color_main_{}.json'.format(self.mri_subject,self.subject))
         print('success: dicom2bids')
-        
-    def housekeeping(self, ):
-        """ Copies events and log files into the bids_raw directory with the nifti files
-        Renames the log files to match MRI files: e.g., sess-2 -> ses-02
-        
+    
+    def rename_logfiles(self, behav_sess):
+        """ Renames the log files to match MRI files: e.g., sess-2 -> ses-02
         """
-        if self.session == 'ses-01':
-            behav_sess = 'sess-1'
-        else:
-            behav_sess = 'sess-2'
-            
-        logfiles_dir = os.path.join(self.raw_dir, 'logfiles')
-        
-        ###################
-        # copy colors file
-        ###################
-        # try:
-        #     src = os.path.join(self.raw_dir, 'logfiles', self.subject, '{}_colors.tsv'.format(self.subject))
-        #     dst = os.path.join(self.raw_dir, 'nifti', self.subject, '{}_colors.tsv'.format(self.subject))
-        #     sh.copyfile(src, dst)
-        #     print('colors: src={} , dst={}'.format(src,dst))
-        # except:
-        #     pass
-        
         ###################
         # RENAME 'behav' 'sess-1' to 'ses-01' in logfiles/behav folder before copying
         ###################
@@ -105,17 +85,7 @@ class preprocess_class(object):
                 F_new = F.replace(behav_sess, self.session)
                 os.rename(os.path.join(dir_path,F),os.path.join(dir_path,F_new)) # old,new
                 print('old={} , new={}'.format(F,F_new))
-            
-        ###################
-        # copy 'behav' folder
-        ###################
-        # try:
-        #     src = os.path.join(self.raw_dir, 'logfiles', self.subject, behav_sess, 'behav')
-        #     dst = os.path.join(self.raw_dir, 'nifti', self.subject, self.session, 'behav')
-        #     sh.copytree(src, dst)
-        #     print('behav: src={} , dst={}'.format(src,dst))
-        # except:
-        #     pass
+        
         
         ###################
         # RENAME 'func' 'sess-1' to 'ses-01' in logfiles/func folder before copying
@@ -159,22 +129,84 @@ class preprocess_class(object):
                 except:
                     pass
                     
+        print('success: rename_logfiles')
+    
+    def remove_timestamps_logfiles(self, behav_sess):
+        """ removes the trailing timestamps from the psychopy output
+         e.g. last 16 characters _00200312-125726
+        """
+        T = 16 # length of trailing characters to remove
+        
+        ###################
+        # behav folder
+        ###################
+        dir_path = os.path.join(self.raw_dir, 'logfiles', self.subject, behav_sess, 'behav')
+        # loops through functional files
+        for F in os.listdir(dir_path):
+            if ('task-iconic' in F) or ('prefs' in F) or ('task-consistency' in F):
+                Fname, extension = os.path.splitext(F) # split name from extension
+                F_new = Fname[:-T]+extension # remove T trailing T characters, add extension back
+                os.rename(os.path.join(dir_path,F),os.path.join(dir_path,F_new)) # old,new
+                print('old={} , new={}'.format(F,F_new))
+                
+        ###################
+        # func folder
+        ###################
+        dir_path = os.path.join(self.raw_dir, 'logfiles', self.subject, behav_sess, 'func')
+        # loops through functional files
+        for F in os.listdir(dir_path):
+            Fname, extension = os.path.splitext(F) # split name from extension
+            F_new = Fname[:-T]+extension # remove T trailing T characters, add extension back
+            os.rename(os.path.join(dir_path,F),os.path.join(dir_path,F_new)) # old,new
+            print('old={} , new={}'.format(F,F_new))
+        
+        print('success: remove_timestamps_logfiles')
+        
+    def copy_logfiles(self, behav_sess):
+        """ copies events and log files into the bids_raw directory with the nifti files
+        """
+        ###################
+        # copy colors file
+        ###################
+        src = os.path.join(self.raw_dir, 'logfiles', self.subject, '{}_colors.tsv'.format(self.subject))
+        dst = os.path.join(self.raw_dir, 'nifti', self.subject, '{}_colors.tsv'.format(self.subject))
+        sh.copyfile(src, dst)
+        print('colors: src={} , dst={}'.format(src,dst))
+
+        ###################
+        # copy 'behav' folder
+        ###################
+        src = os.path.join(self.raw_dir, 'logfiles', self.subject, behav_sess, 'behav')
+        dst = os.path.join(self.raw_dir, 'nifti', self.subject, self.session, 'behav')
+        sh.copytree(src, dst)
+        print('behav: src={} , dst={}'.format(src,dst))
+        
         ###################
         # copy mri event files into existing 'func' folder
         ###################
-        # try:
-        #     # loop through functional files
-        #     for F in os.listdir(os.path.join(self.raw_dir, 'logfiles', self.subject, behav_sess, 'func')):
-        #         src = os.path.join(self.raw_dir, 'logfiles', self.subject, behav_sess, 'func', F)
-        #         dst = os.path.join(self.raw_dir, 'nifti', self.subject, self.session, 'func', F)
-        #         sh.copy(src, dst)
-        #     print('func: src={} , dst={}'.format(src,dst))
-        # except:
-        #     pass
-           
+        # loop through functional files
+        for F in os.listdir(os.path.join(self.raw_dir, 'logfiles', self.subject, behav_sess, 'func')):
+            src = os.path.join(self.raw_dir, 'logfiles', self.subject, behav_sess, 'func', F)
+            dst = os.path.join(self.raw_dir, 'nifti', self.subject, self.session, 'func', F)
+            sh.copy(src, dst)
+        print('func: src={} , dst={}'.format(src,dst))
+        
+        print('success: copy_logfiles')
+        
+    def housekeeping(self, ):
+        """ Renames then copies events and log files into the bids_raw directory with the nifti files
+        """
+        if self.session == 'ses-01':
+            behav_sess = 'sess-1'
+        else:
+            behav_sess = 'sess-2'
+        
+        self.rename_logfiles(behav_sess)    # rename session and runs
+        ## WARNING!! don't remove timestamps twice on same participant
+        self.remove_timestamps_logfiles(behav_sess)  # removes the trailing timestamps from the psychopy output
+        self.copy_logfiles(behav_sess)      # copy logfiles to bids_raw folder with mri data
         print('success: housekeeping')
     
-
     def raw_copy(self,):
         """ copy from bids_raw directory into derivaties folder for further processing/analysis.
         All further analysis should be run within the derivatives folder.
@@ -187,15 +219,20 @@ class preprocess_class(object):
             src = os.path.join(self.raw_dir, 'nifti', self.subject, self.session)
             dst = os.path.join(self.deriv_dir, self.subject, self.session)
             sh.copytree(src, dst)
-        print('success: source_copy')
+            # copy colors file
+            src = os.path.join(self.raw_dir, 'nifti', self.subject, '{}_colors.tsv'.format(self.subject))
+            dst = os.path.join(self.deriv_dir, self.subject, '{}_colors.tsv'.format(self.subject))
+            sh.copyfile(src, dst)
+            print('colors: src={} , dst={}'.format(src,dst))
+        print('success: raw_copy')
 
     def bet_brains_T1(self, postfix='brain'):
         """ Runs brain extraction on all T1s.
         Always check visually in fsleyes.
         """
     
-        inFile = os.path.join(self.deriv_dir, self.subject, 'sess-01', 'anat', '{}_T1w.nii.gz'.format(self.subject))
-        outFile = os.path.join(self.deriv_dir, self.subject, 'sess-01', 'anat', '{}_T1w_{}.nii.gz'.format(self.subject, postfix))
+        inFile = os.path.join(self.deriv_dir,self.subject,self.session,'anat','{}_{}_T1w.nii.gz'.format(self.subject, self.session))
+        outFile = os.path.join(self.deriv_dir,self.subject,self.session,'anat','{}_{}_T1w_{}.nii.gz'.format(self.subject, self.session, postfix))
         # bet inFile outFile
         cmd = 'bet {} {}'.format(inFile, outFile)
         print(cmd)
@@ -212,8 +249,8 @@ class preprocess_class(object):
         # Important! Always check visually in fsleyes
 
         for run in ['01','02','03']: # first 2 are magnitude, 3rd is phase
-            inFile = os.path.join(self.deriv_dir,  self.subject,  self.session, 'fmap', '{}_fmap_run-{}_fmap.nii.gz'.format(self.subject,run))
-            outFile = os.path.join(self.deriv_dir,  self.subject,  self.session, 'fmap', '{}_fmap_run-{}_fmap_{}.nii.gz'.format(self.subject,run,postfix))
+            inFile = os.path.join(self.deriv_dir,  self.subject,  self.session, 'fmap', '{}_{}_run-{}_fmap.nii.gz'.format(self.subject,self.session,run))
+            outFile = os.path.join(self.deriv_dir,  self.subject,  self.session, 'fmap', '{}_{}_run-{}_fmap_{}.nii.gz'.format(self.subject,self.session,run,postfix))
             # bet inFile outFile
             cmd = 'bet {} {} -f 0.6'.format(inFile, outFile) 
             print(cmd)
@@ -232,14 +269,19 @@ class preprocess_class(object):
         Echo time difference need to be in ms (echotimes in JSON)
         fsl_prepare_fieldmap <scanner> <phase_image> <magnitude_image> <out_image> <deltaTE (in ms)> [--nocheck]
         The output of the Fsl_prepare_fieldmap GUI is a correctly calibrated fieldmap in units of rad/s     
-        'dwell_time' refers to effective echo spacing of EPI data
+        **
         echo_tdiff = 0.00246 # seconds, difference between echo times of field map magnitude images [0.0047,0.00716]
+        **
+        **Values to enter into FEAT**:
+        EPI TE (s) of localizer = 0.0396
+        'dwell_time' refers to effective echo spacing of EPI data (s) = 0.000580009
+        NOTE: effective echo spacing and EPI TE (ms) refer to the fMRI EPI data! not the field map data - look in the JSON file for the bold runs
         """
     
         echo_tdiff = echo_tdiff * 1000 # needs to be in milliseconds
-        phase_image = os.path.join(self.deriv_dir, self.subject, self.session, 'fmap', '{}_fmap_run-03_fmap.nii.gz'.format(self.subject))
-        mag_image = os.path.join(self.deriv_dir, self.subject, self.session, 'fmap', '{}_fmap_run-01_fmap_brain.nii.gz'.format(self.subject))
-        outFile = os.path.join(self.deriv_dir, self.subject, self.session, 'fmap', '{}_acq-fmap.nii.gz'.format(self.subject))
+        phase_image = os.path.join(self.deriv_dir, self.subject, self.session, 'fmap', '{}_{}_run-03_fmap.nii.gz'.format(self.subject,self.session))
+        mag_image = os.path.join(self.deriv_dir, self.subject, self.session, 'fmap', '{}_{}_run-01_fmap_brain.nii.gz'.format(self.subject,self.session))
+        outFile = os.path.join(self.deriv_dir, self.subject, self.session, 'fmap', '{}_{}_acq-fmap.nii.gz'.format(self.subject,self.session))
         # bet inFile outFile
         cmd = 'fsl_prepare_fieldmap {} {} {} {} {} [--nocheck]'.format('SIEMENS',phase_image,mag_image,outFile,echo_tdiff)
         print(cmd)
