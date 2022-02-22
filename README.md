@@ -7,20 +7,4 @@ PsychoPy: standalone versions https://github.com/psychopy/psychopy/releases/tag/
 
 Instructions researcher: https://docs.google.com/document/d/1hwT6s0I0_pDNHR-lzS_r88YBOxosGWczPCNQL988zfs/edit?usp=sharing
 
-<br>
-- How to transfer colors from behavioral lab to MRI computer? >> Filezilla DCCN (Email or USB if something goes wrong)
-<br><br>
-- PsychoPy only in WINDOWS TEST ENVIRONMENT mode, internet does not always work, make sure to have everything (instructions) on a USB stick.
-
-<br><br>
-Iconic Memory: 
-- Turn off lights!
-- Chin rest in closet next to cubile 1
-
-<br><br>
-MRI:
-Setup USB forp buttons
-<br> 1) push button autoconfig > USB > key 12345
-<br> 2) plug USB cabel from FORP to stimulus PC (2nd to right usb hole)
-<br>
-<br>fMRI trigger = keyboard input '5'
+fMRI trigger = keyboard input '5'
