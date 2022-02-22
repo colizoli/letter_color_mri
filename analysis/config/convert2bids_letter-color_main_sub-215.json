@@ -1,0 +1,44 @@
+{
+    "descriptions": [
+        {
+            "dataType": "anat",
+            "modalityLabel": "T1w",
+            "criteria": {
+                "SeriesDescription": "*t1_mprage_sag_p2_iso_1.0*"
+            }
+        },
+        {
+            "dataType": "fmap",
+            "modalityLabel": "fmap",
+            "customLabels": "fmap",
+            "criteria": {
+                "SeriesDescription": "field_map_2iso"
+            }
+        },
+        {
+            "dataType": "func",
+            "modalityLabel": "bold",
+            "customLabels": "task-colors",
+            "criteria": {
+                "SeriesDescription": "cmrr_2iso_mb4_TR1500_LOC-01"
+            }
+        },
+        {
+            "dataType": "func",
+            "modalityLabel": "bold",
+            "customLabels": "task-letters",
+            "criteria": {
+                "SeriesDescription": "cmrr_2iso_mb4_TR1500_LOC-02"
+            }
+        },
+        {
+            "dataType": "func",
+            "modalityLabel": "bold",
+            "customLabels": "task-rsa",
+            "criteria": {
+                "SeriesDescription": "cmrr_2iso_mb4_TR1500_RSA"
+            }
+        }
+
+    ]
+}
