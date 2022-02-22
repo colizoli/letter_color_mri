@@ -1,7 +1,0 @@
-#!/bin/bash
-
-module load anaconda2/4.3.0
-source activate reading36
-cd /project/3018051.01/analysis
-python letter_color_preprocessing.py 
-
