@@ -7,7 +7,7 @@ Created by O.Colizoli, 2021
 Last update: 21-2-2022
 Python version 3.6
 
-The following packages need to be installed because they are called from the command line, but not imported:
+The following packages need to be installed because they are called from the command line, not imported:
 dcm2niix (conda install -c conda-forge dcm2niix)
 dcm2bids (python -m pip install dcm2bids)
 fsl
@@ -53,8 +53,8 @@ timing_files_dir = os.path.join(deriv_dir,'timing_files')   # custom 3 column fo
 # -----------------------
 # Levels (switch ON/OFF)
 # ----------------------- 
-run_preprocessing = False    # motion correction, unwarping, registration, filtering, retroicor
-run_first_level = True     # concatenate runs, timing files, 1st level GLMs
+run_preprocessing = True    # motion correction, unwarping, registration, filtering, retroicor
+run_first_level = False     # concatenate runs, timing files, 1st level GLMs
 run_higher_level = False    # group-level analyses and statistics
 
 # -----------------------
@@ -65,10 +65,15 @@ mri_subjects = participants['mri_subjects']
 subjects_group = participants['subjects']
 sessions = ['ses-01','ses-02']
 
-
 # -----------------------
 # Preprocessing class
 # -----------------------
+# Values for unwarping in FEAT, based on BOLD data
+EPI_TE = 0.0396*1000            # in ms
+EPI_EECHO = 0.000580009*1000    # in ms
+TR = 1.5    # in seconds
+FWHM = 3    # smoothing kernel in mm (localizers only)
+
 if run_preprocessing:
     for s,subject in enumerate(mri_subjects): # go in order of mri
         for session in sessions:
@@ -84,52 +89,48 @@ if run_preprocessing:
                 mask_dir = mask_dir,
                 template_dir = template_dir,
                 timing_files_dir = timing_files_dir,
+                EPI_TE = EPI_TE,
+                EPI_EECHO = EPI_EECHO,
+                FWHM = FWHM
                 )            
-            preprocess.dicom2bids()       # convert DICOMS from scanner to nifti in bids format
-            # preprocess.housekeeping()       # copies event files, rename file names to be bids compliant and same b/t mri & behavior
+            # preprocess.dicom2bids()       # convert DICOMS from scanner to nifti in bids format
+            # preprocess.housekeeping()     # copies event files, rename file names to be bids compliant and same b/t mri & behavior
             # preprocess.raw_copy()         # copy from bids_raw directory into derivaties to prevent overwriting
             # preprocess.bet_brains_T1()    # brain extraction T1 always check visually!
             # preprocess.bet_brains_fmap()  # B0 unwarping needs 'tight' brain extracted magnitude images of field map, better too small than too big!
             # preprocess.prepare_fmap()     # prepares the field map image in radians/sec
+            preprocess.preprocess_fsf('colors')     # generate FSF file for preprocessing in FEAT (run from command line - batch)
+            # preprocess.preprocess_fsf('letters')  # generate FSF file for preprocessing in FEAT (run from command line - batch)
+            # preprocess.preprocess_fsf('rsa')      # generate FSF file for preprocessing in FEAT (run from command line - batch)
+            
             ### To-do!!
-            # preprocess.preprocess_fsf()   # generate FSF file for preprocessing in FEAT
             # RETROICOR
-            # preprocess.smooth_epi(fwhm=FWHM)       # smooths EPI data (localizers only)
+            
         
 # -----------------------
 # First-level class
 # -----------------------   
-TR = 1.5 # in seconds
-FWHM = 3 # smoothing kernel in mm (localizers)
-# Values for unwarping in FEAT, based on BOLD data
-EPI_TE = 0.0396*1000 # in ms
-EPI_EECHO = 0.000580009*1000 # in ms
 
 if run_first_level:
     for s,subject in enumerate(subjects_group):
-        for session in sessions:
-            first_level = letter_color_first_level.first_level_class(
-                subject = subject,
-                session = session,
-                analysis_dir = analysis_dir,
-                deriv_dir = deriv_dir,
-                mask_dir = mask_dir,
-                template_dir = template_dir,
-                timing_files_dir = timing_files_dir,
-                TR = TR, # repitition time in seconds
-                FWHM = FWHM,
-                EPI_TE = EPI_TE,
-                EPI_EECHO = EPI_EECHO
-                )
-            # first_level.loc_timing_files('colors') # color localizer
-            first_level.loc_fsf('colors')
+        # sessions are looped depending on task
+        first_level = letter_color_first_level.first_level_class(
+            subject = subject,
+            analysis_dir = analysis_dir,
+            deriv_dir = deriv_dir,
+            mask_dir = mask_dir,
+            template_dir = template_dir,
+            timing_files_dir = timing_files_dir,
+            TR = TR, # repitition time in seconds
+            )
+        first_level.loc_combine_epi('colors')    # concantenate both runs of localizer to perform 1 GLM
+        # first_level.loc_combine_timing_files('colors')    # timing files for color localizer GLM
+        # first_level.loc_nuisance_regressors()     # concatenate motion parameters from preprocessing, also outputs cols of 1s for each blocks' mean
+        # first_level.loc_fsf('colors')             # generates the first level FSF for the localizers (run FEAT from command line in batch)
         
-        
-            # first_level.concatenate_rsa_epi_data()           # concatenate EPI data for the 4 runs of the RSA task
-            # first_level.rsa_timing_files('rsa', subject, session, rsa_runs[s]) # rsa, run as localizer color vs. black for pilot
-            # # first_level.concatenate_timing_files()       # add time to block 2's onsets
-            # # first_level.create_nuisance_regressors()     # concatenate motion parameters from preprocessing, also outputs cols of 1s for each blocks' mean
-            # first_level.blocked_fsf()                     # create subject-specific FSF files for feat
+    
+        # first_level.concatenate_rsa_epi_data()           # concatenate EPI data for the 4 runs of the RSA task
+        # first_level.rsa_timing_files('rsa', subject, session, rsa_runs[s]) # rsa, run as localizer color vs. black for pilot
     
     
 # -----------------------

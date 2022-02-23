@@ -21,7 +21,7 @@ import pandas as pd
 from IPython import embed as shell # for Oly's debugging only
 
 class preprocess_class(object):
-    def __init__(self, subject, mri_subject, session, analysis_dir, source_dir, raw_dir, deriv_dir, mask_dir, template_dir, timing_files_dir):        
+    def __init__(self, subject, mri_subject, session, analysis_dir, source_dir, raw_dir, deriv_dir, mask_dir, template_dir, timing_files_dir, EPI_TE, EPI_EECHO, FWHM):        
         self.subject        = 'sub-'+str(subject)
         self.mri_subject    = 'sub-'+str(mri_subject)
         self.session        = str(session)
@@ -32,6 +32,9 @@ class preprocess_class(object):
         self.mask_dir       = str(mask_dir)
         self.template_dir   = str(template_dir)
         self.timing_files_dir = str(timing_files_dir)
+        self.EPI_TE         = str(EPI_TE)
+        self.EPI_EECHO      = str(EPI_EECHO)
+        self.FWHM           = str(FWHM)
             
         if not os.path.isdir(self.raw_dir):
             os.mkdir(self.raw_dir)
@@ -43,7 +46,17 @@ class preprocess_class(object):
             os.mkdir(self.template_dir)
         if not os.path.isdir(self.timing_files_dir):
             os.mkdir(self.timing_files_dir)    
-
+        
+        self.preprocess_dir = os.path.join(self.deriv_dir,'preprocessing')
+        if not os.path.isdir(self.preprocess_dir):
+            os.mkdir(self.preprocess_dir)
+        
+        if not os.path.isdir(os.path.join(self.preprocess_dir,'task-colors')):
+            os.mkdir(os.path.join(self.preprocess_dir,'task-colors'))
+        if not os.path.isdir(os.path.join(self.preprocess_dir,'task-letters')):
+            os.mkdir(os.path.join(self.preprocess_dir,'task-letters'))
+        if not os.path.isdir(os.path.join(self.preprocess_dir,'task-rsa')):
+            os.mkdir(os.path.join(self.preprocess_dir,'task-rsa'))
     
     def dicom2bids(self, ):
         """ Converts MRI data from dicom to nifti format, then structures them according to the bids standard. 
@@ -70,7 +83,7 @@ class preprocess_class(object):
 
         cmd = 'dcm2bids -d {} -p {} -s {} -c {} -o {}'.format(DICOM_DIR, self.subject, self.session, CONFIG_FILE, OUTPUT_DIR)
         results = subprocess.call(cmd, shell=True, bufsize=0)
-        print('converting sub-{} convert2bids_letter-color_main_{}.json'.format(self.mri_subject,self.subject))
+        print('converting {} convert2bids_letter-color_main_{}.json'.format(self.mri_subject,self.subject))
         print('success: dicom2bids')
     
     def rename_logfiles(self, behav_sess):
@@ -128,6 +141,22 @@ class preprocess_class(object):
                     os.rename(os.path.join(dir_path,F),os.path.join(dir_path,F_new)) # old,new
                 except:
                     pass
+        
+        ###################
+        # RENAME localizer runs: 'task-colorsloc' to 'task-colors'
+        ###################
+        dir_path = os.path.join(self.raw_dir, 'logfiles', self.subject, behav_sess, 'func')
+        # loops through functional files
+        for F in os.listdir(dir_path):
+            # remove run from localizer event file names
+            if ('task-colorsloc' in F):
+                F_new = F.replace('task-colorsloc', 'task-colors') # old, new
+                os.rename(os.path.join(dir_path,F),os.path.join(dir_path,F_new)) # old,new
+                print('old={} , new={}'.format(F,F_new))
+            elif ('task-lettersloc' in F):
+                F_new = F.replace('task-lettersloc', 'task-letters') # old, new
+                os.rename(os.path.join(dir_path,F),os.path.join(dir_path,F_new)) # old,new
+                print('old={} , new={}'.format(F,F_new))
                     
         print('success: rename_logfiles')
     
@@ -287,3 +316,72 @@ class preprocess_class(object):
         print(cmd)
         results = subprocess.call(cmd, shell=True, bufsize=0)
         print('success: prepare_fmap')
+    
+    def preprocess_fsf(self,task):
+        # Creates the FSF files for each subject's first level analysis        
+        
+        template_filename = os.path.join(self.template_dir,'preprocessing_template.fsf')
+    
+        markers = [
+            '[$OUTPUT_PATH]', 
+            '[$NR_TRS]',        # number of volumes
+            '[$NR_VOXELS]',     # total number of voxels
+            '[$FWHM]',
+            '[$EPI_EECHO]',     # EPI DWELL TIME, EFFECTIVE ECHO SPACING
+            '[$EPI_TE]',        # EPI echo time
+            '[$INPUT_FILENAME]', # BOLD data
+            '[$FMAP]',
+            '[$FMAP_MAG_BRAIN]',
+            '[$T1_BRAIN]',
+            '[$MNI_BRAIN]'
+        ]
+    
+        BOLD = os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_task-{}_bold.nii.gz'.format(self.subject,self.session,task))
+        # calculate size of input data
+        nii = nib.load(BOLD).get_data() # only do once 
+        nr_trs = str(nii.shape[-1])
+        nr_voxels = str(nii.size)
+            
+        FSF_filename = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_preprocessing_{}_{}.fsf'.format(task,self.subject,self.session) ) # save fsf
+        # replacements
+        output_path = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}'.format(task,self.subject,self.session)) 
+
+        FMAP = os.path.join(self.deriv_dir,self.subject,self.session,'fmap','{}_{}_acq-fmap.nii.gz'.format(self.subject,self.session))
+        FMAP_MAG_BRAIN = os.path.join(self.deriv_dir,self.subject,self.session,'fmap','{}_{}_run-01_fmap_brain.nii.gz'.format(self.subject,self.session))
+        T1_BRAIN = os.path.join(self.deriv_dir,self.subject,self.session,'anat','{}_{}_T1w_brain.nii.gz'.format(self.subject,self.session))
+        MNI_BRAIN  = os.path.join(self.mask_dir, 'MNI152_T1_2mm_brain.nii.gz')
+        
+        if task == 'rsa':
+            FWHM = '0' # turn smoothing off for mulitvariate analyses
+        else:
+            FWHM = self.FWHM
+            
+        replacements = [ # needs to match order of 'markers'
+            output_path,
+            nr_trs,
+            nr_voxels,
+            FWHM,
+            self.EPI_EECHO, # dwell time is effective echo spacing (EPI data not field map!!)
+            self.EPI_TE,
+            BOLD,
+            FMAP,
+            FMAP_MAG_BRAIN,
+            T1_BRAIN,
+            MNI_BRAIN
+        ]
+        
+        # open the template file, load the text data
+        f = open(template_filename,'r')
+        filedata = f.read()
+        f.close()
+
+        # search and replace
+        for st,this_string in enumerate(markers):
+            filedata = filedata.replace(this_string,replacements[st])
+
+        # write output file
+        f = open(FSF_filename,'w')
+        f.write(filedata)
+        f.close()
+        print('success: {}_fsf_preprocessing'.format(self.subject))
+    
