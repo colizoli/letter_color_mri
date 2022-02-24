@@ -57,9 +57,9 @@ class first_level_class(object):
         # concatenate the 2 blocks of EPI data to perform a single GLM
         
         # output is the concantenated bold of both sessions (input to first level)
-        outFile = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_bold.nii.gz'.format(task,self.subject)) 
-        N1 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,'ses-01'),'filtered_func_data.nii.gz')) # preprocessed session 1
-        N2 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,'ses-02'),'filtered_func_data.nii.gz')) # preprocessed session 2
+        outFile = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_bold_mni.nii.gz'.format(task,self.subject)) 
+        N1 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,'ses-01'),'filtered_func_data_mni.nii.gz')) # preprocessed session 1
+        N2 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,'ses-02'),'filtered_func_data_mni.nii.gz')) # preprocessed session 2
         BOLD1 = N1.get_data()
         BOLD2 = N2.get_data()
         
@@ -77,8 +77,8 @@ class first_level_class(object):
         stim_dur = 0.75 # stimulus duration seconds
         
         # take FIRST session's BOLD to count TRs to add to 2nd sessions' onsets
-        BOLD1 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,'ses-01'),'filtered_func_data.nii.gz'))
-        ntrs = BOLD.shape[-1]  # number of TRs
+        BOLD1 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,'ses-01'),'filtered_func_data_mni.nii.gz'))
+        ntrs = BOLD1.shape[-1]  # number of TRs
         time2add = ntrs*float(self.TR) # time to add in seconds to block 2's onsets
         print('Time to add to run 2: {}'.format(time2add))
         
@@ -102,7 +102,7 @@ class first_level_class(object):
             print(outFile)
         print('success: combine_timing_files {}'.format(self.subject))
     
-    def loc_nuisance_regressors(self,):
+    def loc_nuisance_regressors(self, task):
         # concatenate the 2 sessions of motion parameters from preprocessing
         # these are found in derivatives/preprocessing/task/task_subject_session.feat/mc/prefiltered_func_data_mcf.par
         # Nrows = NTRs, Ncols = 6 (mc directions), note space separated
@@ -142,13 +142,15 @@ class first_level_class(object):
             '[$NUISANCE]', 
             '[$EV1_FILENAME]',
             '[$EV2_FILENAME]', 
-            '[$NR_VOXELS]'
+            '[$NR_VOXELS]',
+            '[$MNI_BRAIN]'
+            
         ]
         
-        FSF_filename = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}.fsf'.format(task,self.subject) ) # save fsf
-        output_path = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}'.format(task,self.subject)) 
+        FSF_filename = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}.fsf'.format(task,self.subject)) # save fsf
+        output_path = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}'.format(task,self.subject)) 
         
-        BOLD = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_bold.nii.gz'.format(task,self.subject)) 
+        BOLD = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_bold_mni.nii.gz'.format(task,self.subject)) 
         # calculate size of input data
         nii = nib.load(BOLD).get_data() # only do once 
         nr_trs = str(nii.shape[-1])
@@ -161,6 +163,8 @@ class first_level_class(object):
         EV1_path = os.path.join(self.deriv_dir,'timing_files','task-{}_{}_{}.txt'.format(task,self.subject,'Color'))
         EV2_path = os.path.join(self.deriv_dir,'timing_files','task-{}_{}_{}.txt'.format(task,self.subject,'Black'))
         
+        MNI_BRAIN  = os.path.join(self.mask_dir, 'MNI152_T1_2mm_brain.nii.gz')
+        
         # replacements
         replacements = [ # needs to match order of 'markers'
             output_path,
@@ -169,7 +173,8 @@ class first_level_class(object):
             nuisance_regressors,
             EV1_path,
             EV2_path,
-            nr_voxels
+            nr_voxels,
+            MNI_BRAIN
         ]
 
         # open the template file, load the text data

@@ -99,9 +99,10 @@ if run_preprocessing:
             # preprocess.bet_brains_T1()    # brain extraction T1 always check visually!
             # preprocess.bet_brains_fmap()  # B0 unwarping needs 'tight' brain extracted magnitude images of field map, better too small than too big!
             # preprocess.prepare_fmap()     # prepares the field map image in radians/sec
-            preprocess.preprocess_fsf('colors')     # generate FSF file for preprocessing in FEAT (run from command line - batch)
-            # preprocess.preprocess_fsf('letters')  # generate FSF file for preprocessing in FEAT (run from command line - batch)
-            # preprocess.preprocess_fsf('rsa')      # generate FSF file for preprocessing in FEAT (run from command line - batch)
+            # preprocess.preprocess_fsf('colors')     # generate FSF file for preprocessing in FEAT (run from command line - batch)
+            # preprocess.transform_2_mni('colors')    # transforms the preprocessed time series to MNI space
+            preprocess.create_native_target('colors')   # create a registration target for native space
+            # preprocess.transform_2_native_target('colors')   # create a registration target for native space
             
             ### To-do!!
             # RETROICOR
@@ -123,9 +124,9 @@ if run_first_level:
             timing_files_dir = timing_files_dir,
             TR = TR, # repitition time in seconds
             )
-        first_level.loc_combine_epi('colors')    # concantenate both runs of localizer to perform 1 GLM
+        # first_level.loc_combine_epi('colors')    # concantenate both runs of localizer to perform 1 GLM
         # first_level.loc_combine_timing_files('colors')    # timing files for color localizer GLM
-        # first_level.loc_nuisance_regressors()     # concatenate motion parameters from preprocessing, also outputs cols of 1s for each blocks' mean
+        # first_level.loc_nuisance_regressors('colors')     # concatenate motion parameters from preprocessing, also outputs cols of 1s for each blocks' mean
         # first_level.loc_fsf('colors')             # generates the first level FSF for the localizers (run FEAT from command line in batch)
         
     

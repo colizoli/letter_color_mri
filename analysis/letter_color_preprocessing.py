@@ -226,18 +226,18 @@ class preprocess_class(object):
         """ Renames then copies events and log files into the bids_raw directory with the nifti files
         """
         if self.session == 'ses-01':
-            behav_sess = 'sess-1'
+            behav_sess = 'sess-1' #old 
         else:
             behav_sess = 'sess-2'
         
-        self.rename_logfiles(behav_sess)    # rename session and runs
+        self.rename_logfiles(behav_sess)            # rename session and runs
         ## WARNING!! don't remove timestamps twice on same participant
-        self.remove_timestamps_logfiles(behav_sess)  # removes the trailing timestamps from the psychopy output
-        self.copy_logfiles(behav_sess)      # copy logfiles to bids_raw folder with mri data
+        self.remove_timestamps_logfiles(behav_sess) # removes the trailing timestamps from the psychopy output
+        self.copy_logfiles(behav_sess)              # copy logfiles to bids_raw folder with mri data
         print('success: housekeeping')
     
     def raw_copy(self,):
-        """ copy from bids_raw directory into derivaties folder for further processing/analysis.
+        """ Copy from bids_raw directory into derivaties folder for further processing/analysis.
         All further analysis should be run within the derivatives folder.
         """
         if os.path.isdir(os.path.join(self.deriv_dir, self.subject, self.session)):
@@ -384,4 +384,70 @@ class preprocess_class(object):
         f.write(filedata)
         f.close()
         print('success: {}_fsf_preprocessing'.format(self.subject))
+        
+    def transform_2_mni(self, task, linear=1):
+        """ Use the registration from the preprocessing FEAT output to transform the filtered_func_data.nii.gz to MNI space (non-linear)
+        FLIRT and FNIRT registrations have already been calculated based on example_func.
+        Here, we are just applying the existing FNIRT warps to the preprocessed data
+        See here: https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FLIRT/FAQ#How_do_I_transform_a_mask_with_FLIRT_from_one_space_to_another.3F
+        """
+        
+        # TIME SERIES TO BE TRANSFORMED
+        EPI = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,self.session),'filtered_func_data.nii.gz')
+        # EPI time series output non-linear NIFTI
+        EPI_MNI = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,self.session),'filtered_func_data_mni.nii.gz')
+        # standard space
+        MNI = os.path.join(self.mask_dir, 'MNI152_T1_2mm_brain.nii.gz') # nifti
+        
+        if linear:
+            # Apply FLIRT matrix (linear)
+            example_func2standard = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,self.session),'reg','example_func2standard') 
+            cmd = 'flirt -in {} -ref {} -applyxfm -init {}.mat -out {}'.format(EPI,MNI,example_func2standard,EPI_MNI)
+            print(cmd)
+            results = subprocess.call(cmd, shell=True, bufsize=0)
+        else: 
+            # Apply FNIRT warpfile (non-linear)
+            # EPI time series (in MNI space) -> apply FNIRT warpfile based on T1 (in MNI space) -> warped to MNI space
+            # commandline = 'applywarp -i input -o output -r reference -w warpfile/coefficients'
+            example_func2standard_warp = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,self.session),'reg','example_func2standard_warp.nii.gz') 
+            cmd = 'applywarp -i {} -o {} -r {} -w {}'.format(EPI,EPI_MNI,MNI,example_func2standard_warp)
+            print(cmd)
+            results = subprocess.call(cmd, shell=True, bufsize=0)
+        print('success: transform_2_mni')
     
+    def create_native_target(self, task):
+        """ Copy the first session's mean_func to preprocessing folder and rename as native target
+        """
+        
+        # use first session as registration target for both sessions
+        native_target = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_reg_target.nii.gz'.format(task,self.subject))
+        
+        ###################
+        # copy session 1's example func to task directory
+        ###################
+        src = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,'ses-01'),'reg','mean_func.nii.gz') # session1
+        dst = reg_target
+        sh.copyfile(src, dst)
+        print('colors: src={} , dst={}'.format(src,dst))
+        print('success: create_native_target')
+        
+    def transform_2_native_target(self, task):
+        """ To  work in NATIVE space only, we need to create 1 target example_func for both sessions, FLIRT to the target, before concantenating EPIs.
+        Use the first session's example_func as the native-space registration target for both sessions
+        """
+        # TIME SERIES TO BE TRANSFORMED
+        EPI = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,self.session),'filtered_func_data.nii.gz')
+        EPI_NATIVE = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,self.session),'filtered_func_data_native')
+        native_target = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_native_target'.format(task,self.subject))
+        
+        # CREATE FLIRT transform (linear) on example_func
+        example_func = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,self.session),'reg','example_func') 
+        cmd = 'flirt -in {} -ref {}.nii.gz -out {}'.format(example_func,native_target,native_target) # save transforms in task folder preprocessing
+        print(cmd)
+        results = subprocess.call(cmd, shell=True, bufsize=0)
+        # APPLY FLIRT transform (linear) to EPI
+        cmd = 'flirt -in {} -ref {}.nii.gz -applyxfm -init {}.mat -out {}'.format(EPI,native_target,native_target,EPI_NATIVE) # what's the name of the matrix here?!
+        print(cmd)
+        results = subprocess.call(cmd, shell=True, bufsize=0)
+
+        print('success: transform_2_native_target')
