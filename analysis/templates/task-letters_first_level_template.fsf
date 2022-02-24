@@ -291,7 +291,7 @@ set unwarp_files_mag(1) ""
 set highres_files(1) ""
 
 # EV 1 title
-set fmri(evtitle1) "Color"
+set fmri(evtitle1) "Letter"
 
 # Basic waveform shape (EV 1)
 # 0 : Square
@@ -335,7 +335,7 @@ set fmri(ortho1.1) 0
 set fmri(ortho1.2) 0
 
 # EV 2 title
-set fmri(evtitle2) "Black"
+set fmri(evtitle2) "Symbol"
 
 # Basic waveform shape (EV 2)
 # 0 : Square
@@ -388,7 +388,7 @@ set fmri(con_mode) orig
 set fmri(conpic_real.1) 1
 
 # Title for contrast_real 1
-set fmri(conname_real.1) "Color>Black"
+set fmri(conname_real.1) "Letter>Symbol"
 
 # Real contrast_real vector 1 element 1
 set fmri(con_real1.1) 1
@@ -400,7 +400,7 @@ set fmri(con_real1.2) -1.0
 set fmri(conpic_orig.1) 1
 
 # Title for contrast_orig 1
-set fmri(conname_orig.1) "Color>Black"
+set fmri(conname_orig.1) "Letter>Symbol"
 
 # Real contrast_orig vector 1 element 1
 set fmri(con_orig1.1) 1

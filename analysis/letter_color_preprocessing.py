@@ -416,37 +416,50 @@ class preprocess_class(object):
         print('success: transform_2_mni')
     
     def create_native_target(self, task):
-        """ Copy the first session's mean_func to preprocessing folder and rename as native target
+        """ Copy the first session's example_func to preprocessing folder and rename as native target
+        example_func is the same target that is used in motion correction. Therefore, we only need to transform session 2's data
         """
         
-        # use first session as registration target for both sessions
-        native_target = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_reg_target.nii.gz'.format(task,self.subject))
+        if self.session == 'ses-02':
+            # use first session as registration target for both sessions
+            native_target = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_native_target.nii.gz'.format(task,self.subject))
         
-        ###################
-        # copy session 1's example func to task directory
-        ###################
-        src = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,'ses-01'),'reg','mean_func.nii.gz') # session1
-        dst = reg_target
-        sh.copyfile(src, dst)
-        print('colors: src={} , dst={}'.format(src,dst))
+            ###################
+            # copy session 1's example func to task directory
+            ###################
+            src = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,'ses-01'),'example_func.nii.gz') # session1
+            dst = native_target
+            sh.copyfile(src, dst)
+            print('colors: src={} , dst={}'.format(src,dst))
+        else:
+            print('ses-01 already in native space. copying filtered func with _native extension')
+            ###################
+            # copy session 1's filtered func and add _native to end of file name to avoid confusion
+            ###################
+            src = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,self.session),'filtered_func_data.nii.gz')
+            dst = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,self.session),'filtered_func_data_native.nii.gz')
+            sh.copyfile(src, dst)
         print('success: create_native_target')
         
     def transform_2_native_target(self, task):
         """ To  work in NATIVE space only, we need to create 1 target example_func for both sessions, FLIRT to the target, before concantenating EPIs.
         Use the first session's example_func as the native-space registration target for both sessions
         """
+        self.create_native_target(task) # first copy registration target
         # TIME SERIES TO BE TRANSFORMED
-        EPI = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,self.session),'filtered_func_data.nii.gz')
+        EPI = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,self.session),'filtered_func_data')
         EPI_NATIVE = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,self.session),'filtered_func_data_native')
         native_target = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_native_target'.format(task,self.subject))
         
         # CREATE FLIRT transform (linear) on example_func
         example_func = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,self.session),'reg','example_func') 
-        cmd = 'flirt -in {} -ref {}.nii.gz -out {}'.format(example_func,native_target,native_target) # save transforms in task folder preprocessing
+        example_func2native = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,self.session),'reg','example_func2native') 
+        cmd = 'flirt -in {}.nii.gz -ref {}.nii.gz -out {}.nii.gz -omat {}.mat'.format(example_func,native_target,example_func2native,example_func2native) # save transforms in task folder preprocessing
         print(cmd)
         results = subprocess.call(cmd, shell=True, bufsize=0)
+        
         # APPLY FLIRT transform (linear) to EPI
-        cmd = 'flirt -in {} -ref {}.nii.gz -applyxfm -init {}.mat -out {}'.format(EPI,native_target,native_target,EPI_NATIVE) # what's the name of the matrix here?!
+        cmd = 'flirt -in {}.nii.gz -ref {}.nii.gz -applyxfm -init {}.mat -out {}.nii.gz'.format(EPI,native_target,example_func2native,EPI_NATIVE) # what's the name of the matrix here?!
         print(cmd)
         results = subprocess.call(cmd, shell=True, bufsize=0)
 

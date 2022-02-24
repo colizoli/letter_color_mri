@@ -144,7 +144,6 @@ class first_level_class(object):
             '[$EV2_FILENAME]', 
             '[$NR_VOXELS]',
             '[$MNI_BRAIN]'
-            
         ]
         
         FSF_filename = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}.fsf'.format(task,self.subject)) # save fsf
