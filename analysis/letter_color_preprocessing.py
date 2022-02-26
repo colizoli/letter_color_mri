@@ -317,7 +317,7 @@ class preprocess_class(object):
         results = subprocess.call(cmd, shell=True, bufsize=0)
         print('success: prepare_fmap')
     
-    def preprocess_fsf(self,task):
+    def preprocess_fsf(self, task, bold_run='', run_cmd=0):
         # Creates the FSF files for each subject's first level analysis        
         
         template_filename = os.path.join(self.template_dir,'preprocessing_template.fsf')
@@ -336,15 +336,15 @@ class preprocess_class(object):
             '[$MNI_BRAIN]'
         ]
     
-        BOLD = os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_task-{}_bold.nii.gz'.format(self.subject,self.session,task))
+        BOLD = os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_task-{}{}_bold.nii.gz'.format(self.subject,self.session,task,bold_run))
         # calculate size of input data
         nii = nib.load(BOLD).get_data() # only do once 
         nr_trs = str(nii.shape[-1])
         nr_voxels = str(nii.size)
             
-        FSF_filename = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_preprocessing_{}_{}.fsf'.format(task,self.subject,self.session) ) # save fsf
+        FSF_filename = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_preprocessing_{}_{}{}.fsf'.format(task,self.subject,self.session,bold_run) ) # save fsf
         # replacements
-        output_path = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}'.format(task,self.subject,self.session)) 
+        output_path = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}'.format(task,self.subject,self.session,bold_run)) 
 
         FMAP = os.path.join(self.deriv_dir,self.subject,self.session,'fmap','{}_{}_acq-fmap.nii.gz'.format(self.subject,self.session))
         FMAP_MAG_BRAIN = os.path.join(self.deriv_dir,self.subject,self.session,'fmap','{}_{}_run-01_fmap_brain.nii.gz'.format(self.subject,self.session))
@@ -383,9 +383,15 @@ class preprocess_class(object):
         f = open(FSF_filename,'w')
         f.write(filedata)
         f.close()
-        print('success: {}_fsf_preprocessing'.format(self.subject))
         
-    def transform_2_mni(self, task, linear=1):
+        # run now from command line?
+        if run_cmd:
+            cmd = 'feat {}'.format(FSF_filename)
+            print(cmd)
+            results = subprocess.call(cmd, shell=True, bufsize=0)
+        print('success: {}'.format(FSF_filename))
+        
+    def transform_2_mni(self, task, bold_run='', linear=1):
         """ Use the registration from the preprocessing FEAT output to transform the filtered_func_data.nii.gz to MNI space (non-linear)
         FLIRT and FNIRT registrations have already been calculated based on example_func.
         Here, we are just applying the existing FNIRT warps to the preprocessed data
@@ -393,15 +399,15 @@ class preprocess_class(object):
         """
         
         # TIME SERIES TO BE TRANSFORMED
-        EPI = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,self.session),'filtered_func_data.nii.gz')
+        EPI = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,self.session,bold_run),'filtered_func_data.nii.gz')
         # EPI time series output non-linear NIFTI
-        EPI_MNI = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,self.session),'filtered_func_data_mni.nii.gz')
+        EPI_MNI = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,self.session,bold_run),'filtered_func_data_mni.nii.gz')
         # standard space
         MNI = os.path.join(self.mask_dir, 'MNI152_T1_2mm_brain.nii.gz') # nifti
         
         if linear:
             # Apply FLIRT matrix (linear)
-            example_func2standard = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,self.session),'reg','example_func2standard') 
+            example_func2standard = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,self.session,bold_run),'reg','example_func2standard') 
             cmd = 'flirt -in {} -ref {} -applyxfm -init {}.mat -out {}'.format(EPI,MNI,example_func2standard,EPI_MNI)
             print(cmd)
             results = subprocess.call(cmd, shell=True, bufsize=0)
@@ -409,51 +415,52 @@ class preprocess_class(object):
             # Apply FNIRT warpfile (non-linear)
             # EPI time series (in MNI space) -> apply FNIRT warpfile based on T1 (in MNI space) -> warped to MNI space
             # commandline = 'applywarp -i input -o output -r reference -w warpfile/coefficients'
-            example_func2standard_warp = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,self.session),'reg','example_func2standard_warp.nii.gz') 
+            example_func2standard_warp = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,self.session,bold_run),'reg','example_func2standard_warp.nii.gz') 
             cmd = 'applywarp -i {} -o {} -r {} -w {}'.format(EPI,EPI_MNI,MNI,example_func2standard_warp)
             print(cmd)
             results = subprocess.call(cmd, shell=True, bufsize=0)
         print('success: transform_2_mni')
     
-    def create_native_target(self, task):
+    def create_native_target(self, task, bold_run=''):
         """ Copy the first session's example_func to preprocessing folder and rename as native target
         example_func is the same target that is used in motion correction. Therefore, we only need to transform session 2's data
         """
         
-        if self.session == 'ses-02':
-            # use first session as registration target for both sessions
-            native_target = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_native_target.nii.gz'.format(task,self.subject))
-        
-            ###################
-            # copy session 1's example func to task directory
-            ###################
-            src = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,'ses-01'),'example_func.nii.gz') # session1
-            dst = native_target
-            sh.copyfile(src, dst)
-            print('colors: src={} , dst={}'.format(src,dst))
-        else:
-            print('ses-01 already in native space. copying filtered func with _native extension')
-            ###################
-            # copy session 1's filtered func and add _native to end of file name to avoid confusion
-            ###################
-            src = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,self.session),'filtered_func_data.nii.gz')
-            dst = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,self.session),'filtered_func_data_native.nii.gz')
-            sh.copyfile(src, dst)
+        if self.session == 'ses-01': 
+            if (task == 'rsa' and bold_run=='_run-01') or (task != 'rsa' and bold_run==''): 
+                print('ses-01 already in native space. copying filtered func with _native extension')
+                ###################
+                # copy session 1's filtered func and add _native to end of file name so all runs/sessions have same files
+                ###################
+                src = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,'ses-01',bold_run),'filtered_func_data.nii.gz')
+                dst = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,'ses-01',bold_run),'filtered_func_data_native.nii.gz')
+                sh.copyfile(src, dst)
+            
+                # use first session as registration target for both sessions
+                native_target = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_native_target.nii.gz'.format(task,self.subject))
+                ###################
+                # copy session 1's example func to task directory
+                ###################
+                src = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,'ses-01',bold_run),'example_func.nii.gz') # session1
+                dst = native_target
+                sh.copyfile(src, dst)
+                print('colors: src={} , dst={}'.format(src,dst))
+
         print('success: create_native_target')
         
-    def transform_2_native_target(self, task):
+    def transform_2_native_target(self, task, bold_run=''):
         """ To  work in NATIVE space only, we need to create 1 target example_func for both sessions, FLIRT to the target, before concantenating EPIs.
         Use the first session's example_func as the native-space registration target for both sessions
         """
-        self.create_native_target(task) # first copy registration target
+        self.create_native_target(task, bold_run) # first copy registration target
         # TIME SERIES TO BE TRANSFORMED
-        EPI = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,self.session),'filtered_func_data')
-        EPI_NATIVE = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,self.session),'filtered_func_data_native')
+        EPI = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,self.session,bold_run),'filtered_func_data')
+        EPI_NATIVE = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,self.session,bold_run),'filtered_func_data_native')
         native_target = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_native_target'.format(task,self.subject))
         
         # CREATE FLIRT transform (linear) on example_func
-        example_func = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,self.session),'reg','example_func') 
-        example_func2native = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,self.session),'reg','example_func2native') 
+        example_func = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,self.session,bold_run),'reg','example_func') 
+        example_func2native = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,self.session,bold_run),'reg','example_func2native') 
         cmd = 'flirt -in {}.nii.gz -ref {}.nii.gz -out {}.nii.gz -omat {}.mat'.format(example_func,native_target,example_func2native,example_func2native) # save transforms in task folder preprocessing
         print(cmd)
         results = subprocess.call(cmd, shell=True, bufsize=0)

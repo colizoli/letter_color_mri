@@ -53,7 +53,7 @@ timing_files_dir = os.path.join(deriv_dir,'timing_files')   # custom 3 column fo
 # -----------------------
 # Levels (switch ON/OFF)
 # ----------------------- 
-run_preprocessing = False    # motion correction, unwarping, registration, filtering, retroicor
+run_preprocessing = True    # motion correction, unwarping, registration, filtering, retroicor
 run_first_level = True     # concatenate runs, timing files, 1st level GLMs
 run_higher_level = False    # group-level analyses and statistics
 
@@ -69,9 +69,9 @@ sessions = ['ses-01','ses-02']
 # Preprocessing class
 # -----------------------
 # Values for unwarping in FEAT, based on BOLD data
-EPI_TE = 0.0396*1000            # in ms
-EPI_EECHO = 0.000580009*1000    # in ms
-TR = 1.5    # in seconds
+EPI_TE = 0.0396*1000            # echo time EPI in ms
+EPI_EECHO = 0.000580009*1000    # effective echo spacing EPI in ms
+TR = 1.5    # repetition time in seconds
 FWHM = 3    # smoothing kernel in mm (localizers only)
 
 if run_preprocessing:
@@ -99,13 +99,18 @@ if run_preprocessing:
             # preprocess.bet_brains_T1()    # brain extraction T1 always check visually!
             # preprocess.bet_brains_fmap()  # B0 unwarping needs 'tight' brain extracted magnitude images of field map, better too small than too big!
             # preprocess.prepare_fmap()     # prepares the field map image in radians/sec
-            # preprocess.preprocess_fsf('colors')     # generate FSF file for preprocessing in FEAT (run from command line - batch)
+            # preprocess.preprocess_fsf('colors',run_cmd=1)     # generate FSF file for preprocessing in FEAT (run from command line - batch)
             # preprocess.transform_2_mni('colors')    # transforms the preprocessed time series to MNI space
             # preprocess.transform_2_native_target('colors')   # register to session 1 native space
             
-            preprocess.preprocess_fsf('letters')     # generate FSF file for preprocessing in FEAT (run from command line - batch)
+            # preprocess.preprocess_fsf('letters',run_cmd=1)     # generate FSF file for preprocessing in FEAT (run from command line - batch)
             # preprocess.transform_2_mni('letters')    # transforms the preprocessed time series to MNI space
             # preprocess.transform_2_native_target('letters')   # register to session 1 native space
+            
+            for bold_run in ['_run-01','_run-02','_run-03','_run-04']: # 4 runs of the RSA task
+                # preprocess.preprocess_fsf('rsa',bold_run, run_cmd=1)    # generate FSF file for preprocessing in FEAT (run from command line - batch)
+                # preprocess.transform_2_mni('rsa',bold_run)              # transforms the preprocessed time series to MNI space
+                preprocess.transform_2_native_target('rsa', bold_run)    # register to session 1 native space
             
             ### To-do!!
             # RETROICOR
@@ -130,12 +135,17 @@ if run_first_level:
         # first_level.loc_combine_epi('colors')    # concantenate both runs of localizer to perform 1 GLM
         # first_level.loc_combine_timing_files('colors')    # timing files for color localizer GLM
         # first_level.loc_nuisance_regressors('colors')     # concatenate motion parameters from preprocessing, also outputs cols of 1s for each blocks' mean
-        first_level.loc_fsf('colors')             # generates the first level FSF for the localizers (run FEAT from command line in batch)
+        # first_level.loc_fsf('colors',run_cmd=1)           # generates the first level FSF for the localizers (run FEAT from command line in batch)
         
-    
-        # first_level.concatenate_rsa_epi_data()           # concatenate EPI data for the 4 runs of the RSA task
-        # first_level.rsa_timing_files('rsa', subject, session, rsa_runs[s]) # rsa, run as localizer color vs. black for pilot
-    
+        # first_level.loc_combine_epi('letters')    # concantenate both runs of localizer to perform 1 GLM
+        # first_level.loc_combine_timing_files('letters')   # timing files for color localizer GLM
+        # first_level.loc_nuisance_regressors('letters')    # concatenate motion parameters from preprocessing, also outputs cols of 1s for each blocks' mean
+        # first_level.loc_fsf('letters',run_cmd=1)          # generates the first level FSF for the localizers (run FEAT from command line in batch)
+        
+        first_level.rsa_combine_epi()                     # concatenate EPI data for the 4 runs of the RSA task
+        first_level.rsa_combine_events()                  # concatenate events files for the 4 runs of the RSA task
+        first_level.rsa_timing_files_2x2()                # simple 2x2 design: trained/untrained vs. color/black
+        first_level.rsa_nuisance_regressors()             # motion parameters, run means, and oddball trials as nuisance
     
 # -----------------------
 # Higher-level class
