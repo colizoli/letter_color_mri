@@ -466,7 +466,7 @@ class preprocess_class(object):
         results = subprocess.call(cmd, shell=True, bufsize=0)
         
         # APPLY FLIRT transform (linear) to EPI
-        cmd = 'flirt -in {}.nii.gz -ref {}.nii.gz -applyxfm -init {}.mat -out {}.nii.gz'.format(EPI,native_target,example_func2native,EPI_NATIVE) # what's the name of the matrix here?!
+        cmd = 'flirt -in {}.nii.gz -ref {}.nii.gz -applyxfm -init {}.mat -out {}.nii.gz'.format(EPI,native_target,example_func2native,EPI_NATIVE) 
         print(cmd)
         results = subprocess.call(cmd, shell=True, bufsize=0)
 

@@ -53,7 +53,7 @@ timing_files_dir = os.path.join(deriv_dir,'timing_files')   # custom 3 column fo
 # -----------------------
 # Levels (switch ON/OFF)
 # ----------------------- 
-run_preprocessing = True    # motion correction, unwarping, registration, filtering, retroicor
+run_preprocessing = False    # motion correction, unwarping, registration, filtering, retroicor
 run_first_level = True     # concatenate runs, timing files, 1st level GLMs
 run_higher_level = False    # group-level analyses and statistics
 
@@ -135,17 +135,18 @@ if run_first_level:
         # first_level.loc_combine_epi('colors')    # concantenate both runs of localizer to perform 1 GLM
         # first_level.loc_combine_timing_files('colors')    # timing files for color localizer GLM
         # first_level.loc_nuisance_regressors('colors')     # concatenate motion parameters from preprocessing, also outputs cols of 1s for each blocks' mean
-        # first_level.loc_fsf('colors',run_cmd=1)           # generates the first level FSF for the localizers (run FEAT from command line in batch)
+        # first_level.loc_fsf('colors',run_cmd=1)           # generates the first level FSF for the localizers
         
         # first_level.loc_combine_epi('letters')    # concantenate both runs of localizer to perform 1 GLM
         # first_level.loc_combine_timing_files('letters')   # timing files for color localizer GLM
         # first_level.loc_nuisance_regressors('letters')    # concatenate motion parameters from preprocessing, also outputs cols of 1s for each blocks' mean
-        # first_level.loc_fsf('letters',run_cmd=1)          # generates the first level FSF for the localizers (run FEAT from command line in batch)
+        # first_level.loc_fsf('letters',run_cmd=1)          # generates the first level FSF for the localizers
         
-        first_level.rsa_combine_epi()                     # concatenate EPI data for the 4 runs of the RSA task
-        first_level.rsa_combine_events()                  # concatenate events files for the 4 runs of the RSA task
-        first_level.rsa_timing_files_2x2()                # simple 2x2 design: trained/untrained vs. color/black
-        first_level.rsa_nuisance_regressors()             # motion parameters, run means, and oddball trials as nuisance
+        # first_level.rsa_combine_epi()                     # concatenate EPI data for the 4 runs of the RSA task
+        # first_level.rsa_combine_events()                  # concatenate events files for the 4 runs of the RSA task
+        # first_level.rsa_timing_files_2x2()                # simple 2x2 design: trained/untrained vs. color/black
+        # first_level.rsa_nuisance_regressors()             # motion parameters, run means, and oddball trials as nuisance
+        first_level.rsa_2x2_fsf(run_cmd=1)                # generates the first level FSF for the localizers
     
 # -----------------------
 # Higher-level class

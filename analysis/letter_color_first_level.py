@@ -39,7 +39,10 @@ class first_level_class(object):
             os.mkdir(self.template_dir)
         if not os.path.isdir(self.timing_files_dir):
             os.mkdir(self.timing_files_dir)   
-        
+            os.mkdir(os.path.join(self.timing_files_dir,'task-colors'))
+            os.mkdir(os.path.join(self.timing_files_dir,'task-letters'))
+            os.mkdir(os.path.join(self.timing_files_dir,'task-rsa'))
+            
         self.preprocess_dir = os.path.join(self.deriv_dir,'preprocessing')
         
         self.first_level_dir = os.path.join(self.deriv_dir,'first_level')
@@ -92,7 +95,7 @@ class first_level_class(object):
 
         # generate 3 column files for each of the 2x2 conditions
         for c,cond in enumerate(np.unique(events['trial_type'])):
-            outFile = os.path.join(self.deriv_dir,'timing_files','task-{}_{}_{}.txt'.format(task,self.subject,cond))
+            outFile = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}.txt'.format(task,self.subject,cond))
 
             # main regressors
             first = np.array(events[events['trial_type']==cond]['onset']) # onset in s
@@ -127,7 +130,7 @@ class first_level_class(object):
         mc['b2'] = b2
         
         # save without header or index! suppress scientific notation!
-        mc.to_csv(os.path.join(self.timing_files_dir,'task-{}_{}_nuisance_regressors.txt'.format(task,self.subject)),header=None,index=False,sep=',',float_format='%.15f')        
+        mc.to_csv(os.path.join(self.timing_files_dir,'task-{}'.format(task),'task-{}_{}_nuisance_regressors.txt'.format(task,self.subject)),header=None,index=False,sep=',',float_format='%.15f')        
         print('success: loc_nuisance_regressors {}'.format(self.subject))
         
     def loc_fsf(self,task, run_cmd=0):
@@ -157,15 +160,15 @@ class first_level_class(object):
         nr_voxels = str(nii.size)
         
         # motion parameters and columns for each session's mean
-        nuisance_regressors = os.path.join(self.timing_files_dir,'task-{}_{}_nuisance_regressors.txt'.format(task,self.subject))
+        nuisance_regressors = os.path.join(self.timing_files_dir,'task-{}'.format(task),'task-{}_{}_nuisance_regressors.txt'.format(task,self.subject))
         
         # timing files for each EV
         if task == 'colors':
             EVS = ['Color','Black']
         elif task == 'letters':
             EVS = ['Letter','Symbol']
-        EV1_path = os.path.join(self.deriv_dir,'timing_files','task-{}_{}_{}.txt'.format(task,self.subject,EVS[0]))
-        EV2_path = os.path.join(self.deriv_dir,'timing_files','task-{}_{}_{}.txt'.format(task,self.subject,EVS[1]))
+        EV1_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}.txt'.format(task,self.subject,EVS[0]))
+        EV2_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}.txt'.format(task,self.subject,EVS[1]))
         
         MNI_BRAIN  = os.path.join(self.mask_dir, 'MNI152_T1_2mm_brain.nii.gz')
         
@@ -202,96 +205,98 @@ class first_level_class(object):
             results = subprocess.run(cmd, shell=True, bufsize=0)
         print('success: loc_fsf {}'.format(FSF_filename))
     
-    def rsa_combine_epi(self, task):
+    def rsa_combine_epi(self,task='rsa'):
         # concatenates the 4 runs per session of EPI data to perform a single GLM (RSA task)
         
-        # output is the concantenated bold of all runs per session (input to first level)
-        outFile = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_bold_mni.nii.gz'.format(task,self.subject,self.session)) 
-        N1 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-01'),'filtered_func_data_mni.nii.gz')) # preprocessed run 1
-        N2 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-02'),'filtered_func_data_mni.nii.gz')) # preprocessed run 2
-        N3 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-03'),'filtered_func_data_mni.nii.gz')) # preprocessed run 3
-        N4 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-04'),'filtered_func_data_mni.nii.gz')) # preprocessed run 4
-        BOLD1 = N1.get_data()
-        BOLD2 = N2.get_data()
-        BOLD3 = N3.get_data()
-        BOLD4 = N4.get_data()
+        for self.session in ['ses-01','ses-02']:
+            # output is the concantenated bold of all runs per session (input to first level)
+            outFile = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_bold_mni.nii.gz'.format(task,self.subject,self.session)) 
+            N1 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-01'),'filtered_func_data_mni.nii.gz')) # preprocessed run 1
+            N2 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-02'),'filtered_func_data_mni.nii.gz')) # preprocessed run 2
+            N3 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-03'),'filtered_func_data_mni.nii.gz')) # preprocessed run 3
+            N4 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-04'),'filtered_func_data_mni.nii.gz')) # preprocessed run 4
+            BOLD1 = N1.get_data()
+            BOLD2 = N2.get_data()
+            BOLD3 = N3.get_data()
+            BOLD4 = N4.get_data()
         
-        BOLD = np.concatenate([BOLD1,BOLD2,BOLD3,BOLD4],axis=-1)
-        outData = nib.Nifti1Image(BOLD, affine=N1.affine, header=N1.header) # pass affine and header from last MNI image
-        outData.set_data_dtype(np.float32)
-        nib.save(outData, outFile)
-        print(BOLD.shape)
-        print('success: rsa_combine_epi {}'.format(self.subject))
+            BOLD = np.concatenate([BOLD1,BOLD2,BOLD3,BOLD4],axis=-1)
+            outData = nib.Nifti1Image(BOLD, affine=N1.affine, header=N1.header) # pass affine and header from last MNI image
+            outData.set_data_dtype(np.float32)
+            nib.save(outData, outFile)
+            print(BOLD.shape)
+        print('success: rsa_combine_epi')
         
-    def rsa_combine_events(self,):
+    def rsa_combine_events(self,task='rsa'):
         # for the RSA task, concantenates the events files of all 4 runs and outputs in first_level directory 
-        ### 1 ###
-        # take FIRST session's BOLD to count TRs to add to 2nd runs' onsets
-        BOLD1 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-01'),'filtered_func_data_mni.nii.gz'))
-        ntrs = BOLD1.shape[-1]  # number of TRs
-        time2add = ntrs*float(self.TR) # time to add in seconds to run 2's onsets
-        print('Time to add to run 2: {}'.format(time2add))
         
-        # open run 2's events
-        events2 = pd.read_csv(os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_{}_task-{}_events.tsv'.format(self.subject,self.session,'run-02',task)),sep='\t')
-        events2['onset'] =  events2['onset'] + time2add
-        # open block 1's events and concantenate
-        events1 = pd.read_csv(os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_{}_task-{}_events.tsv'.format(self.subject,self.session,'run-01',task)),sep='\t')
-        events = pd.concat([events1,events2],axis=0)
+        for self.session in ['ses-01','ses-02']:
+            ### 1 ###
+            # take FIRST session's BOLD to count TRs to add to 2nd runs' onsets
+            BOLD1 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-01'),'filtered_func_data_mni.nii.gz'))
+            ntrs = BOLD1.shape[-1]  # number of TRs
+            time2add = ntrs*float(self.TR) # time to add in seconds to run 2's onsets
+            print('Time to add to run 2: {}'.format(time2add))
         
-        ### 2 ###
-        # take SECOND session's BOLD to count TRs to add to 3rd runs' onsets
-        BOLD2 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-02'),'filtered_func_data_mni.nii.gz'))
-        ntrs = BOLD2.shape[-1]  # number of TRs
-        time2add = time2add + ntrs*float(self.TR) # time to add in seconds to run 3's onsets
-        print('Time to add to run 2: {}'.format(time2add))
+            # open run 2's events
+            events2 = pd.read_csv(os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_task-{}_{}_events.tsv'.format(self.subject,self.session,task,'run-02')),sep='\t')
+            events2['onset'] =  events2['onset'] + time2add
+            # open block 1's events and concantenate
+            events1 = pd.read_csv(os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_task-{}_{}_events.tsv'.format(self.subject,self.session,task,'run-01')),sep='\t')
+            events = pd.concat([events1,events2],axis=0)
         
-        # open run 3's events
-        events3 = pd.read_csv(os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_{}_task-{}_events.tsv'.format(self.subject,self.session,'run-03',task)),sep='\t')
-        events3['onset'] =  events3['onset'] + time2add
-        # concantenate
-        events = pd.concat([events,events3],axis=0)
+            ### 2 ###
+            # take SECOND session's BOLD to count TRs to add to 3rd runs' onsets
+            BOLD2 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-02'),'filtered_func_data_mni.nii.gz'))
+            ntrs = BOLD2.shape[-1]  # number of TRs
+            time2add = time2add + ntrs*float(self.TR) # time to add in seconds to run 3's onsets
+            print('Time to add to run 2: {}'.format(time2add))
         
-        ### 4 ###
-        # take THIRD session's BOLD to count TRs to add to 4th runs' onsets
-        BOLD3 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-03'),'filtered_func_data_mni.nii.gz'))
-        ntrs = BOLD3.shape[-1]  # number of TRs
-        time2add = time2add + ntrs*float(self.TR) # time to add in seconds to run 4's onsets
-        print('Time to add to run 2: {}'.format(time2add))
+            # open run 3's events
+            events3 = pd.read_csv(os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_task-{}_{}_events.tsv'.format(self.subject,self.session,task,'run-03')),sep='\t')
+            events3['onset'] =  events3['onset'] + time2add
+            # concantenate
+            events = pd.concat([events,events3],axis=0)
         
-        # open block 4's events
-        events4 = pd.read_csv(os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_{}_task-{}_events.tsv'.format(self.subject,self.session,'run-04',task)),sep='\t')
-        events4['onset'] =  events4['onset'] + time2add
-        # concantenate
-        events = pd.concat([events,events4],axis=0)
-        events.to_csv(os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_events.tsv'.format(task,self.subject,self.session)),sep='\t') # save concantenated events file
+            ### 4 ###
+            # take THIRD session's BOLD to count TRs to add to 4th runs' onsets
+            BOLD3 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-03'),'filtered_func_data_mni.nii.gz'))
+            ntrs = BOLD3.shape[-1]  # number of TRs
+            time2add = time2add + ntrs*float(self.TR) # time to add in seconds to run 4's onsets
+            print('Time to add to run 2: {}'.format(time2add))
         
-        print('success: rsa_combine_events {} {}'.format(subject,session))    
+            # open block 4's events
+            events4 = pd.read_csv(os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_task-{}_{}_events.tsv'.format(self.subject,self.session,task,'run-04')),sep='\t')
+            events4['onset'] =  events4['onset'] + time2add
+            # concantenate
+            events = pd.concat([events,events4],axis=0)
+            events.to_csv(os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_events.tsv'.format(task,self.subject,self.session)),sep='\t') # save concantenated events file
+        print('success: rsa_combine_events')    
         
 
-    def rsa_timing_files_2x2(self,):
+    def rsa_timing_files_2x2(self,task='rsa'):
         # GLM timing files for RSA - simple 2x2 comparison: trained/untrained vs. color/black
         # event related design
-    
+        
         stim_dur = 1.5 # stimulus duration seconds
-        events = pd.read_csv(os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_events.tsv'.format(task,self.subject,self.session)),sep='\t') # save concantenated events file
+        for self.session in ['ses-01','ses-02']:
+            events = pd.read_csv(os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_events.tsv'.format(task,self.subject,self.session)),sep='\t') # save concantenated events file
         
-        # generate 3 column files for each of the 2x2 conditions
-        for l,lcond in enumerate(np.unique(events['trial_type_letter'])): # letter condition
-            for c,cond in enumerate(np.unique(events['trial_type_color'])): # color condition
+            # generate 3 column files for each of the 2x2 conditions
+            for l,lcond in enumerate(['trained','untrained']): # letter condition
+                for c,ccond in enumerate(['black','color']): # color condition
         
-                outFile = os.path.join(self.deriv_dir,'timing_files','task-{}_{}_{}_{}.txt'.format(task,self.subject,lcond,ccond))
-                # main regressors
-                first = np.array(events[(events['trial_type_letter']==lcond) and (events['trial_type_color']==ccond)]['onset']) # onset in s
-                second = np.array(events[(events['trial_type_letter']==lcond) and (events['trial_type_color']==ccond)]['duration']) # duration in s
-                third = np.array(np.repeat(1, len(first)),dtype=int) # amplitude
-                output = np.array(np.vstack((first, second, third)).T) # 1 x 3
-                np.savetxt(outFile, output, delimiter='/t', fmt='%.2f %.2f %i') #3rd column has to be an integer for FSL!
-                print(outFile)
-        
-        print('success: rsa_timing_files_2x2 {} {}'.format(subject,session))    
+                    outFile = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}_{}.txt'.format(task,self.subject,self.session,lcond,ccond))
+                    # main regressors
+                    first = np.array(events[(events['trial_type_letter']==lcond) & (events['trial_type_color']==ccond)]['onset']) # onset in s
+                    second = np.array(events[(events['trial_type_letter']==lcond) & (events['trial_type_color']==ccond)]['duration']) # duration in s
+                    third = np.array(np.repeat(1, len(first)),dtype=int) # amplitude
+                    output = np.array(np.vstack((first, second, third)).T) # 1 x 3
+                    np.savetxt(outFile, output, delimiter='/t', fmt='%.2f %.2f %i') #3rd column has to be an integer for FSL!
+                    print(outFile)
+        print('success: rsa_timing_files_2x2')    
 
-    def rsa_nuisance_regressors(self,):
+    def rsa_nuisance_regressors(self,task='rsa'):
         # concatenate the 4 runs of motion parameters from preprocessing
         # these are found in derivatives/preprocessing/task/task_subject_session.feat/mc/prefiltered_func_data_mcf.par
         # Nrows = NTRs, Ncols = 6 (mc directions), note space separated
@@ -299,55 +304,130 @@ class first_level_class(object):
         # Also outputs the odd ball button presses in a seperate 3 column format file (so FEAT will convolve with same HRF as used in main analysis)
         # RT on oddball trials set as duration (not amplitude), if no button press then set to stimulus duration
         
-        #### Motion parameters of each run's preprocessing ####
-        mc1 = pd.read_csv(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-01'),'mc','prefiltered_func_data_mcf.par'),header=None,sep='\s+',float_precision='round_trip')
-        mc2 = pd.read_csv(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-02'),'mc','prefiltered_func_data_mcf.par'),header=None,sep='\s+',float_precision='round_trip')
-        mc3 = pd.read_csv(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-03'),'mc','prefiltered_func_data_mcf.par'),header=None,sep='\s+',float_precision='round_trip')
-        mc4 = pd.read_csv(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-04'),'mc','prefiltered_func_data_mcf.par'),header=None,sep='\s+',float_precision='round_trip')
+        for self.session in ['ses-01','ses-02']:
+            #### Motion parameters of each run's preprocessing ####
+            mc1 = pd.read_csv(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-01'),'mc','prefiltered_func_data_mcf.par'),header=None,sep='\s+',float_precision='round_trip')
+            mc2 = pd.read_csv(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-02'),'mc','prefiltered_func_data_mcf.par'),header=None,sep='\s+',float_precision='round_trip')
+            mc3 = pd.read_csv(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-03'),'mc','prefiltered_func_data_mcf.par'),header=None,sep='\s+',float_precision='round_trip')
+            mc4 = pd.read_csv(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-04'),'mc','prefiltered_func_data_mcf.par'),header=None,sep='\s+',float_precision='round_trip')
         
-        for col in mc1.columns.values: # convert data to numeric
-            mc1[col] = pd.to_numeric(mc1[col])
-            mc2[col] = pd.to_numeric(mc2[col])
-            mc3[col] = pd.to_numeric(mc3[col])
-            mc4[col] = pd.to_numeric(mc4[col])
+            for col in mc1.columns.values: # convert data to numeric
+                mc1[col] = pd.to_numeric(mc1[col])
+                mc2[col] = pd.to_numeric(mc2[col])
+                mc3[col] = pd.to_numeric(mc3[col])
+                mc4[col] = pd.to_numeric(mc4[col])
             
-        mc = pd.concat([mc1,mc2,mc3,mc4],axis=0) # concantenate the motion regressors
+            mc = pd.concat([mc1,mc2,mc3,mc4],axis=0) # concantenate the motion regressors
         
-        #### Run means - make columns of 1s and 0s for the length of each run ####
-        b1 = np.concatenate( (np.repeat(1,len(mc1))   ,  np.repeat(0,len(mc2))   ,  np.repeat(0,len(mc3))  , np.repeat(0,len(mc4)) ),axis=0) # session 1: 1s run 1
-        b2 = np.concatenate( (np.repeat(0,len(mc1))   ,  np.repeat(1,len(mc2))   ,  np.repeat(0,len(mc3))  , np.repeat(0,len(mc4)) ),axis=0) # sessoin 2: 1s run 2
-        b3 = np.concatenate( (np.repeat(0,len(mc1))   ,  np.repeat(0,len(mc2))   ,  np.repeat(1,len(mc3))  , np.repeat(0,len(mc4)) ),axis=0) # sessoin 3: 1s run 3
-        b4 = np.concatenate( (np.repeat(0,len(mc1))   ,  np.repeat(0,len(mc2))   ,  np.repeat(0,len(mc3))  , np.repeat(1,len(mc4)) ),axis=0) # sessoin 4: 1s run 4
+            #### Run means - make columns of 1s and 0s for the length of each run ####
+            b1 = np.concatenate( (np.repeat(1,len(mc1))   ,  np.repeat(0,len(mc2))   ,  np.repeat(0,len(mc3))  , np.repeat(0,len(mc4)) ),axis=0) # session 1: 1s run 1
+            b2 = np.concatenate( (np.repeat(0,len(mc1))   ,  np.repeat(1,len(mc2))   ,  np.repeat(0,len(mc3))  , np.repeat(0,len(mc4)) ),axis=0) # sessoin 2: 1s run 2
+            b3 = np.concatenate( (np.repeat(0,len(mc1))   ,  np.repeat(0,len(mc2))   ,  np.repeat(1,len(mc3))  , np.repeat(0,len(mc4)) ),axis=0) # sessoin 3: 1s run 3
+            b4 = np.concatenate( (np.repeat(0,len(mc1))   ,  np.repeat(0,len(mc2))   ,  np.repeat(0,len(mc3))  , np.repeat(1,len(mc4)) ),axis=0) # sessoin 4: 1s run 4
         
-        # add to motion dataframe
-        mc['b1'] = b1
-        mc['b2'] = b2
-        mc['b3'] = b3
-        mc['b4'] = b4
+            # add to motion dataframe
+            mc['b1'] = b1
+            mc['b2'] = b2
+            mc['b3'] = b3
+            mc['b4'] = b4
         
-        # save without header or index! suppress scientific notation!
-        mc.to_csv(os.path.join(self.timing_files_dir,'task-{}_{}_nuisance_regressors.txt'.format(task,self.subject)),header=None,index=False,sep=',',float_format='%.15f')  
-        
-        ### odd ball trials ###
-        stim_dur = 1.5 # stimulus duration seconds
-        
-        # concantenated file
-        events = pd.read_csv(os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_events.tsv'.format(task,self.subject,self.session)),sep='\t') # save concantenated events file
-    
-        outFile = os.path.join(self.deriv_dir,'timing_files','task-{}_{}_{}.txt'.format(task,self.subject,cond))
-        # main regressors
-        first = np.array(events[(events['oddball']==1)]['onset']) # onset in s
-        second = np.array(events[(events['oddball']==1)]['RT']) # duration in s
-        # replace any missed trials with stimulus duration
-        second = second[second==np.nan]=stim_dur
-        third = np.array(np.repeat(1, len(first)),dtype=int) # amplitude
-        output = np.array(np.vstack((first, second, third)).T) # 1 x 3
-        np.savetxt(outFile, output, delimiter='/t', fmt='%.2f %.2f %i') #3rd column has to be an integer for FSL!
-        print(outFile)
-              
+            # save without header or index! suppress scientific notation!
+            mc.to_csv(os.path.join(self.timing_files_dir,'task-{}'.format(task),'task-{}_{}_{}_nuisance_regressors.txt'.format(task,self.subject,self.session)),header=None,index=False,sep=',',float_format='%.15f')  
+            #######################
+            ### odd ball trials ###
+            stim_dur = 1.5 # stimulus duration seconds
+            # concantenated file
+            events = pd.read_csv(os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_events.tsv'.format(task,self.subject,self.session)),sep='\t') # save concantenated events file
+            outFile = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'oddballs'))
+            # main regressors
+            first = np.array(events[(events['oddball']==1)]['onset']) # onset in s
+            second = events[(events['oddball']==1)]['RT'] # duration in s
+            # replace any missed trials with stimulus duration
+            idx=second.isnull() # doesn't recognize np.nan, only works on pd.series
+            second[idx] = stim_dur
+            third = np.array(np.repeat(1, len(first)),dtype=int) # amplitude
+            output = np.array(np.vstack((first, np.array(second), third)).T) # 1 x 3
+            np.savetxt(outFile, output, delimiter='/t', fmt='%.2f %.2f %i') #3rd column has to be an integer for FSL!
+            print(outFile)
         print('success: loc_nuisance_regressors {}'.format(self.subject))
 
+    def rsa_2x2_fsf(self,task='rsa',run_cmd=0):
+        # Creates the FSF files for each subject's first level analysis - RSA 2x2 trained/untrained vs. black/color
+        # Run the actual FSF from the command line: feat task-rsa_sub-01_ses-01.fsf
+            
+        template_filename = os.path.join(self.analysis_dir,'templates','task-{}_2x2_first_level_template.fsf'.format(task))
+    
+        markers = [
+            '[$OUTPUT_PATH]', 
+            '[$NR_TRS]', 
+            '[$INPUT_FILENAME]', 
+            '[$NUISANCE]', 
+            '[$EV1_FILENAME]',
+            '[$EV2_FILENAME]', 
+            '[$EV3_FILENAME]', 
+            '[$EV4_FILENAME]', 
+            '[$EV5_FILENAME]', 
+            '[$NR_VOXELS]',
+            '[$MNI_BRAIN]'
+        ]
+        
+        for self.session in ['ses-01','ses-02']:
+            FSF_filename = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}.fsf'.format(task,self.subject,self.session)) # save fsf
+            output_path = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}'.format(task,self.subject,self.session)) 
+        
+            BOLD = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_bold_mni.nii.gz'.format(task,self.subject,self.session)) 
+            # calculate size of input data
+            nii = nib.load(BOLD).get_data() # only do once 
+            nr_trs = str(nii.shape[-1])
+            nr_voxels = str(nii.size)
+        
+            # motion parameters and columns for each session's mean
+            nuisance_regressors = os.path.join(self.timing_files_dir,'task-{}'.format(task),'task-{}_{}_{}_nuisance_regressors.txt'.format(task,self.subject,self.session))
+        
+            # timing files for each EV
+            EV1_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'untrained_black'))
+            EV2_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'untrained_color'))
+            EV3_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'trained_black'))
+            EV4_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'trained_color'))
+            EV5_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'oddballs'))
+        
+            MNI_BRAIN  = os.path.join(self.mask_dir, 'MNI152_T1_2mm_brain.nii.gz')
+        
+            # replacements
+            replacements = [ # needs to match order of 'markers'
+                output_path,
+                nr_trs,
+                BOLD,
+                nuisance_regressors,
+                EV1_path,
+                EV2_path,
+                EV3_path,
+                EV4_path,
+                EV5_path,
+                nr_voxels,
+                MNI_BRAIN
+            ]
 
+            # open the template file, load the text data
+            f = open(template_filename,'r')
+            filedata = f.read()
+            f.close()
+
+            # search and replace
+            for st,this_string in enumerate(markers):
+                filedata = filedata.replace(this_string,replacements[st])
+
+            # write output file
+            f = open(FSF_filename,'w')
+            f.write(filedata)
+            f.close()
+    
+            # run now from command line?
+            if run_cmd:
+                cmd = 'feat {}'.format(FSF_filename)
+                print(cmd)
+                results = subprocess.run(cmd, shell=True, bufsize=0)
+        print('success: rsa_2x2_fsf {}'.format(FSF_filename))
 
 
 
