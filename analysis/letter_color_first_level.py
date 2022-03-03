@@ -272,29 +272,6 @@ class first_level_class(object):
             events = pd.concat([events,events4],axis=0)
             events.to_csv(os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_events.tsv'.format(task,self.subject,self.session)),sep='\t') # save concantenated events file
         print('success: rsa_combine_events')    
-        
-
-    def rsa_timing_files_2x2(self,task='rsa'):
-        # GLM timing files for RSA - simple 2x2 comparison: trained/untrained vs. color/black
-        # event related design
-        
-        stim_dur = 1.5 # stimulus duration seconds
-        for self.session in ['ses-01','ses-02']:
-            events = pd.read_csv(os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_events.tsv'.format(task,self.subject,self.session)),sep='\t') # save concantenated events file
-        
-            # generate 3 column files for each of the 2x2 conditions
-            for l,lcond in enumerate(['trained','untrained']): # letter condition
-                for c,ccond in enumerate(['black','color']): # color condition
-        
-                    outFile = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}_{}.txt'.format(task,self.subject,self.session,lcond,ccond))
-                    # main regressors
-                    first = np.array(events[(events['trial_type_letter']==lcond) & (events['trial_type_color']==ccond)]['onset']) # onset in s
-                    second = np.array(events[(events['trial_type_letter']==lcond) & (events['trial_type_color']==ccond)]['duration']) # duration in s
-                    third = np.array(np.repeat(1, len(first)),dtype=int) # amplitude
-                    output = np.array(np.vstack((first, second, third)).T) # 1 x 3
-                    np.savetxt(outFile, output, delimiter='/t', fmt='%.2f %.2f %i') #3rd column has to be an integer for FSL!
-                    print(outFile)
-        print('success: rsa_timing_files_2x2')    
 
     def rsa_nuisance_regressors(self,task='rsa'):
         # concatenate the 4 runs of motion parameters from preprocessing
@@ -351,6 +328,29 @@ class first_level_class(object):
             print(outFile)
         print('success: loc_nuisance_regressors {}'.format(self.subject))
 
+    def rsa_timing_files_2x2(self,task='rsa'):
+        # GLM timing files for RSA - simple 2x2 comparison: trained/untrained vs. color/black
+        # event related design
+        
+        stim_dur = 1.5 # stimulus duration seconds
+        for self.session in ['ses-01','ses-02']:
+            events = pd.read_csv(os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_events.tsv'.format(task,self.subject,self.session)),sep='\t') # save concantenated events file
+        
+            # generate 3 column files for each of the 2x2 conditions
+            for l,lcond in enumerate(['trained','untrained']): # letter condition
+                for c,ccond in enumerate(['black','color']): # color condition
+        
+                    outFile = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}_{}.txt'.format(task,self.subject,self.session,lcond,ccond))
+                    # main regressors
+                    first = np.array(events[(events['trial_type_letter']==lcond) & (events['trial_type_color']==ccond)]['onset']) # onset in s
+                    second = np.array(events[(events['trial_type_letter']==lcond) & (events['trial_type_color']==ccond)]['duration']) # duration in s
+                    third = np.array(np.repeat(1, len(first)),dtype=int) # amplitude
+                    output = np.array(np.vstack((first, second, third)).T) # 1 x 3
+                    np.savetxt(outFile, output, delimiter='/t', fmt='%.2f %.2f %i') #3rd column has to be an integer for FSL!
+                    print(outFile)
+        print('success: rsa_timing_files_2x2')    
+        
+        
     def rsa_2x2_fsf(self,task='rsa',run_cmd=0):
         # Creates the FSF files for each subject's first level analysis - RSA 2x2 trained/untrained vs. black/color
         # Run the actual FSF from the command line: feat task-rsa_sub-01_ses-01.fsf
@@ -429,7 +429,104 @@ class first_level_class(object):
                 results = subprocess.run(cmd, shell=True, bufsize=0)
         print('success: rsa_2x2_fsf {}'.format(FSF_filename))
 
+    def rsa_timing_files_letters(self,task='rsa'):
+        # GLM timing files for RSA - each letter in each color (2 trials per run)
+        # event related design
+        
+        stim_dur = 1.5 # stimulus duration seconds
+        for self.session in ['ses-01','ses-02']:
+            events = pd.read_csv(os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_events.tsv'.format(task,self.subject,self.session)),sep='\t') # save concantenated events file
+            
+            # generate 3 column files for each of the 2x2 conditions
+            for l,lcond in enumerate(['a', 'b', 'c', 'd','e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q','r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']): # letters
+                for c,ccond in enumerate([ 248,237,161,16,58,0,181,183,9,109,49,239,255]): # use 'r' from rgb codes
+                    outFile = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}_{}.txt'.format(task,self.subject,self.session,lcond,ccond))
+                    # main regressors
+                    first = np.array(events[(events['letter']==lcond) & (events['r']==ccond)]['onset']) # onset in s
+                    second = np.array(events[(events['letter']==lcond) & (events['r']==ccond)]['duration']) # duration in s
+                    third = np.array(np.repeat(1, len(first)),dtype=int) # amplitude
+                    output = np.array(np.vstack((first, second, third)).T) # 1 x 3
+                    np.savetxt(outFile, output, delimiter='/t', fmt='%.2f %.2f %i') #3rd column has to be an integer for FSL!
+                    print(outFile)
+        print('success: rsa_timing_files_2x2')    
+        
+    def rsa_letters_fsf(self,task='rsa',run_cmd=0):
+        # Creates the FSF files for each subject's first level analysis - RSA design each letter in each color
+        # Run the actual FSF from the command line: feat task-rsa_sub-01_ses-01.fsf
+            
+        template_filename = os.path.join(self.analysis_dir,'templates','task-{}_letters_first_level_template.fsf'.format(task))
+    
+        markers = [
+            '[$OUTPUT_PATH]', 
+            '[$NR_TRS]', 
+            '[$INPUT_FILENAME]', 
+            '[$NUISANCE]', 
+            '[$EV1_FILENAME]',
+            '[$EV2_FILENAME]', 
+            '[$EV3_FILENAME]', 
+            '[$EV4_FILENAME]', 
+            '[$EV5_FILENAME]', 
+            '[$NR_VOXELS]',
+            '[$MNI_BRAIN]'
+        ]
+        
+        for self.session in ['ses-01','ses-02']:
+            FSF_filename = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}.fsf'.format(task,self.subject,self.session)) # save fsf
+            output_path = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}'.format(task,self.subject,self.session)) 
+        
+            BOLD = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_bold_mni.nii.gz'.format(task,self.subject,self.session)) 
+            # calculate size of input data
+            nii = nib.load(BOLD).get_data() # only do once 
+            nr_trs = str(nii.shape[-1])
+            nr_voxels = str(nii.size)
+        
+            # motion parameters and columns for each session's mean
+            nuisance_regressors = os.path.join(self.timing_files_dir,'task-{}'.format(task),'task-{}_{}_{}_nuisance_regressors.txt'.format(task,self.subject,self.session))
+        
+            # timing files for each EV
+            EV1_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'untrained_black'))
+            EV2_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'untrained_color'))
+            EV3_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'trained_black'))
+            EV4_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'trained_color'))
+            EV5_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'oddballs'))
+        
+            MNI_BRAIN  = os.path.join(self.mask_dir, 'MNI152_T1_2mm_brain.nii.gz')
+        
+            # replacements
+            replacements = [ # needs to match order of 'markers'
+                output_path,
+                nr_trs,
+                BOLD,
+                nuisance_regressors,
+                EV1_path,
+                EV2_path,
+                EV3_path,
+                EV4_path,
+                EV5_path,
+                nr_voxels,
+                MNI_BRAIN
+            ]
 
+            # open the template file, load the text data
+            f = open(template_filename,'r')
+            filedata = f.read()
+            f.close()
+
+            # search and replace
+            for st,this_string in enumerate(markers):
+                filedata = filedata.replace(this_string,replacements[st])
+
+            # write output file
+            f = open(FSF_filename,'w')
+            f.write(filedata)
+            f.close()
+    
+            # run now from command line?
+            if run_cmd:
+                cmd = 'feat {}'.format(FSF_filename)
+                print(cmd)
+                results = subprocess.run(cmd, shell=True, bufsize=0)
+        print('success: rsa_letters_fsf {}'.format(FSF_filename))
 
 
 
