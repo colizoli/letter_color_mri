@@ -55,6 +55,13 @@ class first_level_class(object):
             os.mkdir(os.path.join(self.first_level_dir,'task-letters'))
         if not os.path.isdir(os.path.join(self.first_level_dir,'task-rsa')):
             os.mkdir(os.path.join(self.first_level_dir,'task-rsa'))
+        
+        # write unix commands to job to run in parallel
+        self.preprocessing_job_path = os.path.join(self.analysis_dir,'jobs','job_first_level_{}.txt'.format(self.subject))
+        if not os.path.exists(self.preprocessing_job_path):
+            self.preprocessing_job = open(self.preprocessing_job_path, "w")
+            self.preprocessing_job.write("#!/bin/bash\n")
+            self.preprocessing_job.close()
             
     def loc_combine_epi(self, task):
         # concatenate the 2 sessions of EPI data to perform a single GLM
@@ -133,7 +140,7 @@ class first_level_class(object):
         mc.to_csv(os.path.join(self.timing_files_dir,'task-{}'.format(task),'task-{}_{}_nuisance_regressors.txt'.format(task,self.subject)),header=None,index=False,sep=',',float_format='%.15f')        
         print('success: loc_nuisance_regressors {}'.format(self.subject))
         
-    def loc_fsf(self,task, run_cmd=0):
+    def loc_fsf(self,task):
         # Creates the FSF files for each subject's first level analysis - localizers
         # Run the actual FSF from the command line: feat task-colors_sub-01_ses-01.fsf
             
@@ -198,11 +205,12 @@ class first_level_class(object):
         f.write(filedata)
         f.close()
     
-        # run now from command line?
-        if run_cmd:
-            cmd = 'feat {}'.format(FSF_filename)
-            print(cmd)
-            results = subprocess.run(cmd, shell=True, bufsize=0)
+        # open preprocessing job and write command as new line
+        cmd = 'feat {}'.format(FSF_filename)
+        self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
+        self.preprocessing_job.write(cmd)   # feat command
+        self.preprocessing_job.write("\n\n")  # new line
+        self.preprocessing_job.close()
         print('success: loc_fsf {}'.format(FSF_filename))
     
     def rsa_combine_epi(self,task='rsa'):
@@ -351,7 +359,7 @@ class first_level_class(object):
         print('success: rsa_timing_files_2x2')    
         
         
-    def rsa_2x2_fsf(self,task='rsa',run_cmd=0):
+    def rsa_2x2_fsf(self,task='rsa'):
         # Creates the FSF files for each subject's first level analysis - RSA 2x2 trained/untrained vs. black/color
         # Run the actual FSF from the command line: feat task-rsa_sub-01_ses-01.fsf
             
@@ -422,11 +430,12 @@ class first_level_class(object):
             f.write(filedata)
             f.close()
     
-            # run now from command line?
-            if run_cmd:
-                cmd = 'feat {}'.format(FSF_filename)
-                print(cmd)
-                results = subprocess.run(cmd, shell=True, bufsize=0)
+            # open preprocessing job and write command as new line
+            cmd = 'feat {}'.format(FSF_filename)
+            self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
+            self.preprocessing_job.write(cmd)   # feat command
+            self.preprocessing_job.write("\n\n")  # new line
+            self.preprocessing_job.close()
         print('success: rsa_2x2_fsf {}'.format(FSF_filename))
 
     def rsa_timing_files_letters(self,task='rsa'):
@@ -450,7 +459,7 @@ class first_level_class(object):
                     print(outFile)
         print('success: rsa_timing_files_2x2')    
         
-    def rsa_letters_fsf(self,task='rsa',run_cmd=0):
+    def rsa_letters_fsf(self,task='rsa'):
         # Creates the FSF files for each subject's first level analysis - RSA design each letter in each color
         # Run the actual FSF from the command line: feat task-rsa_sub-01_ses-01.fsf
             
@@ -521,11 +530,12 @@ class first_level_class(object):
             f.write(filedata)
             f.close()
     
-            # run now from command line?
-            if run_cmd:
-                cmd = 'feat {}'.format(FSF_filename)
-                print(cmd)
-                results = subprocess.run(cmd, shell=True, bufsize=0)
+            # open preprocessing job and write command as new line
+            cmd = 'feat {}'.format(FSF_filename)
+            self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
+            self.preprocessing_job.write(cmd)   # feat command
+            self.preprocessing_job.write("\n\n")  # new line
+            self.preprocessing_job.close()
         print('success: rsa_letters_fsf {}'.format(FSF_filename))
 
 
