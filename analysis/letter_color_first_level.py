@@ -240,7 +240,7 @@ class first_level_class(object):
         
         for self.session in ['ses-01','ses-02']:
             ### 1 ###
-            # take FIRST session's BOLD to count TRs to add to 2nd runs' onsets
+            # take FIRST run's BOLD to count TRs to add to 2nd runs' onsets
             BOLD1 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-01'),'filtered_func_data_mni.nii.gz'))
             ntrs = BOLD1.shape[-1]  # number of TRs
             time2add = ntrs*float(self.TR) # time to add in seconds to run 2's onsets
@@ -249,35 +249,33 @@ class first_level_class(object):
             # open run 2's events
             events2 = pd.read_csv(os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_task-{}_{}_events.tsv'.format(self.subject,self.session,task,'run-02')),sep='\t')
             events2['onset'] =  events2['onset'] + time2add
-            # open block 1's events and concantenate
-            events1 = pd.read_csv(os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_task-{}_{}_events.tsv'.format(self.subject,self.session,task,'run-01')),sep='\t')
-            events = pd.concat([events1,events2],axis=0)
         
             ### 2 ###
-            # take SECOND session's BOLD to count TRs to add to 3rd runs' onsets
+            # take SECOND run's BOLD to count TRs to add to 3rd runs' onsets
             BOLD2 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-02'),'filtered_func_data_mni.nii.gz'))
             ntrs = BOLD2.shape[-1]  # number of TRs
             time2add = time2add + ntrs*float(self.TR) # time to add in seconds to run 3's onsets
-            print('Time to add to run 2: {}'.format(time2add))
+            print('Time to add to run 3: {}'.format(time2add))
         
             # open run 3's events
             events3 = pd.read_csv(os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_task-{}_{}_events.tsv'.format(self.subject,self.session,task,'run-03')),sep='\t')
             events3['onset'] =  events3['onset'] + time2add
-            # concantenate
-            events = pd.concat([events,events3],axis=0)
         
             ### 4 ###
-            # take THIRD session's BOLD to count TRs to add to 4th runs' onsets
+            # take THIRD run's BOLD to count TRs to add to 4th runs' onsets
             BOLD3 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-03'),'filtered_func_data_mni.nii.gz'))
             ntrs = BOLD3.shape[-1]  # number of TRs
             time2add = time2add + ntrs*float(self.TR) # time to add in seconds to run 4's onsets
-            print('Time to add to run 2: {}'.format(time2add))
+            print('Time to add to run 4: {}'.format(time2add))
         
             # open block 4's events
             events4 = pd.read_csv(os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_task-{}_{}_events.tsv'.format(self.subject,self.session,task,'run-04')),sep='\t')
             events4['onset'] =  events4['onset'] + time2add
-            # concantenate
-            events = pd.concat([events,events4],axis=0)
+            
+            # concantenate all runs
+            # open run 1's events
+            events1 = pd.read_csv(os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_task-{}_{}_events.tsv'.format(self.subject,self.session,task,'run-01')),sep='\t')
+            events = pd.concat([events1,events2,events3,events4],axis=0)
             events.to_csv(os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_events.tsv'.format(task,self.subject,self.session)),sep='\t') # save concantenated events file
         print('success: rsa_combine_events')    
 
@@ -336,11 +334,166 @@ class first_level_class(object):
             print(outFile)
         print('success: loc_nuisance_regressors {}'.format(self.subject))
 
+
+    def rsa_timing_files_letters(self,task='rsa'):
+        # GLM timing files for RSA - each letter in each color (2 trials per run)
+        # event related design
+                
+        # load colors file
+        colors = pd.read_csv(os.path.join(self.deriv_dir,self.subject,'{}_colors.tsv'.format(self.subject)),sep='\t')
+        for self.session in ['ses-01','ses-02']:
+            events = pd.read_csv(os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_events.tsv'.format(task,self.subject,self.session)),sep='\t') # save concantenated events fil  
+            # drop oddballs        
+            events.drop(events[events['oddball'] == 1].index, inplace=True)
+
+            # generate 3 column files for each of the 2x2 conditions
+            for l,lcond in enumerate(np.unique(events['letter'])): # letters
+                for c,ccond in enumerate(np.unique(events['g'])): # use 'g' from rgb codes ('r' has 0 like black)
+                    # this letter in this color?
+                    this_ev = events[(events['letter']==lcond) & (events['g']==ccond)]
+                    # check if letter-color condition exists to prevent writing out empty EV timing files
+                    if not this_ev.empty: 
+                        # all files have to have the same names for subjects
+                        outFile = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}_{}.txt'.format(task,self.subject,self.session,lcond,np.array(this_ev['trial_type_color'])[0]))
+                        # main regressors
+                        first = np.array(this_ev['onset']) # onset in s
+                        second = np.array(this_ev['duration']) # onset in s # duration in s
+                        third = np.array(np.repeat(1, len(first)),dtype=int) # amplitude
+                        output = np.array(np.vstack((first, second, third)).T) # 1 x 3
+                        np.savetxt(outFile, output, delimiter='/t', fmt='%.2f %.2f %i') #3rd column has to be an integer for FSL!
+                        print(outFile)
+        print('success: rsa_timing_files_letters')    
+        
+    def rsa_letters_fsf(self,task='rsa'):
+        # Creates the FSF files for each subject's first level analysis - RSA design each letter in each color
+        # Run the actual FSF from the command line: feat task-rsa_sub-01_ses-01.fsf
+            
+        template_filename = os.path.join(self.analysis_dir,'templates','task-{}_letters_first_level_template.fsf'.format(task))
+    
+        markers = [
+            '[$OUTPUT_PATH]', 
+            '[$NR_TRS]', 
+            '[$NR_VOXELS]',
+            '[$INPUT_FILENAME]', 
+            '[$NUISANCE]', 
+            '[$MNI_BRAIN]',
+            '[$EV1_FILENAME]','[$EV2_FILENAME]','[$EV3_FILENAME]','[$EV4_FILENAME]','[$EV5_FILENAME]','[$EV6_FILENAME]','[$EV7_FILENAME]','[$EV8_FILENAME]','[$EV9_FILENAME]', '[$EV10_FILENAME]',
+            '[$EV11_FILENAME]','[$EV12_FILENAME]','[$EV13_FILENAME]','[$EV14_FILENAME]','[$EV15_FILENAME]','[$EV16_FILENAME]','[$EV17_FILENAME]','[$EV18_FILENAME]','[$EV19_FILENAME]', '[$EV20_FILENAME]',
+            '[$EV21_FILENAME]','[$EV22_FILENAME]','[$EV23_FILENAME]','[$EV24_FILENAME]','[$EV25_FILENAME]','[$EV26_FILENAME]','[$EV27_FILENAME]','[$EV28_FILENAME]','[$EV29_FILENAME]', '[$EV30_FILENAME]',
+            '[$EV31_FILENAME]','[$EV32_FILENAME]','[$EV33_FILENAME]','[$EV34_FILENAME]','[$EV35_FILENAME]','[$EV36_FILENAME]','[$EV37_FILENAME]','[$EV38_FILENAME]','[$EV39_FILENAME]', '[$EV40_FILENAME]',
+            '[$EV41_FILENAME]','[$EV42_FILENAME]','[$EV43_FILENAME]','[$EV44_FILENAME]','[$EV45_FILENAME]','[$EV46_FILENAME]','[$EV47_FILENAME]','[$EV48_FILENAME]','[$EV49_FILENAME]', '[$EV50_FILENAME]',
+            '[$EV51_FILENAME]','[$EV52_FILENAME]',
+            '[$EV53_FILENAME]' # oddballs
+        ]
+        
+        for self.session in ['ses-01','ses-02']:
+            FSF_filename = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}.fsf'.format(task,self.subject,self.session)) # save fsf
+            output_path = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}'.format(task,self.subject,self.session)) 
+        
+            BOLD = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_bold_mni.nii.gz'.format(task,self.subject,self.session)) 
+            # calculate size of input data
+            nii = nib.load(BOLD).get_data() # only do once 
+            nr_trs = str(nii.shape[-1])
+            nr_voxels = str(nii.size)
+        
+            # motion parameters and columns for each session's mean
+            nuisance_regressors = os.path.join(self.timing_files_dir,'task-{}'.format(task),'task-{}_{}_{}_nuisance_regressors.txt'.format(task,self.subject,self.session))
+            MNI_BRAIN  = os.path.join(self.mask_dir, 'MNI152_T1_2mm_brain.nii.gz')
+            
+            # timing files for each EV
+            # black
+            EV1_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'a_black'))
+            EV2_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'b_black'))
+            EV3_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'c_black'))
+            EV4_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'d_black'))
+            EV5_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'e_black'))
+            EV6_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'f_black'))
+            EV7_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'g_black'))
+            EV8_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'h_black'))
+            EV9_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'i_black'))
+            EV10_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'j_black'))
+            EV11_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'k_black'))
+            EV12_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'l_black'))
+            EV13_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'m_black'))
+            EV14_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'n_black'))
+            EV15_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'o_black'))
+            EV16_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'p_black'))
+            EV17_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'q_black'))
+            EV18_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'r_black'))
+            EV19_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'s_black'))
+            EV20_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'t_black'))
+            EV21_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'u_black'))
+            EV22_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'v_black'))
+            EV23_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'w_black'))
+            EV24_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'x_black'))
+            EV25_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'y_black'))
+            EV26_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'z_black'))
+            # color
+            EV27_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'a_color'))
+            EV28_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'b_color'))
+            EV29_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'c_color'))
+            EV30_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'d_color'))
+            EV31_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'e_color'))
+            EV32_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'f_color'))
+            EV33_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'g_color'))
+            EV34_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'h_color'))
+            EV35_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'i_color'))
+            EV36_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'j_color'))
+            EV37_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'k_color'))
+            EV38_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'l_color'))
+            EV39_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'m_color'))
+            EV40_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'n_color'))
+            EV41_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'o_color'))
+            EV42_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'p_color'))
+            EV43_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'q_color'))
+            EV44_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'r_color'))
+            EV45_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'s_color'))
+            EV46_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'t_color'))
+            EV47_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'u_color'))
+            EV48_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'v_color'))
+            EV49_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'w_color'))
+            EV50_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'x_color'))
+            EV51_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'y_color'))
+            EV52_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'z_color'))
+            # oddballs last
+            EV53_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'oddballs'))
+                    
+            # replacements
+            replacements = [ # needs to match order of 'markers'
+                output_path,
+                nr_trs,
+                nr_voxels,
+                BOLD,
+                nuisance_regressors,
+                MNI_BRAIN
+            ]
+
+            # open the template file, load the text data
+            f = open(template_filename,'r')
+            filedata = f.read()
+            f.close()
+
+            # search and replace
+            for st,this_string in enumerate(markers):
+                filedata = filedata.replace(this_string,replacements[st])
+
+            # write output file
+            f = open(FSF_filename,'w')
+            f.write(filedata)
+            f.close()
+    
+            # open preprocessing job and write command as new line
+            cmd = 'feat {}'.format(FSF_filename)
+            self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
+            self.preprocessing_job.write(cmd)   # feat command
+            self.preprocessing_job.write("\n\n")  # new line
+            self.preprocessing_job.close()
+        print('success: rsa_letters_fsf {}'.format(FSF_filename))
+
     def rsa_timing_files_2x2(self,task='rsa'):
         # GLM timing files for RSA - simple 2x2 comparison: trained/untrained vs. color/black
         # event related design
         
-        stim_dur = 1.5 # stimulus duration seconds
         for self.session in ['ses-01','ses-02']:
             events = pd.read_csv(os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_events.tsv'.format(task,self.subject,self.session)),sep='\t') # save concantenated events file
         
@@ -437,106 +590,5 @@ class first_level_class(object):
             self.preprocessing_job.write("\n\n")  # new line
             self.preprocessing_job.close()
         print('success: rsa_2x2_fsf {}'.format(FSF_filename))
-
-    def rsa_timing_files_letters(self,task='rsa'):
-        # GLM timing files for RSA - each letter in each color (2 trials per run)
-        # event related design
-        
-        stim_dur = 1.5 # stimulus duration seconds
-        for self.session in ['ses-01','ses-02']:
-            events = pd.read_csv(os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_events.tsv'.format(task,self.subject,self.session)),sep='\t') # save concantenated events file
-            
-            # generate 3 column files for each of the 2x2 conditions
-            for l,lcond in enumerate(['a', 'b', 'c', 'd','e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q','r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']): # letters
-                for c,ccond in enumerate([ 248,237,161,16,58,0,181,183,9,109,49,239,255]): # use 'r' from rgb codes
-                    outFile = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}_{}.txt'.format(task,self.subject,self.session,lcond,ccond))
-                    # main regressors
-                    first = np.array(events[(events['letter']==lcond) & (events['r']==ccond)]['onset']) # onset in s
-                    second = np.array(events[(events['letter']==lcond) & (events['r']==ccond)]['duration']) # duration in s
-                    third = np.array(np.repeat(1, len(first)),dtype=int) # amplitude
-                    output = np.array(np.vstack((first, second, third)).T) # 1 x 3
-                    np.savetxt(outFile, output, delimiter='/t', fmt='%.2f %.2f %i') #3rd column has to be an integer for FSL!
-                    print(outFile)
-        print('success: rsa_timing_files_2x2')    
-        
-    def rsa_letters_fsf(self,task='rsa'):
-        # Creates the FSF files for each subject's first level analysis - RSA design each letter in each color
-        # Run the actual FSF from the command line: feat task-rsa_sub-01_ses-01.fsf
-            
-        template_filename = os.path.join(self.analysis_dir,'templates','task-{}_letters_first_level_template.fsf'.format(task))
-    
-        markers = [
-            '[$OUTPUT_PATH]', 
-            '[$NR_TRS]', 
-            '[$INPUT_FILENAME]', 
-            '[$NUISANCE]', 
-            '[$EV1_FILENAME]',
-            '[$EV2_FILENAME]', 
-            '[$EV3_FILENAME]', 
-            '[$EV4_FILENAME]', 
-            '[$EV5_FILENAME]', 
-            '[$NR_VOXELS]',
-            '[$MNI_BRAIN]'
-        ]
-        
-        for self.session in ['ses-01','ses-02']:
-            FSF_filename = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}.fsf'.format(task,self.subject,self.session)) # save fsf
-            output_path = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}'.format(task,self.subject,self.session)) 
-        
-            BOLD = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_bold_mni.nii.gz'.format(task,self.subject,self.session)) 
-            # calculate size of input data
-            nii = nib.load(BOLD).get_data() # only do once 
-            nr_trs = str(nii.shape[-1])
-            nr_voxels = str(nii.size)
-        
-            # motion parameters and columns for each session's mean
-            nuisance_regressors = os.path.join(self.timing_files_dir,'task-{}'.format(task),'task-{}_{}_{}_nuisance_regressors.txt'.format(task,self.subject,self.session))
-        
-            # timing files for each EV
-            EV1_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'untrained_black'))
-            EV2_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'untrained_color'))
-            EV3_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'trained_black'))
-            EV4_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'trained_color'))
-            EV5_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'oddballs'))
-        
-            MNI_BRAIN  = os.path.join(self.mask_dir, 'MNI152_T1_2mm_brain.nii.gz')
-        
-            # replacements
-            replacements = [ # needs to match order of 'markers'
-                output_path,
-                nr_trs,
-                BOLD,
-                nuisance_regressors,
-                EV1_path,
-                EV2_path,
-                EV3_path,
-                EV4_path,
-                EV5_path,
-                nr_voxels,
-                MNI_BRAIN
-            ]
-
-            # open the template file, load the text data
-            f = open(template_filename,'r')
-            filedata = f.read()
-            f.close()
-
-            # search and replace
-            for st,this_string in enumerate(markers):
-                filedata = filedata.replace(this_string,replacements[st])
-
-            # write output file
-            f = open(FSF_filename,'w')
-            f.write(filedata)
-            f.close()
-    
-            # open preprocessing job and write command as new line
-            cmd = 'feat {}'.format(FSF_filename)
-            self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
-            self.preprocessing_job.write(cmd)   # feat command
-            self.preprocessing_job.write("\n\n")  # new line
-            self.preprocessing_job.close()
-        print('success: rsa_letters_fsf {}'.format(FSF_filename))
-
 
 
