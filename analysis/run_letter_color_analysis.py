@@ -176,7 +176,12 @@ if run_higher_level:
             template_dir = template_dir,
             TR = TR, # repitition time in seconds
             )    
-            
-        # higher_level.labels_harvard_oxford_whole_brain()    # combine harvard oxford cortical+subcortical atlases
-        higher_level.roy_rsa_letters()                     # for each letter in rsa_letters, extract stats in whole brain/rois
+        # higher_level.rsa_letters_combine_colors()           # concatenates all subjects colors files
+        higher_level.rsa_letters_combine_events()           # concatenates all subjects events files
+        
+        # higher_level.labels_harvard_oxford()    # combine harvard oxford cortical+subcortical atlases
+        # higher_level.rsa_letters_ev_conditions()           # outputs a DF with the letter and color conditions (general)
+        
+        # higher_level.roy_rsa_letters()                     # for each letter in rsa_letters, extract stats in whole brain/rois
+        # higher_level.kelly_rsa_letters()                   # for each letter in rsa_letters, extract stats in whole brain/rois
     
