@@ -47,7 +47,7 @@ class first_level_class(object):
         
         self.first_level_dir = os.path.join(self.deriv_dir,'first_level')
         if not os.path.isdir(self.first_level_dir):
-            os.mkdir(self.first_level)
+            os.mkdir(self.first_level_dir)
             
         if not os.path.isdir(os.path.join(self.first_level_dir,'task-colors')):
             os.mkdir(os.path.join(self.first_level_dir,'task-colors'))
@@ -598,4 +598,32 @@ class first_level_class(object):
             self.first_level_job.close()
         print('success: rsa_2x2_fsf {}'.format(FSF_filename))
 
-
+    def roy_rsa_letters(self,task='rsa'):
+        # Use output from the rsa_letters analysis
+        # For each letter, extract the t-stats from all voxels
+            
+        template_filename = os.path.join(self.analysis_dir,'templates','task-{}_2x2_first_level_template.fsf'.format(task))
+    
+        markers = [
+            '[$OUTPUT_PATH]', 
+            '[$NR_TRS]', 
+            '[$INPUT_FILENAME]', 
+            '[$NUISANCE]', 
+            '[$EV1_FILENAME]',
+            '[$EV2_FILENAME]', 
+            '[$EV3_FILENAME]', 
+            '[$EV4_FILENAME]', 
+            '[$EV5_FILENAME]', 
+            '[$NR_VOXELS]',
+            '[$MNI_BRAIN]'
+        ]
+        
+        for self.session in ['ses-01','ses-02']:
+            FSF_filename = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_2x2_{}_{}.fsf'.format(task,self.subject,self.session)) # save fsf
+            output_path = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_2x2_{}_{}'.format(task,self.subject,self.session)) 
+        
+            BOLD = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_bold_mni.nii.gz'.format(task,self.subject,self.session)) 
+            # calculate size of input data
+            nii = nib.load(BOLD).get_data() # only do once 
+            nr_trs = str(nii.shape[-1])
+            nr_voxels = str(nii.size)

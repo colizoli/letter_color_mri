@@ -32,6 +32,7 @@ from IPython import embed as shell # for Oly's debugging only
 # custom analysis scripts
 import letter_color_preprocessing
 import letter_color_first_level
+import letter_color_higher_level
 
 # -----------------------
 # Paths
@@ -52,8 +53,8 @@ timing_files_dir = os.path.join(deriv_dir,'timing_files')   # custom 3 column fo
 # Levels (switch ON/OFF)
 # ----------------------- 
 run_preprocessing = False    # motion correction, unwarping, registration, filtering, retroicor
-run_first_level = True     # concatenate runs, timing files, 1st level GLMs
-run_higher_level = False    # group-level analyses and statistics
+run_first_level = False     # concatenate runs, timing files, 1st level GLMs
+run_higher_level = True    # group-level analyses and statistics
 
 # -----------------------
 # Participants
@@ -156,14 +157,26 @@ if run_first_level:
         # first_level.rsa_nuisance_regressors()             # motion parameters, run means, and oddball trials as nuisance
         
         # first_level.rsa_timing_files_letters()              # each letter in it's color and black: trained/untrained vs. color/black
-        first_level.rsa_letters_fsf()                # generates the first level FSF for the RSA design
+        # first_level.rsa_letters_fsf()                # generates the first level FSF for the RSA design
         
         # first_level.rsa_timing_files_2x2()                # simple 2x2 design: trained/untrained vs. color/black
         # first_level.rsa_2x2_fsf()                         # generates the first level FSF for the 2x2 design
+                
 # -----------------------
 # Higher-level class
 # -----------------------
     
-# if higher_level:
-    
+if run_higher_level:
+        higher_level = letter_color_higher_level.higher_level_class(
+            subjects = subjects_group,
+            sessions = sessions,
+            analysis_dir = analysis_dir,
+            deriv_dir = deriv_dir,
+            mask_dir = mask_dir,
+            template_dir = template_dir,
+            TR = TR, # repitition time in seconds
+            )    
+            
+        # higher_level.labels_harvard_oxford_whole_brain()    # combine harvard oxford cortical+subcortical atlases
+        higher_level.roy_rsa_letters()                     # for each letter in rsa_letters, extract stats in whole brain/rois
     
