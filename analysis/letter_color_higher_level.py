@@ -67,16 +67,51 @@ class higher_level_class(object):
             'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
         ]
        
-    def rsa_letters_combine_colors(self,):      
-    # concatenates all subjects colors files into a single one
+    def rsa_letters_ev_conditions(self,task='rsa'):
+        # outputs a dataframe with the letter and color conditions (general) for the EVs in the rsa-letters analysis
+        # a-z black, then a-z color, 53rd EV was oddballs (nuisance regressor)
+
+        #############################
+        # output ev-number to letter-color condition file
+        # make letter and color_condition columns based on EV numbers
+        LCDF = pd.DataFrame()
+        LCDF['ev'] = np.arange(1,53)
+        LCDF['letter'] = self.letters*2        
+        LCDF['trial_type_color'] = np.concatenate([np.repeat('black',len(self.letters)),np.repeat('color',len(self.letters))])
+        LCDF.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format(task),'task-{}_letters_ev_conditions.tsv'.format(task)),sep='\t')
+        print('success: rsa_letters_ev_conditions')
+        
+    def rsa_letters_conditions(self,task='rsa'):      
+        # concatenates all subjects colors files into a single one
+        
+        # load evs conditions file
+        LCDF = pd.read_csv(os.path.join(self.higher_level_dir,'task-{}'.format(task),'task-{}_letters_ev_conditions.csv'.format(task)),sep='\t')
+        try:
+            LCDF = LCDF.loc[:, ~LCDF.columns.str.contains('^Unnamed')]
+        except:
+            pass
         
         DFOUT = pd.DataFrame()
         for s,subject in enumerate(self.subjects):
-            colors = pd.read_csv(os.path.join(self.deriv_dir,'sub-{}'.format(subject),'sub-{}_colors.tsv'.format(subject)),sep='\t')
+            events = pd.read_csv(os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_events.tsv'.format(task,subject,'ses-01')),sep='\t')
+            try:
+                events = events.loc[:, ~events.columns.str.contains('^Unnamed')]
+            except:
+                pass
+            # drop trial-wise information
+            events = events[events['oddball']==0]
+            colors = events.get(['subject','letter', 'trial_type_letter', 'trial_type_color','r','g', 'b',])
+            # drop duplicates
+            colors = colors.drop_duplicates()
+            # a-z black, then a-z color
+            colors = colors.sort_values(by=['trial_type_color','letter']).reset_index()
+            # merge with ev condition file
+            colors = pd.merge(colors, LCDF, on=["letter", "trial_type_color"])
             # concate
             DFOUT = pd.concat([DFOUT,colors],axis=0)
         
-        DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format('rsa'),'task-rsa_trained_colors.tsv'), sep='\t')
+        DFOUT = DFOUT.drop(['index']) # drop the index col
+        DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format('rsa'),'task-rsa_letters_conditions.tsv'), sep='\t')
         print('success: rsa_letters_combine_colors')
     
     
@@ -99,25 +134,8 @@ class higher_level_class(object):
             for this_label in np.arange(np.max(labels)):                
                 roi = probability[:,:,:,int(this_label)] # time axis for current ROI
                 DFOUT['{}_{}'.format(atlas,int(this_label+1))]  = roi[mask] # save probabilities as new column
-                        
-            DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format('rsa'),'harvard_oxford_{}_probabilities_flattened.csv'.format(atlas)),sep='\t')
+            DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format('rsa'),'harvard_oxford_{}_probabilities_flattened.tsv'.format(atlas)),sep='\t')
         print('success: labels_harvard_oxford')
-        
-            
-    def rsa_letters_ev_conditions(self,task='rsa'):
-        # outputs a dataframe with the letter and color conditions (general) for the EVs in the rsa-letters analysis
-        # a-z black, then a-z color, 53rd EV was oddballs (nuisance regressor)
-
-        #############################
-        # output ev-number to letter-color condition file
-        # make letter and color_condition columns based on EV numbers
-        LCDF = pd.DataFrame()
-        LCDF['ev'] = np.arange(1,53)
-        LCDF['letter'] = self.letters*2        
-        LCDF['color_condition'] = np.concatenate([np.repeat('black',len(letters)),np.repeat('color',len(letters))])
-        LCDF.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format(task),'task-{}_letters_ev_conditions.csv'.format(task)),sep='\t')
-        print('success: rsa_letters_ev_conditions')
-        
         
     def roy_rsa_letters(self,task='rsa'):
         # Use output from the rsa_letters analysis
@@ -145,10 +163,11 @@ class higher_level_class(object):
                     this_df['ev']       = np.repeat(cope,len(nii))
                     this_df['tstat']    = nii
                     this_df['brain_labels']  = labels[mask] # flatten
+                    this_df['mask_idx']      = np.arange(len(nii))
 
                     # concat data frames
                     DFOUT = pd.concat([DFOUT,this_df],axis=0)
-        DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format(task),'roy_task-{}_letters.csv'.format(task)),sep='\t')
+        DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format(task),'roy_task-{}_letters.tsv'.format(task)),sep='\t')
         print('success: roy_rsa_letters')
         
     def kelly_rsa_letters(self,task='rsa'):
@@ -178,10 +197,11 @@ class higher_level_class(object):
                     this_df['ev']       = np.repeat(cope,len(nii))
                     this_df['zstat']    = nii
                     this_df['brain_labels']  = np.repeat(N,len(nii)) # flatten
-
+                    this_df['mask_idx']      = np.arange(len(nii))
+                    
                     # concat data frames
                     DFOUT = pd.concat([DFOUT,this_df],axis=0)
-        DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format(task),'kelly_task-{}_letters.csv'.format(task)),sep='\t')
+        DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format(task),'kelly_task-{}_letters.tsv'.format(task)),sep='\t')
         print('success: kelly_rsa_letters')    
         
         
