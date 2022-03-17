@@ -114,8 +114,6 @@ class higher_level_class(object):
         DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format('rsa'),'task-rsa_letters_conditions.tsv'), sep='\t')
         print('success: rsa_letters_combine_colors')
     
-    
-    
     def labels_harvard_oxford(self,):
         # outputs the labels and probabilities as a vector
         # harvard oxford cortical and subcortical separately (note subcortical probabilities are only on 1 hemisphere)
@@ -124,7 +122,7 @@ class higher_level_class(object):
             DFOUT = pd.DataFrame() 
             # load 
             mask        = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=bool) # binary mask
-            labels      = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=float)
+            labels      = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=float) # labels as integers in mask
             probability = np.array(nib.load(self.ho_cortical_prob).get_data(),dtype=float) # ROIs in time axis
             
             # load subcortical
@@ -204,4 +202,98 @@ class higher_level_class(object):
         DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format(task),'kelly_task-{}_letters.tsv'.format(task)),sep='\t')
         print('success: kelly_rsa_letters')    
         
+    def timeseries_trials_rsa(self,kernel,task='rsa'):
+        # For each trial in RSA task, extract time series data
+        # Timeseries with length = kernel (#samples)
+        # Input is the same input to the first level analysis rsa_letters
         
+        # using Harvard Oxford cortical
+        mask = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=bool) # boolean mask
+        labels = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=float) # labels
+        
+        DFOUT = pd.DataFrame() # output tstat dataframe for all subjects
+        for s,subject in enumerate(self.subjects):
+            for sess,session in enumerate(self.sessions):
+                # need trial-wise information with event onsets
+                events = pd.read_csv(os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_events.tsv'.format(task,subject,session)),sep='\t')
+                events = events.loc[:, ~events.columns.str.contains('^Unnamed')] # drop unnamed columns
+                BOLD_path = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_bold_mni.nii.gz'.format(task,subject,session)) 
+                BOLD = nib.load(BOLD_path).get_data() # numerical data 4D 
+                
+                # convert stimulus onset to TR, round to nearest TR
+                events['nearest_TR'] = np.round(events['onset']/float(self.TR))
+                TRs = np.array(events['nearest_TR'])
+                
+                this_df = [] # temporary list for concatenation
+                # loop through trials in events dataframe
+                for trial in np.arange(events.shape[0]):
+                    start_tr = int(TRs[trial])-1 # start at TR-1 for indexing 
+                    stop_tr = int(TRs[trial])-1+kernel # extract time series with length = kernel
+                    this_series = BOLD[:,:,:,start_tr:stop_tr] # minus 1 for index of TR   
+                    this_series_flat =  this_series[mask]  # flatten 3D brain to 1D
+                    # trials x voxels x kernel
+                    this_df.append(this_series_flat)
+                
+                this_df = np.array(this_df) # trials x voxels x kernel
+                # output as numpy array
+                
+                # grouped = events.groupby(['letter','trial_type_color'])
+                shell()
+        print('success: timeseries_trials_rsa')
+    
+    def timeseries_letters_rsa(self,kernel,task='rsa'):
+        # For each letter-color condition in RSA task, extract time series data (a-z black, then a-z color)
+        # Timeseries with length = kernel (#samples)
+        # Input is the same input to the first level analysis rsa_letters
+        
+        # using Harvard Oxford cortical
+        mask = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=bool) # boolean mask
+        labels = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=float) # labels
+        
+        DFOUT = pd.DataFrame() # output tstat dataframe for all subjects
+        for s,subject in enumerate(self.subjects):
+            for sess,session in enumerate(self.sessions):
+                # need trial-wise information with event onsets
+                events = pd.read_csv(os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_events.tsv'.format(task,subject,session)),sep='\t')
+                events = events.loc[:, ~events.columns.str.contains('^Unnamed')] # drop unnamed columns
+                BOLD_path = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_bold_mni.nii.gz'.format(task,subject,session)) 
+                BOLD = nib.load(BOLD_path).get_data() # numerical data 4D 
+                
+                # convert stimulus onset to TR, round to nearest TR
+                events['nearest_TR'] = np.round(events['onset']/float(self.TR))
+                
+                # loop through trials in events dataframe
+                for C in np.unique(events['trial_type_color']):
+                    # loop letters
+                    for L in self.letters:
+                        # check if letter-color condition exists, get only those trials in events file
+                        this_ev = events[(events['letter']==L) & (events['trial_type_color']==C)]
+                        TRs = np.array(this_ev['nearest_TR'])
+                        
+                        if not this_ev.empty:
+                            # CUT OUT TIME SERIES 
+                            this_ts_df = [] # temporary DF for letter-color condition all trials
+                            # go through onsets only in current letter-color condition
+                            for trial in np.arange(this_ev.shape[0]):
+                                start_tr = int(TRs[trial])-1 # start at TR-1 for indexing 
+                                stop_tr = int(TRs[trial])-1+kernel # extract time series with length = kernel
+                                this_series = BOLD[:,:,:,start_tr:stop_tr] # minus 1 for index of TR   
+                                this_series_flat =  this_series[mask]  # flatten 3D brain to 1D
+                                this_ts_df.append(this_series_flat)
+                            # take mean timeseries kernel of all trials in current letter-color condition
+                            nii = np.mean(np.array(this_ts_df),axis=0)
+                            this_df = pd.DataFrame() # temporary DF for concatenation, this subject, session
+                            # trials x voxels x kernel
+                            this_df['subject']  = np.repeat(subject,len(nii))
+                            this_df['session']          = np.repeat(sess+1,len(nii))
+                            this_df['letter']           = np.repeat(L,len(nii))
+                            this_df['trial_type_color'] = np.repeat(C,len(nii))
+                            this_df['brain_labels']     = labels[mask] # flatten
+                            this_df['mask_idx']         = np.arange(len(nii))
+                        
+                            nii = pd.DataFrame(nii)
+                            # concat data frames
+                            this_df = pd.concat([nii,this_df],axis=1) # add kernel as columns in front 
+                            DFOUT = pd.concat([this_df,DFOUT],axis=0) # add entire DF as rows to bottom
+        DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format(task),'task-{}_letters_timeseries.tsv'.format(task)),sep='\t')
+        print('success: timeseries_letters_rsa')

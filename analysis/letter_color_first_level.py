@@ -59,9 +59,9 @@ class first_level_class(object):
         # write unix commands to job to run in parallel
         self.first_level_job_path = os.path.join(self.analysis_dir,'jobs','job_first_level_{}.txt'.format(self.subject))
         if not os.path.exists(self.first_level_job_path):
-            self.first_level_job_path = open(self.first_level_job_path, "w")
-            self.first_level_job_path.write("#!/bin/bash\n")
-            self.first_level_job_path.close()
+            self.first_level_job = open(self.first_level_job_path, "w")
+            self.first_level_job.write("#!/bin/bash\n")
+            self.first_level_job.close()
             
     def loc_combine_epi(self, task):
         # concatenate the 2 sessions of EPI data to perform a single GLM
@@ -207,10 +207,10 @@ class first_level_class(object):
     
         # open preprocessing job and write command as new line
         cmd = 'feat {}'.format(FSF_filename)
-        self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
-        self.preprocessing_job.write(cmd)   # feat command
-        self.preprocessing_job.write("\n\n")  # new line
-        self.preprocessing_job.close()
+        self.first_level_job = open(self.first_level_job_path, "a") # append is important, not write
+        self.first_level_job.write(cmd)   # feat command
+        self.first_level_job.write("\n\n")  # new line
+        self.first_level_job.close()
         print('success: loc_fsf {}'.format(FSF_filename))
     
     def rsa_combine_epi(self,task='rsa'):
@@ -491,7 +491,7 @@ class first_level_class(object):
     
             # open preprocessing job and write command as new line
             cmd = 'feat {}'.format(FSF_filename)
-            self.first_level_job = open(self.preprocessing_job_path, "a") # append is important, not write
+            self.first_level_job = open(self.first_level_job_path, "a") # append is important, not write
             self.first_level_job.write(cmd)   # feat command
             self.first_level_job.write("\n\n")  # new line
             self.first_level_job.close()
@@ -598,32 +598,4 @@ class first_level_class(object):
             self.first_level_job.close()
         print('success: rsa_2x2_fsf {}'.format(FSF_filename))
 
-    def roy_rsa_letters(self,task='rsa'):
-        # Use output from the rsa_letters analysis
-        # For each letter, extract the t-stats from all voxels
-            
-        template_filename = os.path.join(self.analysis_dir,'templates','task-{}_2x2_first_level_template.fsf'.format(task))
-    
-        markers = [
-            '[$OUTPUT_PATH]', 
-            '[$NR_TRS]', 
-            '[$INPUT_FILENAME]', 
-            '[$NUISANCE]', 
-            '[$EV1_FILENAME]',
-            '[$EV2_FILENAME]', 
-            '[$EV3_FILENAME]', 
-            '[$EV4_FILENAME]', 
-            '[$EV5_FILENAME]', 
-            '[$NR_VOXELS]',
-            '[$MNI_BRAIN]'
-        ]
-        
-        for self.session in ['ses-01','ses-02']:
-            FSF_filename = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_2x2_{}_{}.fsf'.format(task,self.subject,self.session)) # save fsf
-            output_path = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_2x2_{}_{}'.format(task,self.subject,self.session)) 
-        
-            BOLD = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_bold_mni.nii.gz'.format(task,self.subject,self.session)) 
-            # calculate size of input data
-            nii = nib.load(BOLD).get_data() # only do once 
-            nr_trs = str(nii.shape[-1])
-            nr_voxels = str(nii.size)
+
