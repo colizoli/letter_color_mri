@@ -174,7 +174,8 @@ if run_higher_level:
             mask_dir = mask_dir,
             template_dir = template_dir,
             TR = TR, # repitition time in seconds
-            )    
+            )   
+        higher_level.localizers_randomise_input('letters')       # concatenates all subjects' cope1 in 4th dimension (localizers)
         # higher_level.rsa_letters_ev_conditions()      # outputs a DF with the letter and color conditions (general)
         # higher_level.rsa_letters_conditions()         # concatenates all subjects events files for letter-color conditions
         # higher_level.rsa_letters_combine_events()     # concatenates all subjects events files trial-wise
@@ -184,4 +185,4 @@ if run_higher_level:
         # higher_level.kelly_rsa_letters()              # for each letter in rsa_letters, extract stats in whole brain/rois
         
         # higher_level.timeseries_trials_rsa(kernel=10)          # for each letter-color condition in RSA task, extract time series data
-        higher_level.timeseries_letters_rsa(kernel=10)
+        # higher_level.timeseries_letters_rsa(kernel=10)

@@ -59,14 +59,44 @@ class higher_level_class(object):
         # write unix commands to job to run in parallel
         self.higher_level_job_path = os.path.join(self.analysis_dir,'jobs','job_higher_level.txt')
         if not os.path.exists(self.higher_level_job_path):
-            self.higher_level_job_path = open(self.higher_level_job_path, "w")
-            self.higher_level_job_path.write("#!/bin/bash\n")
-            self.higher_level_job_path.close()
+            self.higher_level_job = open(self.higher_level_job_path, "w")
+            self.higher_level_job.write("#!/bin/bash\n")
+            self.higher_level_job.close()
         
         self.letters = [
             'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
         ]
        
+    def localizers_randomise_input(self,task):
+        # Localizers (letters, colors), cope1 was contrast of interest
+        # For randomise input, we need the 3D cope1 images stacked for all subjects in the 4th dimension
+        # i.e., MNI x #subjects
+        
+        # output path MNI x #subjects
+        outFile = os.path.join(self.higher_level_dir,'task-{}'.format(task),'task-{}_cope1.nii.gz'.format(task))
+        # Load MNI brain and save headers
+        mni = nib.load(self.mni)
+        # initialize empty 4D array
+        COPE = np.zeros((mni.get_data().shape[0],mni.get_data().shape[1],mni.get_data().shape[2],len(self.subjects)))
+        for s,subject in enumerate(self.subjects):
+            C1_path = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_sub-{}.feat'.format(task,subject),'stats','cope1.nii.gz')
+            C1 = nib.load(C1_path).get_data()
+            COPE[:,:,:,s] = C1
+            print(subject)
+        # save as nifti file with correct header and data type        
+        outData = nib.Nifti1Image(COPE, affine=mni.affine, header=mni.header) # pass affine and header from last MNI image
+        outData.set_data_dtype(np.float32)
+        nib.save(outData, outFile)
+        
+        # open higher level job and write command as new line
+        randomise_output = os.path.join(self.higher_level_dir,'task-{}'.format(task),'task-{}_cope1'.format(task))
+        cmd = 'randomise -i {} -o {} -1 -T'.format(outFile,randomise_output) #outFile is from concatenation
+        self.higher_level_job = open(self.higher_level_job_path, "a") # append is important, not write
+        self.higher_level_job.write(cmd)   # feat command
+        self.higher_level_job.write("\n\n")  # new line
+        self.higher_level_job.close()
+        print('success: localizers_randomise_input')
+        
     def rsa_letters_ev_conditions(self,task='rsa'):
         # outputs a dataframe with the letter and color conditions (general) for the EVs in the rsa-letters analysis
         # a-z black, then a-z color, 53rd EV was oddballs (nuisance regressor)

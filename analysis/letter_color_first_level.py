@@ -205,7 +205,7 @@ class first_level_class(object):
         f.write(filedata)
         f.close()
     
-        # open preprocessing job and write command as new line
+        # open job and write command as new line
         cmd = 'feat {}'.format(FSF_filename)
         self.first_level_job = open(self.first_level_job_path, "a") # append is important, not write
         self.first_level_job.write(cmd)   # feat command
