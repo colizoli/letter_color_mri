@@ -72,6 +72,11 @@ class higher_level_class(object):
         # For randomise input, we need the 3D cope1 images stacked for all subjects in the 4th dimension
         # i.e., MNI x #subjects
         
+        if task == 'letters':
+            mask = os.path.join(self.mask_dir,'occipital_fusiform_temporal_occipital_fusiform_cortex_LH.nii.gz') # search only within these voxels
+        elif task == 'colors':
+            mask =  os.path.join(self.mask_dir,'occipital_temporal_occipital_fusiform_cortex.nii.gz')
+        
         # output path MNI x #subjects
         outFile = os.path.join(self.higher_level_dir,'task-{}'.format(task),'task-{}_cope1.nii.gz'.format(task))
         # Load MNI brain and save headers
@@ -90,7 +95,7 @@ class higher_level_class(object):
         
         # open higher level job and write command as new line
         randomise_output = os.path.join(self.higher_level_dir,'task-{}'.format(task),'task-{}_cope1'.format(task))
-        cmd = 'randomise -i {} -o {} -1 -T'.format(outFile,randomise_output) #outFile is from concatenation
+        cmd = 'randomise -i {} -o {} -m {} -1 -x -c 3.1'.format(outFile,randomise_output,mask) #outFile is from concatenation
         self.higher_level_job = open(self.higher_level_job_path, "a") # append is important, not write
         self.higher_level_job.write(cmd)   # feat command
         self.higher_level_job.write("\n\n")  # new line
@@ -146,7 +151,8 @@ class higher_level_class(object):
     
     def labels_harvard_oxford(self,):
         # outputs the labels and probabilities as a vector
-        # harvard oxford cortical and subcortical separately (note subcortical probabilities are only on 1 hemisphere)
+        # harvard oxford (sub)cortical atlas
+        # note that subcortical atlas has left/right hemispheres as separate ROIs
         
         for atlas in ['cort',]:
             DFOUT = pd.DataFrame() 
@@ -155,7 +161,7 @@ class higher_level_class(object):
             labels      = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=float) # labels as integers in mask
             probability = np.array(nib.load(self.ho_cortical_prob).get_data(),dtype=float) # ROIs in time axis
             
-            # load subcortical
+            # add column labels
             DFOUT['{}_labels'.format(atlas)]  = labels[mask] # flatten
             
             # loop through all labels and extract probabilities
@@ -163,6 +169,23 @@ class higher_level_class(object):
                 roi = probability[:,:,:,int(this_label)] # time axis for current ROI
                 DFOUT['{}_{}'.format(atlas,int(this_label+1))]  = roi[mask] # save probabilities as new column
             DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format('rsa'),'harvard_oxford_{}_probabilities_flattened.tsv'.format(atlas)),sep='\t')
+        print('success: labels_harvard_oxford')
+    
+    def probabilities_emotion_rois(self,):
+        # outputs the probabilities of each brain region as columns
+        # used a combination of the harvard oxford cortical and subcortical atlases
+        # there are many overlapping voxels, i.e., voxels that have non-zero probabilities in 2+ ROIs
+        
+        roi_path = os.path.join(self.mask_dir,'hilde_brain_regions')
+        DFOUT = pd.DataFrame() 
+        for roi in os.listdir(roi_path):
+            # load             
+            mask        = np.array(nib.load(os.path.join(self.mask_dir,'emotion_brain_regions_mask.nii.gz')).get_data(),dtype=bool) # binary mask
+            probability = np.array(nib.load(os.path.join(roi_path,roi)).get_data(),dtype=float) # ROIs in time axis
+            # save probabilities as new column
+            DFOUT[roi[:-7]]  = probability[mask] # (remove trailing '.nii.gz')
+            DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format('rsa'),'hilde_brain_region_probabilities.tsv'),sep='\t')
+            print(roi)
         print('success: labels_harvard_oxford')
         
     def roy_rsa_letters(self,task='rsa'):
@@ -197,6 +220,43 @@ class higher_level_class(object):
                     DFOUT = pd.concat([DFOUT,this_df],axis=0)
         DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format(task),'roy_task-{}_letters.tsv'.format(task)),sep='\t')
         print('success: roy_rsa_letters')
+    
+    
+    def hilde_rsa_letters(self,task='rsa'):
+        # Use output from the rsa_letters analysis
+        # For each letter, extract the t-stats from all voxels in "emotional ROIs"
+        
+        # using Harvard Oxford cortical
+        emotion_rois = os.path.join(self.mask_dir,'emotion_brain_regions_mask.nii.gz')
+        mask = np.array(nib.load(emotion_rois).get_data(),dtype=bool) # boolean mask
+        # labels = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=float) # labels
+        
+        DFOUT = pd.DataFrame() # output tstat dataframe for all subjects
+        for s,subject in enumerate(self.subjects):
+            for sess,session in enumerate(self.sessions):
+                # path to first level feat directory
+                this_path = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_letters_sub-{}_{}.feat'.format(task,subject,session),'stats')
+                
+                # 52 EVs alphabet in black, then alphabet in color
+                for cope in np.arange(1,53):
+                    this_df = pd.DataFrame() # temporary DF for concatenation
+                    BOLD = os.path.join(this_path,'tstat{}.nii.gz'.format(cope)) 
+                    # statistic
+                    nii = nib.load(BOLD).get_data()[mask] # flattens
+                    # columns
+                    this_df['subject']  = np.repeat(subject,len(nii))
+                    this_df['session']  = np.repeat(sess+1,len(nii))
+                    this_df['ev']       = np.repeat(cope,len(nii))
+                    this_df['tstat']    = nii
+                    # this_df['brain_labels']  = labels[mask] # flatten
+                    this_df['mask_idx']      = np.arange(len(nii))
+
+                    # concat data frames
+                    DFOUT = pd.concat([DFOUT,this_df],axis=0)
+        DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format(task),'hilde_task-{}_letters.tsv'.format(task)),sep='\t')
+        shell()
+        print('success: hilde_rsa_letters')
+        
         
     def kelly_rsa_letters(self,task='rsa'):
         # Use output from the rsa_letters analysis

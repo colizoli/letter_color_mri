@@ -41,12 +41,12 @@ import letter_color_higher_level
 # home_dir = os.path.dirname(os.getcwd()) # one level up from analysis folder
 home_dir = '/project/3018051.01/'
 ##########################
-analysis_dir = os.path.join(home_dir, 'analysis')       # scripts + configuration files for BIDS
-source_dir = os.path.join(home_dir, 'raw')              # DICOMS DCCN project storage folder 'raw', directly imported from scanner (don't change!)
-raw_dir = os.path.join(home_dir, 'bids_raw')            # NIFTI versions of DICOM files for processing
-deriv_dir = os.path.join(home_dir,'derivatives')            # Processed data
-mask_dir = os.path.join(deriv_dir,'masks')                  # brain masks
-template_dir = os.path.join(analysis_dir,'templates')          # fsl templates
+analysis_dir    = os.path.join(home_dir, 'analysis')        # scripts + configuration files for BIDS
+source_dir      = os.path.join(home_dir, 'raw')             # DICOMS DCCN project storage folder 'raw', directly imported from scanner (don't change!)
+raw_dir         = os.path.join(home_dir, 'bids_raw')        # NIFTI versions of DICOM files for processing
+deriv_dir       = os.path.join(home_dir,'derivatives')      # Processed data
+mask_dir        = os.path.join(deriv_dir,'masks')           # brain masks
+template_dir    = os.path.join(analysis_dir,'templates')    # fsl templates
 timing_files_dir = os.path.join(deriv_dir,'timing_files')   # custom 3 column format for 1st levels
 
 # -----------------------
@@ -175,13 +175,17 @@ if run_higher_level:
             template_dir = template_dir,
             TR = TR, # repitition time in seconds
             )   
-        higher_level.localizers_randomise_input('letters')       # concatenates all subjects' cope1 in 4th dimension (localizers)
+        # higher_level.localizers_randomise_input('letters')       # concatenates all subjects' cope1 in 4th dimension (localizers)
+        higher_level.localizers_randomise_input('colors')       # concatenates all subjects' cope1 in 4th dimension (localizers)
+        
         # higher_level.rsa_letters_ev_conditions()      # outputs a DF with the letter and color conditions (general)
         # higher_level.rsa_letters_conditions()         # concatenates all subjects events files for letter-color conditions
         # higher_level.rsa_letters_combine_events()     # concatenates all subjects events files trial-wise
         # higher_level.labels_harvard_oxford()          # combine harvard oxford cortical+subcortical atlases
+        # higher_level.probabilities_emotion_rois()     # output probabilities for each of the emotional ROIs (Hilde)
         
         # higher_level.roy_rsa_letters()                # for each letter in rsa_letters, extract stats in whole brain/rois
+        # higher_level.hilde_rsa_letters()                # for each letter in rsa_letters, extract stats in whole brain/rois
         # higher_level.kelly_rsa_letters()              # for each letter in rsa_letters, extract stats in whole brain/rois
         
         # higher_level.timeseries_trials_rsa(kernel=10)          # for each letter-color condition in RSA task, extract time series data
