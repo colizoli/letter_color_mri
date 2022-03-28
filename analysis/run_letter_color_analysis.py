@@ -59,7 +59,7 @@ run_higher_level = True    # group-level analyses and statistics
 # -----------------------
 # Participants
 # -----------------------
-participants = pd.read_csv(os.path.join(analysis_dir,'participants.csv'), dtype=str) # open in textmate, not excel!
+participants = pd.read_csv(os.path.join(analysis_dir,'participants_AI.csv'), dtype=str) # open in textmate, not excel!
 mri_subjects = participants['mri_subjects']
 subjects_group = participants['subjects']
 sessions = ['ses-01','ses-02']
@@ -176,17 +176,18 @@ if run_higher_level:
             TR = TR, # repitition time in seconds
             )   
         # higher_level.localizers_randomise_input('letters')       # concatenates all subjects' cope1 in 4th dimension (localizers)
-        higher_level.localizers_randomise_input('colors')       # concatenates all subjects' cope1 in 4th dimension (localizers)
+        # higher_level.localizers_randomise_input('colors')       # concatenates all subjects' cope1 in 4th dimension (localizers)
         
         # higher_level.rsa_letters_ev_conditions()      # outputs a DF with the letter and color conditions (general)
         # higher_level.rsa_letters_conditions()         # concatenates all subjects events files for letter-color conditions
         # higher_level.rsa_letters_combine_events()     # concatenates all subjects events files trial-wise
         # higher_level.labels_harvard_oxford()          # combine harvard oxford cortical+subcortical atlases
         # higher_level.probabilities_emotion_rois()     # output probabilities for each of the emotional ROIs (Hilde)
+        # higher_level.colizoli_rois()                    # combines the VWFA, V4 and parietal ROIs
         
-        # higher_level.roy_rsa_letters()                # for each letter in rsa_letters, extract stats in whole brain/rois
-        # higher_level.hilde_rsa_letters()                # for each letter in rsa_letters, extract stats in whole brain/rois
+        higher_level.roy_rsa_letters()                # for each letter in rsa_letters, extract stats in whole brain/rois
+        # higher_level.hilde_rsa_letters()              # for each letter in rsa_letters, extract stats in whole brain/rois
         # higher_level.kelly_rsa_letters()              # for each letter in rsa_letters, extract stats in whole brain/rois
         
         # higher_level.timeseries_trials_rsa(kernel=10)          # for each letter-color condition in RSA task, extract time series data
-        # higher_level.timeseries_letters_rsa(kernel=10)
+        higher_level.timeseries_letters_rsa(kernel=10)

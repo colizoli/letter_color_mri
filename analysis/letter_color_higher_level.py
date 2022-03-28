@@ -187,14 +187,41 @@ class higher_level_class(object):
             DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format('rsa'),'hilde_brain_region_probabilities.tsv'),sep='\t')
             print(roi)
         print('success: labels_harvard_oxford')
+    
+    def colizoli_rois(self,):
+        # makes a cluster mask of the 3 ROIs from the 2016,2017 papers
+        # 1 = VWFA is the dutch>chinese contrast, randomise 1 sample with cluster threshold 3.1, masked LH inf temp gyrus
+        # 2 = V4 is the average in MNI space thresholded from 0.5-1.0
+        # 3 = parietal lobe is correlation between trained>untrained black with the Stroop effect cluster_mask_zstat2
+        
+        outFile  = os.path.join(self.mask_dir, 'colizoli_rois.nii.gz')
+        vwfa     = nib.load(os.path.join(self.mask_dir,'colizoli_vwfa_roi.nii.gz')).get_data()
+        v4       = nib.load(os.path.join(self.mask_dir,'colizoli_v4_roi.nii.gz')).get_data()
+        parietal = nib.load(os.path.join(self.mask_dir,'colizoli_parietal_roi.nii.gz')).get_data()
+        
+        v4 = np.where(v4==1,2,0) # v4 is label 2
+        parietal = np.where(parietal==1,3,0) # parietal label 3
+        
+        ROI = vwfa+v4+parietal # combine into a single 3D volume
+        # save as nifti file
+        outData = nib.Nifti1Image(ROI, affine=nib.load(self.mni).affine, header=nib.load(self.mni).header) # pass affine and header from last MNI image
+        outData.set_data_dtype(np.float32)
+        nib.save(outData, outFile)
+        
+        print('success: colizoli_rois')
         
     def roy_rsa_letters(self,task='rsa'):
         # Use output from the rsa_letters analysis
         # For each letter, extract the t-stats from all voxels
         
-        # using Harvard Oxford cortical
-        mask = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=bool) # boolean mask
-        labels = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=float) # labels
+        # # using Harvard Oxford cortical
+        # mask = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=bool) # boolean mask
+        # labels = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=float) # labels
+        
+        # VWFA,V4,parietal (Colizoli 2016,2017)
+        rois = os.path.join(self.mask_dir, 'colizoli_rois.nii.gz')
+        mask = np.array(nib.load(rois).get_data(),dtype=bool) # boolean mask
+        labels = np.array(nib.load(rois).get_data(),dtype=float) # labels
         
         DFOUT = pd.DataFrame() # output tstat dataframe for all subjects
         for s,subject in enumerate(self.subjects):
@@ -218,7 +245,7 @@ class higher_level_class(object):
 
                     # concat data frames
                     DFOUT = pd.concat([DFOUT,this_df],axis=0)
-        DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format(task),'roy_task-{}_letters.tsv'.format(task)),sep='\t')
+        DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format(task),'roy_task-{}_letters_rois.tsv'.format(task)),sep='\t')
         print('success: roy_rsa_letters')
     
     
@@ -336,9 +363,14 @@ class higher_level_class(object):
         # Timeseries with length = kernel (#samples)
         # Input is the same input to the first level analysis rsa_letters
         
-        # using Harvard Oxford cortical
-        mask = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=bool) # boolean mask
-        labels = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=float) # labels
+        # VWFA,V4,parietal (Colizoli 2016,2017)
+        rois = os.path.join(self.mask_dir, 'colizoli_rois.nii.gz')
+        mask = np.array(nib.load(rois).get_data(),dtype=bool) # boolean mask
+        labels = np.array(nib.load(rois).get_data(),dtype=float) # labels
+        
+        # # using Harvard Oxford cortical
+        # mask = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=bool) # boolean mask
+        # labels = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=float) # labels
         
         DFOUT = pd.DataFrame() # output tstat dataframe for all subjects
         for s,subject in enumerate(self.subjects):
@@ -385,5 +417,5 @@ class higher_level_class(object):
                             # concat data frames
                             this_df = pd.concat([nii,this_df],axis=1) # add kernel as columns in front 
                             DFOUT = pd.concat([this_df,DFOUT],axis=0) # add entire DF as rows to bottom
-        DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format(task),'task-{}_letters_timeseries.tsv'.format(task)),sep='\t')
+        DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format(task),'task-{}_letters_timeseries_rois.tsv'.format(task)),sep='\t')
         print('success: timeseries_letters_rsa')
