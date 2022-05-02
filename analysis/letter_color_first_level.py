@@ -276,7 +276,53 @@ class first_level_class(object):
             # open run 1's events
             events1 = pd.read_csv(os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_task-{}_{}_events.tsv'.format(self.subject,self.session,task,'run-01')),sep='\t')
             events = pd.concat([events1,events2,events3,events4],axis=0)
-            events.to_csv(os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_events.tsv'.format(task,self.subject,self.session)),sep='\t') # save concantenated events file
+            events = events.loc[:, ~events.columns.str.contains('^Unnamed')] # drop unnamed columns
+                
+            # add unique identifiers for each color
+            rgb_codes = [
+                (events['r'] == 188) & (events['g'] == 188) & (events['b'] == 188), # grey (oddballs)
+                (events['r'] == 117) & (events['g'] == 117) & (events['b'] == 117), # grey (oddballs)
+                (events['r'] == 128) & (events['g'] == 128) & (events['b'] == 128), # grey (oddballs)
+                (events['r'] == 0) & (events['g'] == 0) & (events['b'] == 0), # black
+                (events['r'] == 0) & (events['g'] == 163) & (events['b'] == 228), # light_blue
+                (events['r'] == 161) & (events['g'] == 199) & (events['b'] == 70), # lime_green
+                (events['r'] == 183) & (events['g'] == 61) & (events['b'] == 160), # magenta
+                (events['r'] == 181) & (events['g'] == 44) & (events['b'] == 67), # dark_red
+                (events['r'] == 16) & (events['g'] == 114) & (events['b'] == 86), # dark_green
+                (events['r'] == 237) & (events['g'] == 114) & (events['b'] == 162), # pink
+                (events['r'] == 58) & (events['g'] == 175) & (events['b'] == 75), # green
+                (events['r'] == 248) & (events['g'] == 154) & (events['b'] == 28), # light_orange
+                (events['r'] == 109) & (events['g'] == 57) & (events['b'] == 142), # purple
+                (events['r'] == 239) & (events['g'] == 79) & (events['b'] == 41), # orange
+                (events['r'] == 49) & (events['g'] == 60) & (events['b'] == 163), # blue
+                (events['r'] == 255) & (events['g'] == 211) & (events['b'] == 0), # yellow
+                (events['r'] == 9) & (events['g'] == 181) & (events['b'] == 172) # teal
+            ]
+            
+            color_names = [
+                'grey',
+                'grey',
+                'grey',
+                'black',
+                'light_blue',
+                'lime_green',
+                'magenta',
+                'dark_red',
+                'dark_green',
+                'pink',
+                'green',
+                'light_orange',
+                'purple',
+                'orange',
+                'blue',
+                'yellow',
+                'teal'
+            ]
+            events['color_name'] = np.select(rgb_codes, color_names)
+                    
+            # save concantenated events file
+            events.to_csv(os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_events.tsv'.format(task,self.subject,self.session)),sep='\t') 
+
         print('success: rsa_combine_events')    
 
     def rsa_nuisance_regressors(self,task='rsa'):
@@ -304,9 +350,9 @@ class first_level_class(object):
         
             #### Run means - make columns of 1s and 0s for the length of each run ####
             b1 = np.concatenate( (np.repeat(1,len(mc1))   ,  np.repeat(0,len(mc2))   ,  np.repeat(0,len(mc3))  , np.repeat(0,len(mc4)) ),axis=0) # session 1: 1s run 1
-            b2 = np.concatenate( (np.repeat(0,len(mc1))   ,  np.repeat(1,len(mc2))   ,  np.repeat(0,len(mc3))  , np.repeat(0,len(mc4)) ),axis=0) # sessoin 2: 1s run 2
-            b3 = np.concatenate( (np.repeat(0,len(mc1))   ,  np.repeat(0,len(mc2))   ,  np.repeat(1,len(mc3))  , np.repeat(0,len(mc4)) ),axis=0) # sessoin 3: 1s run 3
-            b4 = np.concatenate( (np.repeat(0,len(mc1))   ,  np.repeat(0,len(mc2))   ,  np.repeat(0,len(mc3))  , np.repeat(1,len(mc4)) ),axis=0) # sessoin 4: 1s run 4
+            b2 = np.concatenate( (np.repeat(0,len(mc1))   ,  np.repeat(1,len(mc2))   ,  np.repeat(0,len(mc3))  , np.repeat(0,len(mc4)) ),axis=0) # session 2: 1s run 2
+            b3 = np.concatenate( (np.repeat(0,len(mc1))   ,  np.repeat(0,len(mc2))   ,  np.repeat(1,len(mc3))  , np.repeat(0,len(mc4)) ),axis=0) # session 3: 1s run 3
+            b4 = np.concatenate( (np.repeat(0,len(mc1))   ,  np.repeat(0,len(mc2))   ,  np.repeat(0,len(mc3))  , np.repeat(1,len(mc4)) ),axis=0) # session 4: 1s run 4
         
             # add to motion dataframe
             mc['b1'] = b1
@@ -338,19 +384,37 @@ class first_level_class(object):
     def rsa_timing_files_letters(self,task='rsa'):
         # GLM timing files for RSA - each letter in each color (2 trials per run)
         # event related design
-                
-        # load colors file
-        colors = pd.read_csv(os.path.join(self.deriv_dir,self.subject,'{}_colors.tsv'.format(self.subject)),sep='\t')
-        for self.session in ['ses-01','ses-02']:
-            events = pd.read_csv(os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_events.tsv'.format(task,self.subject,self.session)),sep='\t') # save concantenated events fil  
+        
+        color_name = [
+                # 'grey',
+                # 'grey',
+                # 'grey',
+                'black',
+                'light_blue',
+                'lime_green',
+                'magenta',
+                'dark_red',
+                'dark_green',
+                'pink',
+                'green',
+                'light_orange',
+                'purple',
+                'orange',
+                'blue',
+                'yellow',
+                'teal'
+            ]
+
+        for self.session in ['ses-01','ses-02']: # load session data with onsets
+            events = pd.read_csv(os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_events.tsv'.format(task,self.subject,self.session)),sep='\t') 
             # drop oddballs        
             events.drop(events[events['oddball'] == 1].index, inplace=True)
 
             # generate 3 column files for each of the 2x2 conditions
             for l,lcond in enumerate(np.unique(events['letter'])): # letters
-                for c,ccond in enumerate(np.unique(events['g'])): # use 'g' from rgb codes ('r' has 0 like black)
+                for c,ccond in enumerate(color_name): # 13 trained colors
                     # this letter in this color?
-                    this_ev = events[(events['letter']==lcond) & (events['g']==ccond)]
+                    this_ev = events[(events['letter']==lcond) & (events['color_name']==ccond)]
                     # check if letter-color condition exists to prevent writing out empty EV timing files
                     if not this_ev.empty: 
                         # all files have to have the same names for subjects
@@ -369,13 +433,13 @@ class first_level_class(object):
         # Run the actual FSF from the command line: feat task-rsa_sub-01_ses-01.fsf
             
         template_filename = os.path.join(self.analysis_dir,'templates','task-{}_letters_first_level_template.fsf'.format(task))
-    
+
         markers = [
-            '[$OUTPUT_PATH]', 
-            '[$NR_TRS]', 
+            '[$OUTPUT_PATH]',
+            '[$NR_TRS]',
             '[$NR_VOXELS]',
-            '[$INPUT_FILENAME]', 
-            '[$NUISANCE]', 
+            '[$INPUT_FILENAME]',
+            '[$NUISANCE]',
             '[$MNI_BRAIN]',
             '[$EV1_FILENAME]','[$EV2_FILENAME]','[$EV3_FILENAME]','[$EV4_FILENAME]','[$EV5_FILENAME]','[$EV6_FILENAME]','[$EV7_FILENAME]','[$EV8_FILENAME]','[$EV9_FILENAME]', '[$EV10_FILENAME]',
             '[$EV11_FILENAME]','[$EV12_FILENAME]','[$EV13_FILENAME]','[$EV14_FILENAME]','[$EV15_FILENAME]','[$EV16_FILENAME]','[$EV17_FILENAME]','[$EV18_FILENAME]','[$EV19_FILENAME]', '[$EV20_FILENAME]',
@@ -385,21 +449,21 @@ class first_level_class(object):
             '[$EV51_FILENAME]','[$EV52_FILENAME]',
             '[$EV53_FILENAME]' # oddballs
         ]
-        
+
         for self.session in ['ses-01','ses-02']:
             FSF_filename = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_letters_{}_{}.fsf'.format(task,self.subject,self.session)) # save fsf
-            output_path = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_letters_{}_{}'.format(task,self.subject,self.session)) 
-        
-            BOLD = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_bold_mni.nii.gz'.format(task,self.subject,self.session)) 
+            output_path = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_letters_{}_{}'.format(task,self.subject,self.session))
+
+            BOLD = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_bold_mni.nii.gz'.format(task,self.subject,self.session))
             # calculate size of input data
-            nii = nib.load(BOLD).get_data() # only do once 
+            nii = nib.load(BOLD).get_data() # only do once
             nr_trs = str(nii.shape[-1])
             nr_voxels = str(nii.size)
-        
+
             # motion parameters and columns for each session's mean
             nuisance_regressors = os.path.join(self.timing_files_dir,'task-{}'.format(task),'task-{}_{}_{}_nuisance_regressors.txt'.format(task,self.subject,self.session))
             MNI_BRAIN  = os.path.join(self.mask_dir, 'MNI152_T1_2mm_brain.nii.gz')
-            
+
             # timing files for each EV
             # black
             EV1_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'a_black'))
@@ -457,7 +521,7 @@ class first_level_class(object):
             EV52_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'z_color'))
             # oddballs last
             EV53_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}_{}.txt'.format(task,self.subject,self.session,'oddballs'))
-                    
+
             # replacements
             replacements = [ # needs to match order of 'markers'
                 output_path,
@@ -471,7 +535,7 @@ class first_level_class(object):
                 EV21_path, EV22_path, EV23_path, EV24_path, EV25_path, EV26_path, EV27_path, EV28_path, EV29_path, EV30_path,
                 EV31_path, EV32_path, EV33_path, EV34_path, EV35_path, EV36_path, EV37_path, EV38_path, EV39_path, EV40_path,
                 EV41_path, EV42_path, EV43_path, EV44_path, EV45_path, EV46_path, EV47_path, EV48_path, EV49_path, EV50_path,
-                EV51_path, EV52_path, 
+                EV51_path, EV52_path,
                 EV53_path
             ]
 
