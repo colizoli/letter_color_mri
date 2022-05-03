@@ -419,3 +419,70 @@ class higher_level_class(object):
                             DFOUT = pd.concat([this_df,DFOUT],axis=0) # add entire DF as rows to bottom
         DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format(task),'task-{}_letters_timeseries_rois.tsv'.format(task)),sep='\t')
         print('success: timeseries_letters_rsa')
+        
+    def housekeeping_dcm(self,task='rsa'):
+        # For each subject and session of the RSA task, unzips then splits the nifti files into the DCM folder
+        # mkdir -p /sub-xxx && gunzip -c BIG5.gz > /sub-xxx/file
+        # fslsplit <input> [output_basename] [-t/x/y/z]
+        # input = first_level/task-rsa
+        # output = AI project folder/Faye/DCM
+        
+        DCM_path = '/project/2422045.01/faye/DCM'
+        
+        # write unix commands to job to run in parallel
+        self.dcm_houskeeping_path = os.path.join(self.analysis_dir,'jobs','job_dcm_fslsplit.txt')
+        self.dcm_houskeeping = open(self.higher_level_job_path, "w")
+        self.dcm_houskeeping.write("#!/bin/bash\n")
+        self.dcm_houskeeping.close()
+        
+        for s,subject in enumerate(self.subjects):
+            for sess,session in enumerate(self.sessions):
+                
+                dcm_sessions = ['session1','session2'] # different folder names
+                input_path = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_bold_mni.nii.gz'.format(task,subject,session))
+                
+                # first unzip the nii.gz file
+                cmd = 'gzip -dkc {}'.format()
+                
+                # then split it in the time dimension
+            
+                
+                output_base = os.path.join(DCM_path,dcm_sessions[sess],'sub-{}'.format(subject))
+                # open job and write command as new line
+                cmd = 'fslsplit {} {} -t'.format(input_path, output_base)
+                self.first_level_job = open(self.first_level_job_path, "a") # append is important, not write
+                self.first_level_job.write(cmd)   # feat command
+                self.first_level_job.write("\n\n")  # new line
+                self.first_level_job.close()
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+                
+                
+                
+    

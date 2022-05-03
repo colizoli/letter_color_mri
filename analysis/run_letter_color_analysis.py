@@ -188,11 +188,13 @@ if run_higher_level:
         # higher_level.rsa_letters_combine_events()     # concatenates all subjects events files trial-wise
         # higher_level.labels_harvard_oxford()          # combine harvard oxford cortical+subcortical atlases
         # higher_level.probabilities_emotion_rois()     # output probabilities for each of the emotional ROIs (Hilde)
-        # higher_level.colizoli_rois()                    # combines the VWFA, V4 and parietal ROIs
+        # higher_level.colizoli_rois()                  # combines the VWFA, V4 and parietal ROIs
         
-        higher_level.roy_rsa_letters()                # for each letter in rsa_letters, extract stats in whole brain/rois
+        # higher_level.roy_rsa_letters()                # for each letter in rsa_letters, extract stats in whole brain/rois
         # higher_level.hilde_rsa_letters()              # for each letter in rsa_letters, extract stats in whole brain/rois
         # higher_level.kelly_rsa_letters()              # for each letter in rsa_letters, extract stats in whole brain/rois
         
         # higher_level.timeseries_trials_rsa(kernel=10)          # for each letter-color condition in RSA task, extract time series data
-        higher_level.timeseries_letters_rsa(kernel=10)
+        # higher_level.timeseries_letters_rsa(kernel=10)
+        
+        higher_level.housekeeping_dcm()                 # copies and splits the nifti files for the SPM first level input
