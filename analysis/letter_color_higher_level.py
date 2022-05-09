@@ -422,12 +422,14 @@ class higher_level_class(object):
         
     def housekeeping_dcm(self,task='rsa'):
         # For each subject and session of the RSA task, unzips then splits the nifti files into the DCM folder
-        # mkdir -p /sub-xxx && gunzip -c BIG5.gz > /sub-xxx/file
+        # copies the events file into the DCM folder
         # fslsplit <input> [output_basename] [-t/x/y/z]
+        # gunzip all files in directory
         # input = first_level/task-rsa
         # output = AI project folder/Faye/DCM
         
         DCM_path = '/project/2422045.01/faye/DCM'
+        dcm_sessions = ['session1','session2'] # different folder names
         
         # write unix commands to job to run in parallel
         self.dcm_houskeeping_path = os.path.join(self.analysis_dir,'jobs','job_dcm_fslsplit.txt')
@@ -438,23 +440,37 @@ class higher_level_class(object):
         for s,subject in enumerate(self.subjects):
             for sess,session in enumerate(self.sessions):
                 
-                dcm_sessions = ['session1','session2'] # different folder names
-                input_path = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_bold_mni.nii.gz'.format(task,subject,session))
+                # make subject's directory in DCM folder path
+                subj_dir_path = os.path.join(DCM_path, dcm_sessions[sess],'sub-{}'.format(subject))
+                if not os.path.isdir(subj_dir_path):
+                    os.mkdir(subj_dir_path)
+                    
+                #### FSL SPLIT ####
+                # split it in the time dimension
+                input_split = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_bold_mni.nii.gz'.format(task,subject,session))
+                split_base = os.path.join(DCM_path, dcm_sessions[sess],'sub-{}'.format(subject),'task-{}_sub-{}_{}_bold_mni_'.format(task,subject,session))
+                cmd1 = 'fslsplit {} {} -t'.format(input_split, split_base)
                 
-                # first unzip the nii.gz file
-                cmd = 'gzip -dkc {}'.format()
+                #### UNZIP ####
+                # first unzip all files in the subject's folder
+                cmd2 = 'gunzip {}/*.gz'.format(subj_dir_path)
                 
-                # then split it in the time dimension
-            
+                #### copy events file into DCM folder ####
+                old_events = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_bold_events.tsv'.format(task,subject,session))
+                new_events = os.path.join(DCM_path, dcm_sessions[sess],'sub-{}'.format(subject),'task-{}_sub-{}_{}_bold_events.tsv'.format(task,subject,session))
+                cmd3 = 'cp {} {}'.format(old_events,new_events)
                 
-                output_base = os.path.join(DCM_path,dcm_sessions[sess],'sub-{}'.format(subject))
                 # open job and write command as new line
-                cmd = 'fslsplit {} {} -t'.format(input_path, output_base)
-                self.first_level_job = open(self.first_level_job_path, "a") # append is important, not write
-                self.first_level_job.write(cmd)   # feat command
-                self.first_level_job.write("\n\n")  # new line
-                self.first_level_job.close()
-        
+                self.higher_level_job = open(self.higher_level_job_path, "a") # append is important, not write
+                self.higher_level_job.write(cmd1)   # split command
+                self.higher_level_job.write("\n\n")  # new line
+                self.higher_level_job.write(cmd2)   # gunzip command
+                self.higher_level_job.write("\n\n")  # new line
+                self.higher_level_job.write(cmd3)   # copy command
+                self.higher_level_job.write("\n\n")  # new line
+                self.higher_level_job.close()
+
+        print('success: housekeeping_dcm')
         
         
         

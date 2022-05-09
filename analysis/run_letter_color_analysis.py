@@ -53,8 +53,8 @@ timing_files_dir = os.path.join(deriv_dir,'timing_files')   # custom 3 column fo
 # Levels (switch ON/OFF)
 # ----------------------- 
 run_preprocessing = False    # motion correction, unwarping, registration, filtering, retroicor
-run_first_level = True     # concatenate runs, timing files, 1st level GLMs
-run_higher_level = False    # group-level analyses and statistics
+run_first_level = False     # concatenate runs, timing files, 1st level GLMs
+run_higher_level = True    # group-level analyses and statistics
 
 # -----------------------
 # Participants
