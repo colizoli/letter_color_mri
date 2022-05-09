@@ -191,14 +191,18 @@ class higher_level_class(object):
     def colizoli_rois(self,):
         # makes a cluster mask of the 3 ROIs from the 2016,2017 papers
         # 1 = VWFA is the dutch>chinese contrast, randomise 1 sample with cluster threshold 3.1, masked LH inf temp gyrus
-        # 2 = V4 is the average in MNI space thresholded from 0.5-1.0
+        # 2 = v4 is significant from current color localizer, randomise 1 sample with cluster threshold 3.1, 
         # 3 = parietal lobe is correlation between trained>untrained black with the Stroop effect cluster_mask_zstat2
         
         outFile  = os.path.join(self.mask_dir, 'colizoli_rois.nii.gz')
-        vwfa     = nib.load(os.path.join(self.mask_dir,'colizoli_vwfa_roi.nii.gz')).get_data()
-        v4       = nib.load(os.path.join(self.mask_dir,'colizoli_v4_roi.nii.gz')).get_data()
-        parietal = nib.load(os.path.join(self.mask_dir,'colizoli_parietal_roi.nii.gz')).get_data()
+        vwfa     = nib.load(os.path.join(self.mask_dir,'colizoli_vwfa_roi.nii.gz')).get_data() # from dutch>chinese contrast 2016
+        v4       = nib.load(os.path.join(self.mask_dir,'task-colors_roi.nii.gz')).get_data() # significant from current color localizer
+        parietal = nib.load(os.path.join(self.mask_dir,'colizoli_parietal_roi.nii.gz')).get_data() # from color-letter stroop contrast2 2016
         
+        # remove overlap color and vwfa rois
+        v4 = np.where(v4==vwfa,0,v4)
+        vwfa = np.where(v4==vwfa,0,vwfa)
+         
         v4 = np.where(v4==1,2,0) # v4 is label 2
         parietal = np.where(parietal==1,3,0) # parietal label 3
         
@@ -218,6 +222,7 @@ class higher_level_class(object):
         # mask = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=bool) # boolean mask
         # labels = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=float) # labels
         
+        roy_path = '/project/2422045.01/roy/'
         # VWFA,V4,parietal (Colizoli 2016,2017)
         rois = os.path.join(self.mask_dir, 'colizoli_rois.nii.gz')
         mask = np.array(nib.load(rois).get_data(),dtype=bool) # boolean mask
@@ -245,7 +250,7 @@ class higher_level_class(object):
 
                     # concat data frames
                     DFOUT = pd.concat([DFOUT,this_df],axis=0)
-        DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format(task),'roy_task-{}_letters_rois.tsv'.format(task)),sep='\t')
+        DFOUT.to_csv(os.path.join(roy_path,'roy_task-{}_letters_rois.tsv'.format(task)),sep='\t')
         print('success: roy_rsa_letters')
     
     
@@ -253,6 +258,7 @@ class higher_level_class(object):
         # Use output from the rsa_letters analysis
         # For each letter, extract the t-stats from all voxels in "emotional ROIs"
         
+        hilde_path = '/project/2422045.01/hilde/'
         # using Harvard Oxford cortical
         emotion_rois = os.path.join(self.mask_dir,'emotion_brain_regions_mask.nii.gz')
         mask = np.array(nib.load(emotion_rois).get_data(),dtype=bool) # boolean mask
@@ -280,7 +286,7 @@ class higher_level_class(object):
 
                     # concat data frames
                     DFOUT = pd.concat([DFOUT,this_df],axis=0)
-        DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format(task),'hilde_task-{}_letters.tsv'.format(task)),sep='\t')
+        DFOUT.to_csv(os.path.join(self.hilde_path,'task-{}'.format(task),'hilde_task-{}_letters.tsv'.format(task)),sep='\t')
         shell()
         print('success: hilde_rsa_letters')
         
@@ -289,6 +295,8 @@ class higher_level_class(object):
         # Use output from the rsa_letters analysis
         # For each letter, extract the z-stats from OCCIPITAL LOBE
         # use occipital lobe mask from MNI atlas = label #5
+        
+        kelly_path = '/project/2422045.01/kelly/'
         
         N = 5 # label number
         mni_labels = np.array(nib.load(self.mni_labels).get_data(),dtype=float)
@@ -316,14 +324,14 @@ class higher_level_class(object):
                     
                     # concat data frames
                     DFOUT = pd.concat([DFOUT,this_df],axis=0)
-        DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format(task),'kelly_task-{}_letters.tsv'.format(task)),sep='\t')
+        DFOUT.to_csv(os.path.join(kelly_path,'task-{}'.format(task),'kelly_task-{}_letters.tsv'.format(task)),sep='\t')
         print('success: kelly_rsa_letters')    
         
     def timeseries_trials_rsa(self,kernel,task='rsa'):
         # For each trial in RSA task, extract time series data
         # Timeseries with length = kernel (#samples)
         # Input is the same input to the first level analysis rsa_letters
-        
+                
         # using Harvard Oxford cortical
         mask = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=bool) # boolean mask
         labels = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=float) # labels
@@ -362,6 +370,8 @@ class higher_level_class(object):
         # For each letter-color condition in RSA task, extract time series data (a-z black, then a-z color)
         # Timeseries with length = kernel (#samples)
         # Input is the same input to the first level analysis rsa_letters
+        
+        coen_path = '/project/2422045.01/coen/'
         
         # VWFA,V4,parietal (Colizoli 2016,2017)
         rois = os.path.join(self.mask_dir, 'colizoli_rois.nii.gz')
@@ -417,7 +427,7 @@ class higher_level_class(object):
                             # concat data frames
                             this_df = pd.concat([nii,this_df],axis=1) # add kernel as columns in front 
                             DFOUT = pd.concat([this_df,DFOUT],axis=0) # add entire DF as rows to bottom
-        DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format(task),'task-{}_letters_timeseries_rois.tsv'.format(task)),sep='\t')
+        DFOUT.to_csv(os.path.join(coen_path,'task-{}'.format(task),'task-{}_letters_timeseries_rois.tsv'.format(task)),sep='\t')
         print('success: timeseries_letters_rsa')
         
     def housekeeping_dcm(self,task='rsa'):
