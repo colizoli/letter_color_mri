@@ -120,7 +120,7 @@ class higher_level_class(object):
         # concatenates all subjects colors files into a single one
         
         # load evs conditions file
-        LCDF = pd.read_csv(os.path.join(self.higher_level_dir,'task-{}'.format(task),'task-{}_letters_ev_conditions.csv'.format(task)),sep='\t')
+        LCDF = pd.read_csv(os.path.join(self.higher_level_dir,'task-{}'.format(task),'task-{}_letters_ev_conditions.tsv'.format(task)),sep='\t')
         try:
             LCDF = LCDF.loc[:, ~LCDF.columns.str.contains('^Unnamed')]
         except:
@@ -144,8 +144,8 @@ class higher_level_class(object):
             colors = pd.merge(colors, LCDF, on=["letter", "trial_type_color"])
             # concate
             DFOUT = pd.concat([DFOUT,colors],axis=0)
-        
-        DFOUT = DFOUT.drop(['index']) # drop the index col
+        # shell()
+        DFOUT = DFOUT.loc[:, ~DFOUT.columns.str.contains('index')]
         DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format('rsa'),'task-rsa_letters_conditions.tsv'), sep='\t')
         print('success: rsa_letters_combine_colors')
     
@@ -237,20 +237,20 @@ class higher_level_class(object):
                 # 52 EVs alphabet in black, then alphabet in color
                 for cope in np.arange(1,53):
                     this_df = pd.DataFrame() # temporary DF for concatenation
-                    BOLD = os.path.join(this_path,'tstat{}.nii.gz'.format(cope)) 
+                    BOLD = os.path.join(this_path,'zstat{}.nii.gz'.format(cope)) 
                     # statistic
                     nii = nib.load(BOLD).get_data()[mask] # flattens
                     # columns
                     this_df['subject']  = np.repeat(subject,len(nii))
                     this_df['session']  = np.repeat(sess+1,len(nii))
                     this_df['ev']       = np.repeat(cope,len(nii))
-                    this_df['tstat']    = nii
+                    this_df['zstat']    = nii
                     this_df['brain_labels']  = labels[mask] # flatten
                     this_df['mask_idx']      = np.arange(len(nii))
 
                     # concat data frames
                     DFOUT = pd.concat([DFOUT,this_df],axis=0)
-        DFOUT.to_csv(os.path.join(roy_path,'roy_task-{}_letters_rois.tsv'.format(task)),sep='\t')
+        DFOUT.to_csv(os.path.join(roy_path,'roy_task-{}_letters_rois_zstats.tsv'.format(task)),sep='\t')
         print('success: roy_rsa_letters')
     
     
@@ -273,21 +273,20 @@ class higher_level_class(object):
                 # 52 EVs alphabet in black, then alphabet in color
                 for cope in np.arange(1,53):
                     this_df = pd.DataFrame() # temporary DF for concatenation
-                    BOLD = os.path.join(this_path,'tstat{}.nii.gz'.format(cope)) 
+                    BOLD = os.path.join(this_path,'zstat{}.nii.gz'.format(cope)) 
                     # statistic
                     nii = nib.load(BOLD).get_data()[mask] # flattens
                     # columns
                     this_df['subject']  = np.repeat(subject,len(nii))
                     this_df['session']  = np.repeat(sess+1,len(nii))
                     this_df['ev']       = np.repeat(cope,len(nii))
-                    this_df['tstat']    = nii
+                    this_df['zstat']    = nii
                     # this_df['brain_labels']  = labels[mask] # flatten
                     this_df['mask_idx']      = np.arange(len(nii))
 
                     # concat data frames
                     DFOUT = pd.concat([DFOUT,this_df],axis=0)
-        DFOUT.to_csv(os.path.join(self.hilde_path,'task-{}'.format(task),'hilde_task-{}_letters.tsv'.format(task)),sep='\t')
-        shell()
+        DFOUT.to_csv(os.path.join(hilde_path,'hilde_task-{}_letters.tsv'.format(task)),sep='\t')
         print('success: hilde_rsa_letters')
         
         
@@ -324,7 +323,7 @@ class higher_level_class(object):
                     
                     # concat data frames
                     DFOUT = pd.concat([DFOUT,this_df],axis=0)
-        DFOUT.to_csv(os.path.join(kelly_path,'task-{}'.format(task),'kelly_task-{}_letters.tsv'.format(task)),sep='\t')
+        DFOUT.to_csv(os.path.join(kelly_path,'kelly_task-{}_letters.tsv'.format(task)),sep='\t')
         print('success: kelly_rsa_letters')    
         
     def timeseries_trials_rsa(self,kernel,task='rsa'):
@@ -373,7 +372,7 @@ class higher_level_class(object):
         
         coen_path = '/project/2422045.01/coen/'
         
-        # VWFA,V4,parietal (Colizoli 2016,2017)
+        # VWFA,color localizer current study,parietal (Colizoli 2016,2017)
         rois = os.path.join(self.mask_dir, 'colizoli_rois.nii.gz')
         mask = np.array(nib.load(rois).get_data(),dtype=bool) # boolean mask
         labels = np.array(nib.load(rois).get_data(),dtype=float) # labels
@@ -388,9 +387,12 @@ class higher_level_class(object):
                 # need trial-wise information with event onsets
                 events = pd.read_csv(os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_events.tsv'.format(task,subject,session)),sep='\t')
                 events = events.loc[:, ~events.columns.str.contains('^Unnamed')] # drop unnamed columns
+                ######## drop GREY color oddball trials ########
+                events = events[events['trial_type_color']!='grey'] # drop unnamed columns
+                ################################################
                 BOLD_path = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_bold_mni.nii.gz'.format(task,subject,session)) 
                 BOLD = nib.load(BOLD_path).get_data() # numerical data 4D 
-                
+
                 # convert stimulus onset to TR, round to nearest TR
                 events['nearest_TR'] = np.round(events['onset']/float(self.TR))
                 
@@ -409,11 +411,17 @@ class higher_level_class(object):
                             for trial in np.arange(this_ev.shape[0]):
                                 start_tr = int(TRs[trial])-1 # start at TR-1 for indexing 
                                 stop_tr = int(TRs[trial])-1+kernel # extract time series with length = kernel
+                                # if stop_tr is longer than the BOLD time series, it crashes (hack by adding zeros to end)
+                                if BOLD.shape[-1] < stop_tr:
+                                    # need to add zeros (np.nans?)
+                                    for extra in range(stop_tr-BOLD.shape[-1]): # for each additional time point, add zero to 4th dimension
+                                        BOLD = np.append(BOLD, BOLD[:,:,:,0,np.newaxis], axis=3)
                                 this_series = BOLD[:,:,:,start_tr:stop_tr] # minus 1 for index of TR   
                                 this_series_flat =  this_series[mask]  # flatten 3D brain to 1D
                                 this_ts_df.append(this_series_flat)
                             # take mean timeseries kernel of all trials in current letter-color condition
                             nii = np.mean(np.array(this_ts_df),axis=0)
+
                             this_df = pd.DataFrame() # temporary DF for concatenation, this subject, session
                             # trials x voxels x kernel
                             this_df['subject']  = np.repeat(subject,len(nii))
@@ -427,7 +435,7 @@ class higher_level_class(object):
                             # concat data frames
                             this_df = pd.concat([nii,this_df],axis=1) # add kernel as columns in front 
                             DFOUT = pd.concat([this_df,DFOUT],axis=0) # add entire DF as rows to bottom
-        DFOUT.to_csv(os.path.join(coen_path,'task-{}'.format(task),'task-{}_letters_timeseries_rois.tsv'.format(task)),sep='\t')
+        DFOUT.to_csv(os.path.join(coen_path,'task-{}_letters_timeseries_rois.tsv'.format(task)),sep='\t')
         print('success: timeseries_letters_rsa')
         
     def housekeeping_dcm(self,task='rsa'):
@@ -466,8 +474,8 @@ class higher_level_class(object):
                 cmd2 = 'gunzip {}/*.gz'.format(subj_dir_path)
                 
                 #### copy events file into DCM folder ####
-                old_events = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_bold_events.tsv'.format(task,subject,session))
-                new_events = os.path.join(DCM_path, dcm_sessions[sess],'sub-{}'.format(subject),'task-{}_sub-{}_{}_bold_events.tsv'.format(task,subject,session))
+                old_events = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_events.tsv'.format(task,subject,session))
+                new_events = os.path.join(DCM_path, dcm_sessions[sess],'sub-{}'.format(subject),'task-{}_sub-{}_{}_events.tsv'.format(task,subject,session))
                 cmd3 = 'cp {} {}'.format(old_events,new_events)
                 
                 # open job and write command as new line
@@ -482,33 +490,26 @@ class higher_level_class(object):
 
         print('success: housekeeping_dcm')
         
+    def qualia(self,):    
+        # calculate the PA score from the Reading Questionnaire
+        # see PAscoring 2020.xls for details
+        # PA score = projector - associator
         
+        flip_scores = ['7', '15', '5', '6', '8', '16'] # flip the response direction of the Likert scale from 5 to 1 for these questions
+        # associator = ['7', '15', '5', '6', '8', '16', '10', '3', '14', '12', '18', '1']
+        # projector = ['7', '15', '5', '6', '8', '16', '17', '2', '9', '11', '4', '13']
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        associator = [ '10', '3', '14', '12', '18', '1']
+        projector = ['17', '2', '9', '11', '4', '13']
                 
-                
-                
-    
+        DF = pd.read_csv(os.path.join(self.higher_level_dir,'participants_qualia.csv'))
+        
+        DF2 = DF.copy()
+        DF2[flip_scores] = np.max(DF[flip_scores]) + 1 - DF[flip_scores] # flip the likert scale
+        
+        DF2['associator'] = np.mean(DF[associator],axis=1)
+        DF2['projector'] = np.mean(DF[projector],axis=1)
+        DF['PA_score'] = DF2['projector'] - DF2['associator']
+        DF.to_csv(os.path.join(self.higher_level_dir,'participants_qualia.csv'))
+        # PA = projector - associator
+        

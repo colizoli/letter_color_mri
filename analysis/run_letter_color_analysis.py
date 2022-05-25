@@ -62,7 +62,7 @@ run_higher_level = True    # group-level analyses and statistics
 # Notes
 # sub-211_ses-02 has no events file for RSA run 2 (need to adjust all first level functions)
 # sub-107_ses-01 no T1 anatomical, have to overwrite in preprocessing FSF by hand to use session 2's T1
-participants    = pd.read_csv(os.path.join(analysis_dir,'participants_AI.csv'), dtype=str) # open in textmate, not excel!
+participants    = pd.read_csv(os.path.join(analysis_dir,'participants_AI_full.csv'), dtype=str) # open in textmate, not excel!
 mri_subjects    = participants['mri_subjects']
 subjects_group  = participants['subjects']
 sessions        = ['ses-01','ses-02']
@@ -112,19 +112,19 @@ if run_preprocessing:
                 # preprocess.transform_2_native_target('colors')  # register to session 1 native space
                 
                 preprocess.preprocess_fsf('rsa','_run-01')    # generate FSF file for preprocessing in FEAT (run from command line - batch)
-                preprocess.preprocess_fsf('rsa','_run-02')    # generate FSF file for preprocessing in FEAT (run from command line - batch)
-                preprocess.preprocess_fsf('rsa','_run-03')    # generate FSF file for preprocessing in FEAT (run from command line - batch)
-                preprocess.preprocess_fsf('rsa','_run-04')    # generate FSF file for preprocessing in FEAT (run from command line - batch)
+                # preprocess.preprocess_fsf('rsa','_run-02')    # generate FSF file for preprocessing in FEAT (run from command line - batch)
+                # preprocess.preprocess_fsf('rsa','_run-03')    # generate FSF file for preprocessing in FEAT (run from command line - batch)
+                # preprocess.preprocess_fsf('rsa','_run-04')    # generate FSF file for preprocessing in FEAT (run from command line - batch)
 
                 preprocess.transform_2_mni('rsa','_run-01')     # transforms the preprocessed time series to MNI space
-                preprocess.transform_2_mni('rsa','_run-02')     # transforms the preprocessed time series to MNI space
-                preprocess.transform_2_mni('rsa','_run-03')     # transforms the preprocessed time series to MNI space
-                preprocess.transform_2_mni('rsa','_run-04')     # transforms the preprocessed time series to MNI space
+                # preprocess.transform_2_mni('rsa','_run-02')     # transforms the preprocessed time series to MNI space
+                # preprocess.transform_2_mni('rsa','_run-03')     # transforms the preprocessed time series to MNI space
+                # preprocess.transform_2_mni('rsa','_run-04')     # transforms the preprocessed time series to MNI space
                 #
                 preprocess.transform_2_native_target('rsa','_run-01')   # register to session 1 native space
-                preprocess.transform_2_native_target('rsa','_run-02')   # register to session 1 native space
-                preprocess.transform_2_native_target('rsa','_run-03')   # register to session 1 native space
-                preprocess.transform_2_native_target('rsa','_run-04')   # register to session 1 native space
+                # preprocess.transform_2_native_target('rsa','_run-02')   # register to session 1 native space
+                # preprocess.transform_2_native_target('rsa','_run-03')   # register to session 1 native space
+                # preprocess.transform_2_native_target('rsa','_run-04')   # register to session 1 native space
             except:
                 pass
 
@@ -151,16 +151,16 @@ if run_first_level:
         # first_level.loc_combine_timing_files('colors')    # timing files for color localizer GLM
         # first_level.loc_nuisance_regressors('colors')     # concatenate motion parameters from preprocessing, also outputs cols of 1s for each blocks' mean
         # first_level.loc_fsf('colors')                     # generates the first level FSF for the localizers
-        #
+        # 
         # first_level.loc_combine_epi('letters')            # concantenate both runs of localizer to perform 1 GLM
         # first_level.loc_combine_timing_files('letters')   # timing files for color localizer GLM
         # first_level.loc_nuisance_regressors('letters')    # concatenate motion parameters from preprocessing, also outputs cols of 1s for each blocks' mean
         # first_level.loc_fsf('letters')                    # generates the first level FSF for the localizers
         #
-        # first_level.rsa_combine_epi()                     # concatenate EPI data for the 4 runs of the RSA task
+        first_level.rsa_combine_epi()                     # concatenate EPI data for the 4 runs of the RSA task
         # first_level.rsa_combine_events()                  # concatenate events files for the 4 runs of the RSA task
         # first_level.rsa_nuisance_regressors()             # motion parameters, run means, and oddball trials as nuisance
-
+        #
         # first_level.rsa_timing_files_letters()            # each letter in it's color and black: trained/untrained vs. color/black
         # first_level.rsa_letters_fsf()                     # generates the first level FSF for the RSA design
         
@@ -187,14 +187,17 @@ if run_higher_level:
         # higher_level.rsa_letters_conditions()         # concatenates all subjects events files for letter-color conditions
         # higher_level.rsa_letters_combine_events()     # concatenates all subjects events files trial-wise
         # higher_level.labels_harvard_oxford()          # combine harvard oxford cortical+subcortical atlases
+        # higher_level.labels_emotion_rois()              # labels the emotion brain regions for hilde, removes overlapping voxels
         # higher_level.probabilities_emotion_rois()     # output probabilities for each of the emotional ROIs (Hilde)
         # higher_level.colizoli_rois()                  # combines the VWFA, V4 and parietal ROIs
         
         higher_level.roy_rsa_letters()                # for each letter in rsa_letters, extract stats in whole brain/rois
-        higher_level.hilde_rsa_letters()              # for each letter in rsa_letters, extract stats in whole brain/rois
-        higher_level.kelly_rsa_letters()              # for each letter in rsa_letters, extract stats in whole brain/rois
+        # higher_level.hilde_rsa_letters()              # for each letter in rsa_letters, extract stats in whole brain/rois
+        # higher_level.kelly_rsa_letters()              # for each letter in rsa_letters, extract stats in whole brain/rois
         
-        # higher_level.timeseries_trials_rsa(kernel=10)          # for each letter-color condition in RSA task, extract time series data
-        higher_level.timeseries_letters_rsa(kernel=10)  # coen's functional connectivity analysis
+        # higher_level.timeseries_trials_rsa(kernel=10)   # for each letter-color condition in RSA task, extract time series data
+        # higher_level.timeseries_letters_rsa(kernel=10)  # coen's functional connectivity analysis
         
         # higher_level.housekeeping_dcm()                 # copies and splits the nifti files for the SPM first level input
+        
+        # higher_level.qualia()                           # computes the PA score for participants     

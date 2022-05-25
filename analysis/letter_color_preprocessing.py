@@ -149,7 +149,7 @@ class preprocess_class(object):
                 except:
                     pass
         
-        ###################
+        ################### 
         # RENAME localizer runs: 'task-colorsloc' to 'task-colors'
         ###################
         dir_path = os.path.join(self.raw_dir, 'logfiles', self.subject, behav_sess, 'func')
