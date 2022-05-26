@@ -262,7 +262,7 @@ class higher_level_class(object):
         # using Harvard Oxford cortical
         emotion_rois = os.path.join(self.mask_dir,'emotion_brain_regions_mask.nii.gz')
         mask = np.array(nib.load(emotion_rois).get_data(),dtype=bool) # boolean mask
-        # labels = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=float) # labels
+        labels = np.array(nib.load(emotion_rois).get_data(),dtype=float) # labels
         
         DFOUT = pd.DataFrame() # output tstat dataframe for all subjects
         for s,subject in enumerate(self.subjects):
@@ -281,12 +281,12 @@ class higher_level_class(object):
                     this_df['session']  = np.repeat(sess+1,len(nii))
                     this_df['ev']       = np.repeat(cope,len(nii))
                     this_df['zstat']    = nii
-                    # this_df['brain_labels']  = labels[mask] # flatten
+                    this_df['brain_labels']  = labels[mask] # flatten
                     this_df['mask_idx']      = np.arange(len(nii))
 
                     # concat data frames
                     DFOUT = pd.concat([DFOUT,this_df],axis=0)
-        DFOUT.to_csv(os.path.join(hilde_path,'hilde_task-{}_letters.tsv'.format(task)),sep='\t')
+        DFOUT.to_csv(os.path.join(hilde_path,'hilde_task-{}_letters_zstats.tsv'.format(task)),sep='\t')
         print('success: hilde_rsa_letters')
         
         
@@ -373,16 +373,16 @@ class higher_level_class(object):
         coen_path = '/project/2422045.01/coen/'
         
         # VWFA,color localizer current study,parietal (Colizoli 2016,2017)
-        rois = os.path.join(self.mask_dir, 'colizoli_rois.nii.gz')
-        mask = np.array(nib.load(rois).get_data(),dtype=bool) # boolean mask
-        labels = np.array(nib.load(rois).get_data(),dtype=float) # labels
+        # rois = os.path.join(self.mask_dir, 'colizoli_rois.nii.gz')
+        # mask = np.array(nib.load(rois).get_data(),dtype=bool) # boolean mask
+        # labels = np.array(nib.load(rois).get_data(),dtype=float) # labels
         
         # # using Harvard Oxford cortical
-        # mask = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=bool) # boolean mask
-        # labels = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=float) # labels
+        mask = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=bool) # boolean mask
+        labels = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=float) # labels
         
         DFOUT = pd.DataFrame() # output tstat dataframe for all subjects
-        for s,subject in enumerate(self.subjects):
+        for s,subject in enumerate(self.subjects):            
             for sess,session in enumerate(self.sessions):
                 # need trial-wise information with event onsets
                 events = pd.read_csv(os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_events.tsv'.format(task,subject,session)),sep='\t')
@@ -435,8 +435,85 @@ class higher_level_class(object):
                             # concat data frames
                             this_df = pd.concat([nii,this_df],axis=1) # add kernel as columns in front 
                             DFOUT = pd.concat([this_df,DFOUT],axis=0) # add entire DF as rows to bottom
-        DFOUT.to_csv(os.path.join(coen_path,'task-{}_letters_timeseries_rois.tsv'.format(task)),sep='\t')
+        DFOUT.to_csv(os.path.join(coen_path,'task-{}_letters_timeseries_cortex.tsv'.format(task)),sep='\t')
         print('success: timeseries_letters_rsa')
+    
+    def timeseries_conditions_rsa(self,kernel,task='rsa'):
+        # For each letter-color condition in RSA task, extract time series data (a-z black, then a-z color)
+        # Timeseries with length = kernel (#samples)
+        # Input is the same input to the first level analysis rsa_letters
+        
+        coen_path = '/project/2422045.01/coen/'
+        
+        # VWFA,color localizer current study,parietal (Colizoli 2016,2017)
+        # rois = os.path.join(self.mask_dir, 'colizoli_rois.nii.gz')
+        # mask = np.array(nib.load(rois).get_data(),dtype=bool) # boolean mask
+        # labels = np.array(nib.load(rois).get_data(),dtype=float) # labels
+        
+        # # using Harvard Oxford cortical
+        mask = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=bool) # boolean mask
+        labels = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=float) # labels
+        
+        DFOUT = pd.DataFrame() # output tstat dataframe for all subjects
+        for s,subject in enumerate(self.subjects):
+            # DFOUT = pd.DataFrame() # output tstat dataframe for each subject (memory error)
+            
+            for sess,session in enumerate(self.sessions):
+                # need trial-wise information with event onsets
+                events = pd.read_csv(os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_events.tsv'.format(task,subject,session)),sep='\t')
+                events = events.loc[:, ~events.columns.str.contains('^Unnamed')] # drop unnamed columns
+                ######## drop oddball trials ########
+                events = events[events['oddball']==0] # drop oddballs
+                ################################################
+                BOLD_path = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_bold_mni.nii.gz'.format(task,subject,session)) 
+                BOLD = nib.load(BOLD_path).get_data() # numerical data 4D 
+
+                # convert stimulus onset to TR, round to nearest TR
+                events['nearest_TR'] = np.round(events['onset']/float(self.TR))
+                
+                # loop through trials in events dataframe
+                for C in np.unique(events['trial_type_color']):
+                    
+                    # loop letters
+                    for L in np.unique(events['trial_type_letter']):
+                        # check if letter-color condition exists, get only those trials in events file
+                        this_ev = events[(events['trial_type_letter']==L) & (events['trial_type_color']==C)]
+                        TRs = np.array(this_ev['nearest_TR'])
+                        
+                        if not this_ev.empty:
+                            # CUT OUT TIME SERIES 
+                            this_ts_df = [] # temporary DF for letter-color condition all trials
+                            # go through onsets only in current letter-color condition
+                            for trial in np.arange(this_ev.shape[0]):
+                                start_tr = int(TRs[trial])-1 # start at TR-1 for indexing 
+                                stop_tr = int(TRs[trial])-1+kernel # extract time series with length = kernel
+                                # if stop_tr is longer than the BOLD time series, it crashes (hack by adding zeros to end)
+                                if BOLD.shape[-1] < stop_tr:
+                                    # need to add zeros (np.nans?)
+                                    for extra in range(stop_tr-BOLD.shape[-1]): # for each additional time point, add zero to 4th dimension
+                                        BOLD = np.append(BOLD, BOLD[:,:,:,0,np.newaxis], axis=3)
+                                this_series = BOLD[:,:,:,start_tr:stop_tr] # minus 1 for index of TR   
+                                this_series_flat =  this_series[mask]  # flatten 3D brain to 1D
+                                this_ts_df.append(this_series_flat)
+                            # take mean timeseries kernel of all trials in current letter-color condition
+                            nii = np.mean(np.array(this_ts_df),axis=0)
+
+                            this_df = pd.DataFrame() # temporary DF for concatenation, this subject, session
+                            # trials x voxels x kernel
+                            this_df['subject']  = np.repeat(subject,len(nii))
+                            this_df['session']          = np.repeat(sess+1,len(nii))
+                            this_df['trial_type_letter']= np.repeat(L,len(nii))
+                            this_df['trial_type_color'] = np.repeat(C,len(nii))
+                            this_df['brain_labels']     = labels[mask] # flatten
+                            this_df['mask_idx']         = np.arange(len(nii))
+                        
+                            nii = pd.DataFrame(nii)
+                            # concat data frames
+                            this_df = pd.concat([nii,this_df],axis=1) # add kernel as columns in front 
+                            DFOUT = pd.concat([this_df,DFOUT],axis=0) # add entire DF as rows to bottom
+            # DFOUT.to_csv(os.path.join(coen_path,'task-{}_sub-{}_letters_timeseries_cortex.tsv'.format(task,subject)),sep='\t')
+        DFOUT.to_csv(os.path.join(coen_path,'task-{}_letters_timeseries_cortex.tsv'.format(task)),sep='\t')
+        print('success: timeseries_conditions_rsa')
         
     def housekeeping_dcm(self,task='rsa'):
         # For each subject and session of the RSA task, unzips then splits the nifti files into the DCM folder
@@ -450,10 +527,10 @@ class higher_level_class(object):
         dcm_sessions = ['session1','session2'] # different folder names
         
         # write unix commands to job to run in parallel
-        self.dcm_houskeeping_path = os.path.join(self.analysis_dir,'jobs','job_dcm_fslsplit.txt')
-        self.dcm_houskeeping = open(self.higher_level_job_path, "w")
-        self.dcm_houskeeping.write("#!/bin/bash\n")
-        self.dcm_houskeeping.close()
+        self.dcm_housekeeping_path = os.path.join(self.analysis_dir,'jobs','job_dcm_fslsplit.txt')
+        self.dcm_housekeeping = open(self.dcm_housekeeping_path, "w")
+        self.dcm_housekeeping.write("#!/bin/bash\n")
+        self.dcm_housekeeping.close()
         
         for s,subject in enumerate(self.subjects):
             for sess,session in enumerate(self.sessions):
@@ -479,14 +556,14 @@ class higher_level_class(object):
                 cmd3 = 'cp {} {}'.format(old_events,new_events)
                 
                 # open job and write command as new line
-                self.higher_level_job = open(self.higher_level_job_path, "a") # append is important, not write
-                self.higher_level_job.write(cmd1)   # split command
-                self.higher_level_job.write("\n\n")  # new line
-                self.higher_level_job.write(cmd2)   # gunzip command
-                self.higher_level_job.write("\n\n")  # new line
-                self.higher_level_job.write(cmd3)   # copy command
-                self.higher_level_job.write("\n\n")  # new line
-                self.higher_level_job.close()
+                self.dcm_housekeeping = open(self.dcm_housekeeping_path, "a") # append is important, not write
+                self.dcm_housekeeping.write(cmd1)   # split command
+                self.dcm_housekeeping.write("\n\n")  # new line
+                self.dcm_housekeeping.write(cmd2)   # gunzip command
+                self.dcm_housekeeping.write("\n\n")  # new line
+                self.dcm_housekeeping.write(cmd3)   # copy command
+                self.dcm_housekeeping.write("\n\n")  # new line
+                self.dcm_housekeeping.close()
 
         print('success: housekeeping_dcm')
         
