@@ -17,6 +17,9 @@ import shutil as sh
 import nibabel as nib
 import pandas as pd
 import numpy as np
+from scipy import stats
+import itertools 
+
 from IPython import embed as shell # for Oly's debugging only
 
 class higher_level_class(object):
@@ -223,6 +226,10 @@ class higher_level_class(object):
         # labels = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=float) # labels
         
         roy_path = '/project/2422045.01/roy/'
+        
+        # DFOUT = pd.read_csv(os.path.join(roy_path,'roy_task-{}_letters_rois_zstats.tsv'.format(task)),sep='\t')
+        # shell()
+        
         # VWFA,V4,parietal (Colizoli 2016,2017)
         rois = os.path.join(self.mask_dir, 'colizoli_rois.nii.gz')
         mask = np.array(nib.load(rois).get_data(),dtype=bool) # boolean mask
@@ -259,8 +266,9 @@ class higher_level_class(object):
         # For each letter, extract the t-stats from all voxels in "emotional ROIs"
         
         hilde_path = '/project/2422045.01/hilde/'
+        
         # using Harvard Oxford cortical
-        emotion_rois = os.path.join(self.mask_dir,'emotion_brain_regions_mask.nii.gz')
+        emotion_rois = os.path.join(self.mask_dir,'hilde_brain_region_labels.nii.gz')
         mask = np.array(nib.load(emotion_rois).get_data(),dtype=bool) # boolean mask
         labels = np.array(nib.load(emotion_rois).get_data(),dtype=float) # labels
         
@@ -286,7 +294,7 @@ class higher_level_class(object):
 
                     # concat data frames
                     DFOUT = pd.concat([DFOUT,this_df],axis=0)
-        DFOUT.to_csv(os.path.join(hilde_path,'hilde_task-{}_letters_zstats.tsv'.format(task)),sep='\t')
+        DFOUT.to_csv(os.path.join(hilde_path,'hilde_task-{}_letters_labels_zstats.tsv'.format(task)),sep='\t')
         print('success: hilde_rsa_letters')
         
         
@@ -321,10 +329,38 @@ class higher_level_class(object):
                     this_df['brain_labels']  = np.repeat(N,len(nii)) # flatten
                     this_df['mask_idx']      = np.arange(len(nii))
                     
+                    print(subject)
+                    print(session)
                     # concat data frames
                     DFOUT = pd.concat([DFOUT,this_df],axis=0)
         DFOUT.to_csv(os.path.join(kelly_path,'kelly_task-{}_letters.tsv'.format(task)),sep='\t')
         print('success: kelly_rsa_letters')    
+        
+    def coen_reorder_cortical_labels(self,):
+        # reorders the harvard oxford cortical label's for Coen's functional connectivity analysis
+        # new_order column in 
+        coen_path = '/project/2422045.01/coen/'
+        outFile  = os.path.join(self.mask_dir, 'coen_harvard_oxford_cortical_rois.nii.gz')
+        
+        DF = pd.read_csv(os.path.join(coen_path,'new_cortical_labels.csv'))
+        
+        atlas_nifti = nib.load(self.ho_cortical_labels) # labels
+        atlas_labels = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=float) # labels
+        
+        new_atlas = np.zeros(atlas_labels.shape)
+        
+        original_order = np.array(DF['original_order'])
+        new_order = np.array(DF['new_order'])
+        
+        for roi_num,label in enumerate(original_order):
+            new_atlas = np.where(atlas_labels==label,new_order[roi_num],new_atlas)
+            
+            
+        outData = nib.Nifti1Image(new_atlas, affine=nib.load(self.mni).affine, header=nib.load(self.mni).header) # pass affine and header from last MNI image
+        outData.set_data_dtype(np.float32)
+        nib.save(outData, outFile)
+        print('success: coen_reorder_cortical_labels')    
+        
         
     def timeseries_trials_rsa(self,kernel,task='rsa'):
         # For each trial in RSA task, extract time series data
@@ -438,21 +474,25 @@ class higher_level_class(object):
         DFOUT.to_csv(os.path.join(coen_path,'task-{}_letters_timeseries_cortex.tsv'.format(task)),sep='\t')
         print('success: timeseries_letters_rsa')
     
-    def timeseries_conditions_rsa(self,kernel,task='rsa'):
+    def timeseries_conditions_rsa(self,kernel,brain,task='rsa'):
         # For each letter-color condition in RSA task, extract time series data (a-z black, then a-z color)
         # Timeseries with length = kernel (#samples)
         # Input is the same input to the first level analysis rsa_letters
         
-        coen_path = '/project/2422045.01/coen/'
         
-        # VWFA,color localizer current study,parietal (Colizoli 2016,2017)
-        # rois = os.path.join(self.mask_dir, 'colizoli_rois.nii.gz')
-        # mask = np.array(nib.load(rois).get_data(),dtype=bool) # boolean mask
-        # labels = np.array(nib.load(rois).get_data(),dtype=float) # labels
-        
-        # # using Harvard Oxford cortical
-        mask = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=bool) # boolean mask
-        labels = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=float) # labels
+        if brain == 'rois':
+            # VWFA,color localizer current study,parietal (Colizoli 2016,2017)
+            rois = os.path.join(self.mask_dir, 'colizoli_rois.nii.gz')
+            mask = np.array(nib.load(rois).get_data(),dtype=bool) # boolean mask
+            labels = np.array(nib.load(rois).get_data(),dtype=float) # labels
+            coen_path = '/project/2422045.01/coen/letter_files/rois_synesthesia/'
+        else: # cortex
+            # using Harvard Oxford cortical
+            cortex = os.path.join(self.mask_dir, 'coen_harvard_oxford_cortical_rois.nii.gz')
+            mask = np.array(nib.load(cortex).get_data(),dtype=bool) # boolean mask
+            labels = np.array(nib.load(cortex).get_data(),dtype=float) # labels
+            coen_path = '/project/2422045.01/coen/letter_files/rois_cortex/'
+            
         
         DFOUT = pd.DataFrame() # output tstat dataframe for all subjects
         for s,subject in enumerate(self.subjects):
@@ -512,8 +552,75 @@ class higher_level_class(object):
                             this_df = pd.concat([nii,this_df],axis=1) # add kernel as columns in front 
                             DFOUT = pd.concat([this_df,DFOUT],axis=0) # add entire DF as rows to bottom
             # DFOUT.to_csv(os.path.join(coen_path,'task-{}_sub-{}_letters_timeseries_cortex.tsv'.format(task,subject)),sep='\t')
-        DFOUT.to_csv(os.path.join(coen_path,'task-{}_letters_timeseries_cortex.tsv'.format(task)),sep='\t')
+        DFOUT.to_csv(os.path.join(coen_path,'task-{}_letters_timeseries_{}.tsv'.format(task,brain)),sep='\t')
         print('success: timeseries_conditions_rsa')
+    
+    def timeseries_sessions_rsa(self,brain,task='rsa'):
+        # Within session - correlate all brain regions: full time series
+                
+        if brain == 'rois':         
+            # VWFA,color localizer current study,parietal (Colizoli 2016,2017)
+            rois = os.path.join(self.mask_dir, 'colizoli_rois.nii.gz')
+            mask = np.array(nib.load(rois).get_data(),dtype=bool) # boolean mask
+            labels = np.array(nib.load(rois).get_data(),dtype=float) # labels
+            labels = labels[mask] # 2D
+            coen_path = '/project/2422045.01/coen/session_files/rois_synesthesia/'
+        else: # cortex
+            # using Harvard Oxford cortical (reordered)
+            cortex = os.path.join(self.mask_dir, 'coen_harvard_oxford_cortical_rois.nii.gz')
+            mask = np.array(nib.load(cortex).get_data(),dtype=bool) # boolean mask
+            labels = np.array(nib.load(cortex).get_data(),dtype=float) # labels
+            labels = labels[mask] # 2D
+            coen_path = '/project/2422045.01/coen/session_files/rois_cortex/'
+            
+        def stack(df):
+            df = df.stack().rename_axis(('Region x', 'Region y')).reset_index(name='value').drop_duplicates(subset='value', keep='first') #.sort_values('value', ascending=False)
+            df = df.loc[~(df['Region x'] == df['Region y'])]
+            df.reset_index(drop=True, inplace=True)
+            return df
+            
+        for sess,session in enumerate(self.sessions):
+            DFOUT = pd.DataFrame() # one DF for each session
+            for s,subject in enumerate(self.subjects):
+                
+                # output is the concantenated bold of all runs per session (input to first level)
+                N1 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_{}.feat'.format(task,subject,session,'run-01'),'filtered_func_data_mni.nii.gz')) # preprocessed run 1
+                N2 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_{}.feat'.format(task,subject,session,'run-02'),'filtered_func_data_mni.nii.gz')) # preprocessed run 2
+                N3 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_{}.feat'.format(task,subject,session,'run-03'),'filtered_func_data_mni.nii.gz')) # preprocessed run 3
+                N4 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_{}.feat'.format(task,subject,session,'run-04'),'filtered_func_data_mni.nii.gz')) # preprocessed run 4
+                # make 2D 
+                BOLD1 = N1.get_data()[mask] #2D
+                BOLD2 = N2.get_data()[mask]
+                BOLD3 = N3.get_data()[mask]
+                BOLD4 = N4.get_data()[mask]
+                
+                # zscore each run before concantenation
+                BOLD1 = stats.zscore(BOLD1)
+                BOLD2 = stats.zscore(BOLD2)
+                BOLD3 = stats.zscore(BOLD3)
+                BOLD4 = stats.zscore(BOLD4)
+                
+                # concatenate
+                BOLD = np.concatenate([BOLD1,BOLD2,BOLD3,BOLD4],axis=-1)
+                
+                # get mean time series within each brain region
+                DF = pd.DataFrame(BOLD)
+                DF['labels'] = labels
+                DFG = DF.groupby(['labels']).mean() 
+                
+                # correlation matrix
+                DFG = DFG.transpose()
+                DFG = DFG.corr('pearson') 
+                
+                # put into the right format
+                df_stacked = stack(DFG) 
+                DFOUT['sub-{}'.format(subject)] = df_stacked['value'] # columns are subjects, rows are nxm brain region correlations
+
+            # rows = subjects, columns = brain region pairs
+            DFOUT = DFOUT.T
+            DFOUT.columns=list(itertools.combinations(np.unique(DF['labels']), 2))
+            DFOUT.to_csv(os.path.join(coen_path,'df_{}_{}_stacked.csv'.format(brain,session)))       
+        print('success: timeseries_sessions_rsa')
         
     def housekeeping_dcm(self,task='rsa'):
         # For each subject and session of the RSA task, unzips then splits the nifti files into the DCM folder
@@ -589,4 +696,52 @@ class higher_level_class(object):
         DF['PA_score'] = DF2['projector'] - DF2['associator']
         DF.to_csv(os.path.join(self.higher_level_dir,'participants_qualia.csv'))
         # PA = projector - associator
+    
+    def kelly_project_mask3D(self,):
+        # Take the mask_idx and project it back into a 3D nifti file
+        # use occipital lobe mask from MNI atlas = label #5
         
+        kelly_path = '/project/2422045.01/kelly/'
+        
+        save_file = 'permutationImportanceSession1'
+        DFIN = pd.read_csv(os.path.join(kelly_path,'{}.csv'.format(save_file)),header=None)
+        DFIN.columns = ['mask_idx','f-score']
+        
+        N = 5
+        mni_labels = np.array(nib.load(self.mni_labels).get_data(),dtype=float)
+        mask_roi = np.array(np.where(mni_labels==N,1,0),dtype=bool) # binary mask, this roi
+        mask_mni = np.array(nib.load(self.mni_labels).get_data(),dtype=bool)
+        
+        
+        # roi label=5 flattened out 
+        nii = mni_labels[mask_roi] # flattens
+        mask_idx = np.arange(len(nii))
+        
+        # whole brain MNI space flattened out
+        nii_mni = mni_labels[mask_mni] # flattens
+        # mask_mni_idx = np.arange(len(nii_mni))
+        
+        # flattened boolean index of whole brain where label==5
+        roi_idx = nii_mni==5
+        
+        # this is the value we want to plot on the brain
+        # we first, have to fill in the empty/missing mask_idx as zeros
+        zstat = np.zeros(np.sum(roi_idx))
+        zstat[np.array(DFIN['mask_idx'])] = np.array(DFIN['f-score'])
+
+        # replace indices with this value
+        nii_mni[roi_idx] = zstat
+        
+        # make all other voxels 0
+        nii_mni = np.where(roi_idx,nii_mni,0)
+        
+        # need to reshape back to 3D
+        # put phasics back into MNI space
+        mni_out = np.zeros((mask_mni.shape[0],mask_mni.shape[1],mask_mni.shape[2]))
+        mni_out[mask_mni] = nii_mni
+        
+        mni_out_file = nib.Nifti1Image(mni_out, affine=nib.load(self.mni_labels).affine, header=nib.load(self.mni_labels).header)
+        mni_out_file.set_data_dtype(np.float32)
+        nib.save(mni_out_file, os.path.join(kelly_path,'mask_idx_label{}_{}.nii.gz'.format(N,save_file)))
+        
+        print('success: kelly_project_mask3D')

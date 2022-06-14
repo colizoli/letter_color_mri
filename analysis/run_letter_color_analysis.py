@@ -191,14 +191,22 @@ if run_higher_level:
         # higher_level.probabilities_emotion_rois()     # output probabilities for each of the emotional ROIs (Hilde)
         # higher_level.colizoli_rois()                  # combines the VWFA, V4 and parietal ROIs
         
-        higher_level.roy_rsa_letters()                # for each letter in rsa_letters, extract stats in whole brain/rois
-        higher_level.hilde_rsa_letters()              # for each letter in rsa_letters, extract stats in whole brain/rois
-        higher_level.kelly_rsa_letters()              # for each letter in rsa_letters, extract stats in whole brain/rois
+        # higher_level.roy_rsa_letters()                # for each letter in rsa_letters, extract stats in whole brain/rois
+        # higher_level.hilde_rsa_letters()              # for each letter in rsa_letters, extract stats in whole brain/rois
+        # higher_level.kelly_rsa_letters()              # for each letter in rsa_letters, extract stats in whole brain/rois
         
-        # higher_level.timeseries_trials_rsa(kernel=10)   # for each letter-color condition in RSA task, extract time series data
-        higher_level.timeseries_letters_rsa(kernel=10)  # coen's functional connectivity analysis
-        higher_level.timeseries_conditions_rsa(kernel=10)  # coen - cortex, take mean over conditions to reduce data
+        # higher_level.coen_reorder_cortical_labels()     # makes a new 3D nifit image with reordered brain labels
+        # higher_level.timeseries_sessions_rsa(brain='rois')                  # coen - cortex, take mean over conditions to reduce data
+        # higher_level.timeseries_sessions_rsa(brain='cortex')                # coen - cortex, take mean over conditions to reduce data
+        # higher_level.timeseries_conditions_rsa(brain='rois',kernel=10)      # coen - cortex, take mean over conditions to reduce data
+        # higher_level.timeseries_conditions_rsa(brain='cortex',kernel=10)    # coen - cortex, take mean over conditions to reduce data
         
         # higher_level.housekeeping_dcm()                 # copies and splits the nifti files for the SPM first level input
         
         # higher_level.qualia()                           # computes the PA score for participants
+        
+        higher_level.kelly_project_mask3D()             # takes the mask_idx and projects it back into 3D
+        
+        ## NOT USING
+        # higher_level.timeseries_trials_rsa(kernel=10)   # for each letter-color condition in RSA task, extract time series data
+        # higher_level.timeseries_letters_rsa(kernel=10)  # coen's functional connectivity analysis
