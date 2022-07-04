@@ -124,28 +124,27 @@ if run_preprocessing:
             # preprocess.dicom2bids()       # convert DICOMS from scanner to nifti in bids format
             # preprocess.housekeeping()     # copies event files, rename file names to be bids compliant and same b/t mri & behavior
             # preprocess.raw_copy()         # copy from bids_raw directory into derivaties to prevent overwriting
-            preprocess.bet_brains_T1()      # brain extraction T1 always check visually!
-            preprocess.bet_brains_fmap()    # B0 unwarping needs 'tight' brain extracted magnitude images of field map, better too small than too big!
-            preprocess.prepare_fmap()       # prepares the field map image in radians/sec
+            # preprocess.bet_brains_T1()      # brain extraction T1 always check visually!
+            # preprocess.bet_brains_fmap()    # B0 unwarping needs 'tight' brain extracted magnitude images of field map, better too small than too big!
+            # preprocess.prepare_fmap()       # prepares the field map image in radians/sec
             
             #### Everything below here writes commands to a batch job ####
-            # preprocess.preprocess_fsf('letters')            # generate FSF file for preprocessing in FEAT (run from command line - batch)
-            # preprocess.transform_2_mni('letters')           # transforms the preprocessed time series to MNI space
-            # preprocess.transform_2_native_target('letters') # register to session 1 native space RSA task
-            #
-            # preprocess.preprocess_fsf('colors')             # generate FSF file for preprocessing in FEAT (run from command line - batch)
-            # preprocess.transform_2_mni('colors')            # transforms the preprocessed time series to MNI space
-            # preprocess.transform_2_native_target('colors')  # register to session 1 native space
+            preprocess.preprocess_fsf('letters')          # generate FSF file for preprocessing in FEAT (run from command line - batch)
+            preprocess.preprocess_fsf('colors')           # generate FSF file for preprocessing in FEAT (run from command line - batch)
+            preprocess.preprocess_fsf('rsa','_run-01')    # generate FSF file for preprocessing in FEAT (run from command line - batch)
+            preprocess.preprocess_fsf('rsa','_run-02')    # generate FSF file for preprocessing in FEAT (run from command line - batch)
+            preprocess.preprocess_fsf('rsa','_run-03')    # generate FSF file for preprocessing in FEAT (run from command line - batch)
+            preprocess.preprocess_fsf('rsa','_run-04')    # generate FSF file for preprocessing in FEAT (run from command line - batch)
             
-            # preprocess.preprocess_fsf('rsa','_run-01')    # generate FSF file for preprocessing in FEAT (run from command line - batch)
-            # preprocess.preprocess_fsf('rsa','_run-02')    # generate FSF file for preprocessing in FEAT (run from command line - batch)
-            # preprocess.preprocess_fsf('rsa','_run-03')    # generate FSF file for preprocessing in FEAT (run from command line - batch)
-            # preprocess.preprocess_fsf('rsa','_run-04')    # generate FSF file for preprocessing in FEAT (run from command line - batch)
+            # preprocess.transform_2_mni('letters')           # transforms the preprocessed time series to MNI space
+            # preprocess.transform_2_mni('colors')            # transforms the preprocessed time series to MNI space
             
             # preprocess.transform_2_native_target('rsa','_run-01')   # register to session 1 native space
             # preprocess.transform_2_native_target('rsa','_run-02')   # register to session 1 native space
             # preprocess.transform_2_native_target('rsa','_run-03')   # register to session 1 native space
             # preprocess.transform_2_native_target('rsa','_run-04')   # register to session 1 native space
+            
+            
             
 # -----------------------
 # First-level class
