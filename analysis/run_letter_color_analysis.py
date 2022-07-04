@@ -15,9 +15,7 @@ fsl
 """
 
 # TO DO:
-# Trim ends of RSA runs - sometimes scanner stops early, sometimes late
-# cut physiological recordings into EPI time series
-# implement RETROICOR
+# ?? Trim ends of RSA runs - sometimes scanner stops early, sometimes late
 
 # PUBLICATION
 # deface images T1s and fieldmaps before publication
@@ -28,6 +26,7 @@ fsl
 # ----------------------- 
 import os, subprocess, sys
 import pandas as pd
+import numpy as np
 from IPython import embed as shell # for Oly's debugging only
 # custom analysis scripts
 import letter_color_preprocessing
@@ -52,9 +51,9 @@ timing_files_dir = os.path.join(deriv_dir,'timing_files')   # custom 3 column fo
 # -----------------------
 # Levels (switch ON/OFF)
 # ----------------------- 
-run_preprocessing = False    # motion correction, unwarping, registration, filtering, retroicor
+run_preprocessing = True    # motion correction, unwarping, registration, filtering, retroicor
 run_first_level = False     # concatenate runs, timing files, 1st level GLMs
-run_higher_level = True    # group-level analyses and statistics
+run_higher_level = False    # group-level analyses and statistics
 
 # -----------------------
 # Participants
@@ -62,10 +61,20 @@ run_higher_level = True    # group-level analyses and statistics
 # Notes
 # sub-211_ses-02 has no events file for RSA run 2 (need to adjust all first level functions)
 # sub-107_ses-01 no T1 anatomical, have to overwrite in preprocessing FSF by hand to use session 2's T1
-participants    = pd.read_csv(os.path.join(analysis_dir,'participants_AI_full.csv'), dtype=str) # open in textmate, not excel!
+participants    = pd.read_csv(os.path.join(analysis_dir,'participants.csv'), dtype=str) # open in textmate, not excel!
 mri_subjects    = participants['mri_subjects']
 subjects_group  = participants['subjects']
 sessions        = ['ses-01','ses-02']
+# the following is for indexing any missing files
+t1              = ['t1_1','t1_2']
+fieldmap        = ['fieldmap1','fieldmap2']
+loc_letters     = ['loc-letters1','loc-letters2']
+loc_colors      = ['loc-colors1','loc-colors2']
+rsa             = [ ['rsa1_1','rsa2_1','rsa3_1','rsa4_1'],
+                    ['rsa1_2','rsa2_2','rsa3_2','rsa4_2'] ] 
+consistency     = ['consistency1','consistency2']  
+iconic_memory   = ['iconic_memory1','iconic_memory2']  
+
 
 # -----------------------
 # Preprocessing class
@@ -78,11 +87,26 @@ FWHM        = 3         # smoothing kernel in mm (localizers only)
 
 if run_preprocessing:
     for s,subject in enumerate(mri_subjects): # go in order of mri
-        for session in sessions:
+        ######################################################################
+        # check if field map exists in both sessions (identical preprocessing for each session)
+        if np.array(participants[fieldmap[0]][s],dtype=bool) and np.array(participants[fieldmap[1]][s],dtype=bool):
+            UNWARP = 1
+        else: # otherwise, turn off unwarping for both sessions current subject
+            UNWARP = 0
+        ######################################################################
+        for ss,session in enumerate(sessions): # loop sessions
+            ###################################################################
+            # check if T1 exists for current session. If not, use other session
+            if int(participants[t1[ss]][s]):
+                T1_PATH = os.path.join(deriv_dir,subjects_group[s],session,'anat','{}_{}_T1w_brain.nii.gz'.format(subjects_group[s],session))
+            else:
+                T1_PATH = os.path.join(deriv_dir,subjects_group[s],sessions[~ss],'anat','{}_{}_T1w_brain.nii.gz'.format(subjects_group[s],sessions[~ss]))
+            
+            ######################################################################
             # initialize class
             preprocess = letter_color_preprocessing.preprocess_class(
                 subject         = subjects_group[s], # experiment subject number
-                mri_subject     = subject,  # mri subject number
+                mri_subject     = subject.zfill(3),  # mri subject number, leading zeros
                 session         = session,
                 analysis_dir    = analysis_dir,
                 source_dir      = source_dir,
@@ -93,45 +117,36 @@ if run_preprocessing:
                 timing_files_dir = timing_files_dir,
                 EPI_TE          = EPI_TE,
                 EPI_EECHO       = EPI_EECHO,
-                FWHM            = FWHM
+                FWHM            = FWHM,
+                UNWARP          = UNWARP,
+                T1_PATH         = T1_PATH
                 )            
-            ## preprocess.dicom2bids()       # DONE  till sub-226!!! convert DICOMS from scanner to nifti in bids format
-            ## preprocess.housekeeping()     # DONE  till sub-226!!! till sub-226 copies event files, rename file names to be bids compliant and same b/t mri & behavior
-            ## preprocess.raw_copy()         # DONE  till sub-226!!! copy from bids_raw directory into derivaties to prevent overwriting
-            # preprocess.bet_brains_T1()    # brain extraction T1 always check visually!
-            # preprocess.bet_brains_fmap()  # B0 unwarping needs 'tight' brain extracted magnitude images of field map, better too small than too big!
-            # preprocess.prepare_fmap()     # prepares the field map image in radians/sec            
+            # preprocess.dicom2bids()       # convert DICOMS from scanner to nifti in bids format
+            # preprocess.housekeeping()     # copies event files, rename file names to be bids compliant and same b/t mri & behavior
+            # preprocess.raw_copy()         # copy from bids_raw directory into derivaties to prevent overwriting
+            preprocess.bet_brains_T1()      # brain extraction T1 always check visually!
+            preprocess.bet_brains_fmap()    # B0 unwarping needs 'tight' brain extracted magnitude images of field map, better too small than too big!
+            preprocess.prepare_fmap()       # prepares the field map image in radians/sec
             
-            try:
-                # preprocess.preprocess_fsf('letters')            # generate FSF file for preprocessing in FEAT (run from command line - batch)
-                # preprocess.transform_2_mni('letters')           # transforms the preprocessed time series to MNI space
-                # preprocess.transform_2_native_target('letters') # register to session 1 native space RSA task
-                #
-                # preprocess.preprocess_fsf('colors')             # generate FSF file for preprocessing in FEAT (run from command line - batch)
-                # preprocess.transform_2_mni('colors')            # transforms the preprocessed time series to MNI space
-                # preprocess.transform_2_native_target('colors')  # register to session 1 native space
-                
-                preprocess.preprocess_fsf('rsa','_run-01')    # generate FSF file for preprocessing in FEAT (run from command line - batch)
-                # preprocess.preprocess_fsf('rsa','_run-02')    # generate FSF file for preprocessing in FEAT (run from command line - batch)
-                # preprocess.preprocess_fsf('rsa','_run-03')    # generate FSF file for preprocessing in FEAT (run from command line - batch)
-                # preprocess.preprocess_fsf('rsa','_run-04')    # generate FSF file for preprocessing in FEAT (run from command line - batch)
-
-                preprocess.transform_2_mni('rsa','_run-01')     # transforms the preprocessed time series to MNI space
-                # preprocess.transform_2_mni('rsa','_run-02')     # transforms the preprocessed time series to MNI space
-                # preprocess.transform_2_mni('rsa','_run-03')     # transforms the preprocessed time series to MNI space
-                # preprocess.transform_2_mni('rsa','_run-04')     # transforms the preprocessed time series to MNI space
-                #
-                preprocess.transform_2_native_target('rsa','_run-01')   # register to session 1 native space
-                # preprocess.transform_2_native_target('rsa','_run-02')   # register to session 1 native space
-                # preprocess.transform_2_native_target('rsa','_run-03')   # register to session 1 native space
-                # preprocess.transform_2_native_target('rsa','_run-04')   # register to session 1 native space
-            except:
-                pass
-
-            ### To-do!!
-            # RETROICOR
+            #### Everything below here writes commands to a batch job ####
+            # preprocess.preprocess_fsf('letters')            # generate FSF file for preprocessing in FEAT (run from command line - batch)
+            # preprocess.transform_2_mni('letters')           # transforms the preprocessed time series to MNI space
+            # preprocess.transform_2_native_target('letters') # register to session 1 native space RSA task
+            #
+            # preprocess.preprocess_fsf('colors')             # generate FSF file for preprocessing in FEAT (run from command line - batch)
+            # preprocess.transform_2_mni('colors')            # transforms the preprocessed time series to MNI space
+            # preprocess.transform_2_native_target('colors')  # register to session 1 native space
             
-        
+            # preprocess.preprocess_fsf('rsa','_run-01')    # generate FSF file for preprocessing in FEAT (run from command line - batch)
+            # preprocess.preprocess_fsf('rsa','_run-02')    # generate FSF file for preprocessing in FEAT (run from command line - batch)
+            # preprocess.preprocess_fsf('rsa','_run-03')    # generate FSF file for preprocessing in FEAT (run from command line - batch)
+            # preprocess.preprocess_fsf('rsa','_run-04')    # generate FSF file for preprocessing in FEAT (run from command line - batch)
+            
+            # preprocess.transform_2_native_target('rsa','_run-01')   # register to session 1 native space
+            # preprocess.transform_2_native_target('rsa','_run-02')   # register to session 1 native space
+            # preprocess.transform_2_native_target('rsa','_run-03')   # register to session 1 native space
+            # preprocess.transform_2_native_target('rsa','_run-04')   # register to session 1 native space
+            
 # -----------------------
 # First-level class
 # -----------------------   
@@ -197,7 +212,7 @@ if run_higher_level:
         
         # higher_level.coen_reorder_cortical_labels()     # makes a new 3D nifit image with reordered brain labels
         # higher_level.timeseries_sessions_rsa(brain='rois')                  # coen - cortex, take mean over conditions to reduce data
-        # higher_level.timeseries_sessions_rsa(brain='cortex')                # coen - cortex, take mean over conditions to reduce data
+        higher_level.timeseries_sessions_rsa(brain='cortex')                # coen - cortex, take mean over conditions to reduce data
         # higher_level.timeseries_conditions_rsa(brain='rois',kernel=10)      # coen - cortex, take mean over conditions to reduce data
         # higher_level.timeseries_conditions_rsa(brain='cortex',kernel=10)    # coen - cortex, take mean over conditions to reduce data
         
@@ -205,7 +220,7 @@ if run_higher_level:
         
         # higher_level.qualia()                           # computes the PA score for participants
         
-        higher_level.kelly_project_mask3D()             # takes the mask_idx and projects it back into 3D
+        # higher_level.kelly_project_mask3D()             # takes the mask_idx and projects it back into 3D
         
         ## NOT USING
         # higher_level.timeseries_trials_rsa(kernel=10)   # for each letter-color condition in RSA task, extract time series data

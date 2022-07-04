@@ -18,10 +18,11 @@ import os, subprocess, sys
 import shutil as sh
 import nibabel as nib
 import pandas as pd
+import numpy as np
 from IPython import embed as shell # for Oly's debugging only
 
 class preprocess_class(object):
-    def __init__(self, subject, mri_subject, session, analysis_dir, source_dir, raw_dir, deriv_dir, mask_dir, template_dir, timing_files_dir, EPI_TE, EPI_EECHO, FWHM):        
+    def __init__(self, subject, mri_subject, session, analysis_dir, source_dir, raw_dir, deriv_dir, mask_dir, template_dir, timing_files_dir, EPI_TE, EPI_EECHO, FWHM, UNWARP, T1_PATH):        
         self.subject        = 'sub-'+str(subject)
         self.mri_subject    = 'sub-'+str(mri_subject)
         self.session        = str(session)
@@ -35,6 +36,9 @@ class preprocess_class(object):
         self.EPI_TE         = str(EPI_TE)
         self.EPI_EECHO      = str(EPI_EECHO)
         self.FWHM           = str(FWHM)
+        self.UNWARP         = str(UNWARP)
+        self.T1_PATH        = str(T1_PATH) # with _brain extension
+
             
         if not os.path.isdir(self.raw_dir):
             os.mkdir(self.raw_dir)
@@ -89,6 +93,7 @@ class preprocess_class(object):
             os.mkdir(os.path.join(self.raw_dir, 'nifti'))
 
         cmd = 'dcm2bids -d {} -p {} -s {} -c {} -o {}'.format(DICOM_DIR, self.subject, self.session, CONFIG_FILE, OUTPUT_DIR)
+        
         results = subprocess.call(cmd, shell=True, bufsize=0)
         print('converting {} convert2bids_letter-color_main_{}.json'.format(self.mri_subject,self.subject))
         print('success: dicom2bids')
@@ -266,35 +271,40 @@ class preprocess_class(object):
         """ Runs brain extraction on all T1s.
         Always check visually in fsleyes.
         """
-    
         inFile = os.path.join(self.deriv_dir,self.subject,self.session,'anat','{}_{}_T1w.nii.gz'.format(self.subject, self.session))
-        outFile = os.path.join(self.deriv_dir,self.subject,self.session,'anat','{}_{}_T1w_{}.nii.gz'.format(self.subject, self.session, postfix))
-        # bet inFile outFile
-        cmd = 'bet {} {}'.format(inFile, outFile)
-        print(cmd)
-        results = subprocess.call(cmd, shell=True, bufsize=0)
+        
+        if os.path.exists(inFile):
+            outFile = os.path.join(self.deriv_dir,self.subject,self.session,'anat','{}_{}_T1w_{}.nii.gz'.format(self.subject, self.session, postfix))
+            # bet inFile outFile
+            cmd = 'bet {} {}'.format(inFile, outFile)
+            print(cmd)
+            results = subprocess.call(cmd, shell=True, bufsize=0)
 
-        # reorient to mni space if necessary (sometimes turned around)
-        # cmd = 'fslreorient2std {} {}'.format(outFile,outFile)
-        # proc = subprocess.call( cmd, shell=True, bufsize=0,) # COMMAND LINE
+            # reorient to mni space if necessary (sometimes turned around)
+            # cmd = 'fslreorient2std {} {}'.format(outFile,outFile)
+            # proc = subprocess.call( cmd, shell=True, bufsize=0,) # COMMAND LINE
+        else:
+            print('No T1 for {} {}'.format(self.subject, self.session))
         print('success: bet_brains_T1')
     
     def bet_brains_fmap(self, postfix='brain'):
         # Runs brain extraction on magnitude images of field maps
         # This needs to be 'tight', meaning it is better to exclude brain voxels than include noisy non-brain voxels
         # Important! Always check visually in fsleyes
-
-        for run in ['01','02','03']: # first 2 are magnitude, 3rd is phase
-            inFile = os.path.join(self.deriv_dir,  self.subject,  self.session, 'fmap', '{}_{}_run-{}_fmap.nii.gz'.format(self.subject,self.session,run))
-            outFile = os.path.join(self.deriv_dir,  self.subject,  self.session, 'fmap', '{}_{}_run-{}_fmap_{}.nii.gz'.format(self.subject,self.session,run,postfix))
-            # bet inFile outFile
-            cmd = 'bet {} {} -f 0.6'.format(inFile, outFile) 
-            print(cmd)
-            results = subprocess.call(cmd, shell=True, bufsize=0)
+        if int(self.UNWARP):
+            for run in ['01','02','03']: # first 2 are magnitude, 3rd is phase
+                inFile = os.path.join(self.deriv_dir,  self.subject,  self.session, 'fmap', '{}_{}_run-{}_fmap.nii.gz'.format(self.subject,self.session,run))
+                outFile = os.path.join(self.deriv_dir,  self.subject,  self.session, 'fmap', '{}_{}_run-{}_fmap_{}.nii.gz'.format(self.subject,self.session,run,postfix))
+                # bet inFile outFile
+                cmd = 'bet {} {} -f 0.6'.format(inFile, outFile) 
+                print(cmd)
+                results = subprocess.call(cmd, shell=True, bufsize=0)
     
-            # reorient to mni space if necessary (sometimes turned around)
-            # cmd = 'fslreorient2std {} {}'.format(outFile,outFile)
-            # proc = subprocess.call( cmd, shell=True, bufsize=0,) # COMMAND LINE
+                # reorient to mni space if necessary (sometimes turned around)
+                # cmd = 'fslreorient2std {} {}'.format(outFile,outFile)
+                # proc = subprocess.call( cmd, shell=True, bufsize=0,) # COMMAND LINE
+        else:
+            print('No fieldmap for {} {}'.format(self.subject, self.session))
         print('success: bet_brains_fmap')
     
     def prepare_fmap(self, echo_tdiff=0.00246):
@@ -313,27 +323,30 @@ class preprocess_class(object):
         'dwell_time' refers to effective echo spacing of EPI data (s) = 0.000580009
         NOTE: effective echo spacing and EPI TE (ms) refer to the fMRI EPI data! not the field map data - look in the JSON file for the bold runs
         """
-    
-        echo_tdiff = echo_tdiff * 1000 # needs to be in milliseconds
-        phase_image = os.path.join(self.deriv_dir, self.subject, self.session, 'fmap', '{}_{}_run-03_fmap.nii.gz'.format(self.subject,self.session))
-        mag_image = os.path.join(self.deriv_dir, self.subject, self.session, 'fmap', '{}_{}_run-01_fmap_brain.nii.gz'.format(self.subject,self.session))
-        outFile = os.path.join(self.deriv_dir, self.subject, self.session, 'fmap', '{}_{}_acq-fmap.nii.gz'.format(self.subject,self.session))
-        # bet inFile outFile
-        cmd = 'fsl_prepare_fieldmap {} {} {} {} {} [--nocheck]'.format('SIEMENS',phase_image,mag_image,outFile,echo_tdiff)
-        print(cmd)
-        results = subprocess.call(cmd, shell=True, bufsize=0)
+        if int(self.UNWARP):
+            echo_tdiff = echo_tdiff * 1000 # needs to be in milliseconds
+            phase_image = os.path.join(self.deriv_dir, self.subject, self.session, 'fmap', '{}_{}_run-03_fmap.nii.gz'.format(self.subject,self.session))
+            mag_image = os.path.join(self.deriv_dir, self.subject, self.session, 'fmap', '{}_{}_run-01_fmap_brain.nii.gz'.format(self.subject,self.session))
+            outFile = os.path.join(self.deriv_dir, self.subject, self.session, 'fmap', '{}_{}_acq-fmap.nii.gz'.format(self.subject,self.session))
+            # bet inFile outFile
+            cmd = 'fsl_prepare_fieldmap {} {} {} {} {} [--nocheck]'.format('SIEMENS',phase_image,mag_image,outFile,echo_tdiff)
+            print(cmd)
+            results = subprocess.call(cmd, shell=True, bufsize=0)
+        else:
+            print('No fieldmap for {} {}'.format(self.subject, self.session))
         print('success: prepare_fmap')
     
     def preprocess_fsf(self, task, bold_run=''):
         # Creates the FSF files for each subject's first level analysis        
         
         template_filename = os.path.join(self.template_dir,'preprocessing_template.fsf')
-    
+        
         markers = [
             '[$OUTPUT_PATH]', 
             '[$NR_TRS]',        # number of volumes
             '[$NR_VOXELS]',     # total number of voxels
             '[$FWHM]',
+            '[$UNWARP_ON]',     # turn on unwarping
             '[$EPI_EECHO]',     # EPI DWELL TIME, EFFECTIVE ECHO SPACING
             '[$EPI_TE]',        # EPI echo time
             '[$INPUT_FILENAME]', # BOLD data
@@ -342,64 +355,67 @@ class preprocess_class(object):
             '[$T1_BRAIN]',
             '[$MNI_BRAIN]'
         ]
-    
+        
         BOLD = os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_task-{}{}_bold.nii.gz'.format(self.subject,self.session,task,bold_run))
-        # calculate size of input data
-        nii = nib.load(BOLD).get_data() # only do once 
-        nr_trs = str(nii.shape[-1])
-        nr_voxels = str(nii.size)
+        
+        if os.path.exists(BOLD):  ##### SKIP IF BOLD FILE DOES NOT EXIST #####
+            # calculate size of input data
+            nii = nib.load(BOLD).get_data() # only do once 
+            nr_trs = str(nii.shape[-1])
+            nr_voxels = str(nii.size)
+        
+            FSF_filename = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_preprocessing_{}_{}{}.fsf'.format(task,self.subject,self.session,bold_run) ) # save fsf
+            # replacements
+            output_path = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}'.format(task,self.subject,self.session,bold_run)) 
+
+            FMAP = os.path.join(self.deriv_dir,self.subject,self.session,'fmap','{}_{}_acq-fmap.nii.gz'.format(self.subject,self.session))
+            FMAP_MAG_BRAIN = os.path.join(self.deriv_dir,self.subject,self.session,'fmap','{}_{}_run-01_fmap_brain.nii.gz'.format(self.subject,self.session))
+            T1_BRAIN = self.T1_PATH
+            MNI_BRAIN  = os.path.join(self.mask_dir, 'MNI152_T1_2mm_brain.nii.gz')
+        
+            if task == 'rsa':
+                FWHM = '0' # turn smoothing off for mulitvariate analyses
+            else:
+                FWHM = self.FWHM
             
-        FSF_filename = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_preprocessing_{}_{}{}.fsf'.format(task,self.subject,self.session,bold_run) ) # save fsf
-        # replacements
-        output_path = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}'.format(task,self.subject,self.session,bold_run)) 
-
-        FMAP = os.path.join(self.deriv_dir,self.subject,self.session,'fmap','{}_{}_acq-fmap.nii.gz'.format(self.subject,self.session))
-        FMAP_MAG_BRAIN = os.path.join(self.deriv_dir,self.subject,self.session,'fmap','{}_{}_run-01_fmap_brain.nii.gz'.format(self.subject,self.session))
-        T1_BRAIN = os.path.join(self.deriv_dir,self.subject,self.session,'anat','{}_{}_T1w_brain.nii.gz'.format(self.subject,self.session))
-        MNI_BRAIN  = os.path.join(self.mask_dir, 'MNI152_T1_2mm_brain.nii.gz')
+            replacements = [ # needs to match order of 'markers'
+                output_path,
+                nr_trs,
+                nr_voxels,
+                FWHM,
+                self.UNWARP,         # true=ON
+                self.EPI_EECHO, # dwell time is effective echo spacing (EPI data not field map!!)
+                self.EPI_TE,
+                BOLD,
+                FMAP,
+                FMAP_MAG_BRAIN,
+                T1_BRAIN,
+                MNI_BRAIN
+            ]
         
-        if task == 'rsa':
-            FWHM = '0' # turn smoothing off for mulitvariate analyses
-        else:
-            FWHM = self.FWHM
-            
-        replacements = [ # needs to match order of 'markers'
-            output_path,
-            nr_trs,
-            nr_voxels,
-            FWHM,
-            self.EPI_EECHO, # dwell time is effective echo spacing (EPI data not field map!!)
-            self.EPI_TE,
-            BOLD,
-            FMAP,
-            FMAP_MAG_BRAIN,
-            T1_BRAIN,
-            MNI_BRAIN
-        ]
-        
-        # open the template file, load the text data
-        f = open(template_filename,'r')
-        filedata = f.read()
-        f.close()
+            # open the template file, load the text data
+            f = open(template_filename,'r')
+            filedata = f.read()
+            f.close()
 
-        # search and replace
-        for st,this_string in enumerate(markers):
-            filedata = filedata.replace(this_string,replacements[st])
+            # search and replace
+            for st,this_string in enumerate(markers):
+                filedata = filedata.replace(this_string,replacements[st])
 
-        # write output file
-        f = open(FSF_filename,'w')
-        f.write(filedata)
-        f.close()
+            # write output file
+            f = open(FSF_filename,'w')
+            f.write(filedata)
+            f.close()
         
-        # open preprocessing job and write command as new line
-        cmd = 'feat {}'.format(FSF_filename)
-        self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
-        self.preprocessing_job.write(cmd)   # feat command
-        self.preprocessing_job.write("\n\n")  # new line
-        self.preprocessing_job.close()
+            # open preprocessing job and write command as new line
+            cmd = 'feat {}'.format(FSF_filename)
+            self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
+            self.preprocessing_job.write(cmd)   # feat command
+            self.preprocessing_job.write("\n\n")  # new line
+            self.preprocessing_job.close()
         print('success: {}'.format(FSF_filename))
         
-    def transform_2_mni(self, task, bold_run='', linear=1):
+    def transform_2_mni(self, task, bold_run='', linear=0):
         """ Use the registration from the preprocessing FEAT output to transform the filtered_func_data.nii.gz to MNI space (non-linear)
         FLIRT and FNIRT registrations have already been calculated based on example_func.
         Here, we are just applying the existing FNIRT warps to the preprocessed data
@@ -408,31 +424,31 @@ class preprocess_class(object):
         
         # TIME SERIES TO BE TRANSFORMED
         EPI = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,self.session,bold_run),'filtered_func_data.nii.gz')
-        # EPI time series output non-linear NIFTI
-        EPI_MNI = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,self.session,bold_run),'filtered_func_data_mni.nii.gz')
-        # standard space
-        MNI = os.path.join(self.mask_dir, 'MNI152_T1_2mm_brain.nii.gz') # nifti
+        if os.path.exists(EPI): ##### SKIP IF EPI FILE DOES NOT EXIST #####
+            # EPI time series output non-linear NIFTI
+            EPI_MNI = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,self.session,bold_run),'filtered_func_data_mni.nii.gz')
+            # standard space
+            MNI = os.path.join(self.mask_dir, 'MNI152_T1_2mm_brain.nii.gz') # nifti
         
-        if linear:
-            # Apply FLIRT matrix (linear)
-            example_func2standard = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,self.session,bold_run),'reg','example_func2standard') 
-            cmd = 'flirt -in {} -ref {} -applyxfm -init {}.mat -out {}'.format(EPI,MNI,example_func2standard,EPI_MNI)
-            print(cmd)
-            # results = subprocess.call(cmd, shell=True, bufsize=0)
-
-        else: 
-            # Apply FNIRT warpfile (non-linear)
-            # EPI time series (in MNI space) -> apply FNIRT warpfile based on T1 (in MNI space) -> warped to MNI space
-            # commandline = 'applywarp -i input -o output -r reference -w warpfile/coefficients'
-            example_func2standard_warp = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,self.session,bold_run),'reg','example_func2standard_warp.nii.gz') 
-            cmd = 'applywarp -i {} -o {} -r {} -w {}'.format(EPI,EPI_MNI,MNI,example_func2standard_warp)
-            print(cmd)
-            # results = subprocess.call(cmd, shell=True, bufsize=0)
-        # open preprocessing job and write command as new line
-        self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
-        self.preprocessing_job.write(cmd)   # command
-        self.preprocessing_job.write("\n\n")  # new line
-        self.preprocessing_job.close()
+            if linear:
+                # Apply FLIRT matrix (linear)
+                example_func2standard = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,self.session,bold_run),'reg','example_func2standard') 
+                cmd = 'flirt -in {} -ref {} -applyxfm -init {}.mat -out {}'.format(EPI,MNI,example_func2standard,EPI_MNI)
+                print(cmd)
+                # results = subprocess.call(cmd, shell=True, bufsize=0)
+            else: 
+                # Apply FNIRT warpfile (non-linear)
+                # EPI time series (in MNI space) -> apply FNIRT warpfile based on T1 (in MNI space) -> warped to MNI space
+                # commandline = 'applywarp -i input -o output -r reference -w warpfile/coefficients'
+                example_func2standard_warp = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,self.session,bold_run),'reg','example_func2standard_warp.nii.gz') 
+                cmd = 'applywarp -i {} -o {} -r {} -w {}'.format(EPI,EPI_MNI,MNI,example_func2standard_warp)
+                print(cmd)
+                # results = subprocess.call(cmd, shell=True, bufsize=0)
+            # open preprocessing job and write command as new line
+            self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
+            self.preprocessing_job.write(cmd)   # command
+            self.preprocessing_job.write("\n\n")  # new line
+            self.preprocessing_job.close()
         print('success: transform_2_mni')
     
     def create_native_target(self, task, session, bold_run):
@@ -489,28 +505,29 @@ class preprocess_class(object):
         else:
             # TIME SERIES TO BE TRANSFORMED
             EPI = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,self.session,bold_run),'filtered_func_data')
-            EPI_NATIVE = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,self.session,bold_run),'filtered_func_data_native')
-            native_target = os.path.join(self.preprocess_dir,'{}_native_target'.format(self.subject))
+            if os.path.exists(EPI):  ##### SKIP IF EPI FILE DOES NOT EXIST #####
+                EPI_NATIVE = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,self.session,bold_run),'filtered_func_data_native')
+                native_target = os.path.join(self.preprocess_dir,'{}_native_target'.format(self.subject))
         
-            # CREATE FLIRT transform (linear) on example_func
-            example_func = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,self.session,bold_run),'reg','example_func') 
-            example_func2native = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,self.session,bold_run),'reg','example_func2native') 
-            cmd = 'flirt -in {}.nii.gz -ref {}.nii.gz -out {}.nii.gz -omat {}.mat'.format(example_func,native_target,example_func2native,example_func2native) # save transforms in task folder preprocessing
-            print(cmd)
-            # results = subprocess.call(cmd, shell=True, bufsize=0)
-            # open preprocessing job and write command as new line
-            self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
-            self.preprocessing_job.write(cmd)   # command
-            self.preprocessing_job.write("\n\n")  # new line
-            self.preprocessing_job.close()
+                # CREATE FLIRT transform (linear) on example_func
+                example_func = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,self.session,bold_run),'reg','example_func') 
+                example_func2native = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,self.session,bold_run),'reg','example_func2native') 
+                cmd = 'flirt -in {}.nii.gz -ref {}.nii.gz -out {}.nii.gz -omat {}.mat'.format(example_func,native_target,example_func2native,example_func2native) # save transforms in task folder preprocessing
+                print(cmd)
+                # results = subprocess.call(cmd, shell=True, bufsize=0)
+                # open preprocessing job and write command as new line
+                self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
+                self.preprocessing_job.write(cmd)   # command
+                self.preprocessing_job.write("\n\n")  # new line
+                self.preprocessing_job.close()
         
-            # APPLY FLIRT transform (linear) to EPI
-            cmd = 'flirt -in {}.nii.gz -ref {}.nii.gz -applyxfm -init {}.mat -out {}.nii.gz'.format(EPI,native_target,example_func2native,EPI_NATIVE) 
-            print(cmd)
-            # results = subprocess.call(cmd, shell=True, bufsize=0)
-            # open preprocessing job and write command as new line
-            self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
-            self.preprocessing_job.write(cmd)   # command
-            self.preprocessing_job.write("\n\n")  # new line
-            self.preprocessing_job.close()
+                # APPLY FLIRT transform (linear) to EPI
+                cmd = 'flirt -in {}.nii.gz -ref {}.nii.gz -applyxfm -init {}.mat -out {}.nii.gz'.format(EPI,native_target,example_func2native,EPI_NATIVE) 
+                print(cmd)
+                # results = subprocess.call(cmd, shell=True, bufsize=0)
+                # open preprocessing job and write command as new line
+                self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
+                self.preprocessing_job.write(cmd)   # command
+                self.preprocessing_job.write("\n\n")  # new line
+                self.preprocessing_job.close()
         print('success: transform_2_native_target')
