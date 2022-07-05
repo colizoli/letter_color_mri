@@ -108,7 +108,7 @@ class Test():
         self.root.geometry('%dx%d+%d+%d' % (ws, hs, 0, 0))
         self.open1 = tk.Button(self.root, text='Pick a color:', command=self.pick_a_color, font=('Helvetica', '36'),padx=5, pady=5)
         self.open1.pack(fill=tk.X, expand=False)    
-        self.letter = tk.Label(self.root, bg='white', text=L, font=("Helvetica", 90))
+        self.letter = tk.Label(self.root, bg='white', text=L, font=("Helvetica", 90)) # background white = #FFFFFF
         self.letter.pack()
         self.root.mainloop()
         
