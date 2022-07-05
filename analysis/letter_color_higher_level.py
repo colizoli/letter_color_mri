@@ -110,6 +110,12 @@ class higher_level_class(object):
         self.letters = [
             'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
         ]
+        
+        # Letter sets, from experiment/general_parameters.py
+        self.letter_sets_lower = [
+            ['b','c','d','e','g','n','o','p','q','r','w','x','y'], # 0 False 
+            ['a','f','h','i','j','k','l','m','s','t','u','v','z']  # 1 True 
+        ]
     
     def dataframe_choose_pairs(self,):
         # put all of group 1 and group 2's color choices together in a single dataframe
@@ -121,10 +127,113 @@ class higher_level_class(object):
                 this_df = pd.read_csv(os.path.join(self.deriv_dir,'sub-{}'.format(subject),'ses-01','behav','sub-{}_prefs.tsv'.format(subject,'ses-01')),sep='\t')
             this_df = this_df.loc[:, ~this_df.columns.str.contains('^Unnamed')] # remove all unnamed columns
             DFOUT = pd.concat([DFOUT,this_df],axis=0) #concant on rows\
+        
+        ########## ADD COLUMN FOR GROUP ##########
+        group = [
+            # updating
+            (DFOUT['subject'] < 200), # group 1
+            (DFOUT['subject'] >= 200) # group 2
+            ]
+        values = [1,2]
+        DFOUT['group'] = np.select(group, values)
+        
+        ########## ADD UNIQUE IDENTIFIERS FOR EACH COLOR ##########
+        # copied from first_level.rsa_combine_events()
+        rgb_codes = [
+            (DFOUT['r'] == 0) & (DFOUT['g'] == 163) & (DFOUT['b'] == 228), # light_blue
+            (DFOUT['r'] == 161) & (DFOUT['g'] == 199) & (DFOUT['b'] == 70), # lime_green
+            (DFOUT['r'] == 183) & (DFOUT['g'] == 61) & (DFOUT['b'] == 160), # magenta
+            (DFOUT['r'] == 181) & (DFOUT['g'] == 44) & (DFOUT['b'] == 67), # dark_red
+            (DFOUT['r'] == 16) & (DFOUT['g'] == 114) & (DFOUT['b'] == 86), # dark_green
+            (DFOUT['r'] == 237) & (DFOUT['g'] == 114) & (DFOUT['b'] == 162), # pink
+            (DFOUT['r'] == 58) & (DFOUT['g'] == 175) & (DFOUT['b'] == 75), # green
+            (DFOUT['r'] == 248) & (DFOUT['g'] == 154) & (DFOUT['b'] == 28), # light_orange
+            (DFOUT['r'] == 109) & (DFOUT['g'] == 57) & (DFOUT['b'] == 142), # purple
+            (DFOUT['r'] == 239) & (DFOUT['g'] == 79) & (DFOUT['b'] == 41), # orange
+            (DFOUT['r'] == 49) & (DFOUT['g'] == 60) & (DFOUT['b'] == 163), # blue
+            (DFOUT['r'] == 255) & (DFOUT['g'] == 211) & (DFOUT['b'] == 0), # yellow
+            (DFOUT['r'] == 9) & (DFOUT['g'] == 181) & (DFOUT['b'] == 172) # teal
+        ]
+        
+        hex_codes = [
+            '#00A3E4',
+            '#A1C746',
+            '#B73DA0',
+            '#B52C43',
+            '#107256',
+            '#ED72A2',
+            '#3AAF4B',
+            '#F89A1C',
+            '#6D398E',
+            '#EF4F29',
+            '#313CA3',
+            '#FFD300',
+            '#09B5AC'
+        ]
+        
+        color_names = [
+            'light_blue',
+            'lime_green',
+            'magenta',
+            'dark_red',
+            'dark_green',
+            'pink',
+            'green',
+            'light_orange',
+            'purple',
+            'orange',
+            'blue',
+            'yellow',
+            'teal'
+        ]
+        DFOUT['hex_codes'] = np.select(rgb_codes, hex_codes)
+        DFOUT['color_name'] = np.select(rgb_codes, color_names)
+        
         DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-choose_pairs','task-choose_pairs_subjects.tsv'),sep='\t')
         print('success: dataframe_choose_pairs')
         
+    def plot_choose_pairs(self,):
+        # pie charts for frequency of letter-color pairs
+        # group by letter and group1 vs. group2 (preference)
+        DF = pd.read_csv(os.path.join(self.higher_level_dir,'task-choose_pairs','task-choose_pairs_subjects.tsv'),sep='\t')
+        DF = DF.loc[:, ~DF.columns.str.contains('^Unnamed')] # remove all unnamed columns
         
+        G = pd.DataFrame(DF.groupby(['letter','group','hex_codes','color_name'])['subject'].count())
+        G.reset_index(inplace=True)
+
+        fig = plt.figure(figsize=(24,12))
+        # loop through letters for each group
+        counter = 1 # subplots
+        ########## group 1 ##########
+        for letter_set in self.letter_sets_lower:
+            G1 = G[G['group']==1]
+    
+            for L in letter_set:
+                ax = fig.add_subplot(5,13,counter)
+                G1L = G1[G1['letter']==L]
+                ax.pie(np.array(G1L['subject']),startangle=90, colors=np.array(G1L['hex_codes']))
+                ax.set_title('Group 1, {}'.format(L))
+                counter += 1
+        
+        ########## group 2 ##########
+            G2 = G[G['group']==2]
+            for L in letter_set:
+                ax = fig.add_subplot(5,13,counter) # shift over and down
+                G2L = G2[G2['letter']==L]
+                ax.pie(np.array(G2L['subject']),startangle=90, colors=np.array(G2L['hex_codes']))
+                ax.set_title('Group 2, {}'.format(L))
+                counter += 1
+        # last subplot show all colors
+        ax = fig.add_subplot(5,13,counter) 
+        all_colors = np.unique(np.array(G2L['hex_codes']))
+        ax.pie(np.repeat(1,len(all_colors)),startangle=90, colors=all_colors)
+        ax.set_title('color choices')
+        
+        sns.despine(offset=10, trim=True)
+        plt.tight_layout()
+        fig.savefig(os.path.join(self.figure_dir,'frequency_choose_pairs.pdf'))
+        
+        print('success: plot_choose_pairs')
         
     def dataframe_subjects_iconic_memory(self,):
         # concantenates all behavioral logfiles of the iconic memory task
