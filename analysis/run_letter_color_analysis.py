@@ -51,9 +51,9 @@ timing_files_dir = os.path.join(deriv_dir,'timing_files')   # custom 3 column fo
 # -----------------------
 # Levels (switch ON/OFF)
 # ----------------------- 
-run_preprocessing = True    # motion correction, unwarping, registration, filtering, retroicor
+run_preprocessing = False    # motion correction, unwarping, registration, filtering, retroicor
 run_first_level = False     # concatenate runs, timing files, 1st level GLMs
-run_higher_level = False    # group-level analyses and statistics
+run_higher_level = True    # group-level analyses and statistics
 
 # -----------------------
 # Participants
@@ -72,9 +72,6 @@ loc_letters     = ['loc-letters1','loc-letters2']
 loc_colors      = ['loc-colors1','loc-colors2']
 rsa             = [ ['rsa1_1','rsa2_1','rsa3_1','rsa4_1'],
                     ['rsa1_2','rsa2_2','rsa3_2','rsa4_2'] ] 
-consistency     = ['consistency1','consistency2']  
-iconic_memory   = ['iconic_memory1','iconic_memory2']  
-
 
 # -----------------------
 # Preprocessing class
@@ -89,7 +86,7 @@ if run_preprocessing:
     for s,subject in enumerate(mri_subjects): # go in order of mri
         ######################################################################
         # check if field map exists in both sessions (identical preprocessing for each session)
-        if np.array(participants[fieldmap[0]][s],dtype=bool) and np.array(participants[fieldmap[1]][s],dtype=bool):
+        if int(participants[fieldmap[0]][s]) and int(participants[fieldmap[1]][s]):
             UNWARP = 1
         else: # otherwise, turn off unwarping for both sessions current subject
             UNWARP = 0
@@ -136,13 +133,13 @@ if run_preprocessing:
             preprocess.preprocess_fsf('rsa','_run-03')    # generate FSF file for preprocessing in FEAT (run from command line - batch)
             preprocess.preprocess_fsf('rsa','_run-04')    # generate FSF file for preprocessing in FEAT (run from command line - batch)
             
-            # preprocess.transform_2_mni('letters')           # transforms the preprocessed time series to MNI space
-            # preprocess.transform_2_mni('colors')            # transforms the preprocessed time series to MNI space
+            preprocess.transform_2_mni('letters')           # transforms the preprocessed time series to MNI space
+            preprocess.transform_2_mni('colors')            # transforms the preprocessed time series to MNI space
             
-            # preprocess.transform_2_native_target('rsa','_run-01')   # register to session 1 native space
-            # preprocess.transform_2_native_target('rsa','_run-02')   # register to session 1 native space
-            # preprocess.transform_2_native_target('rsa','_run-03')   # register to session 1 native space
-            # preprocess.transform_2_native_target('rsa','_run-04')   # register to session 1 native space
+            preprocess.transform_2_native_target('rsa','_run-01')   # register to session 1 native space
+            preprocess.transform_2_native_target('rsa','_run-02')   # register to session 1 native space
+            preprocess.transform_2_native_target('rsa','_run-03')   # register to session 1 native space
+            preprocess.transform_2_native_target('rsa','_run-04')   # register to session 1 native space
             
             
             
@@ -193,34 +190,23 @@ if run_higher_level:
             mask_dir     = mask_dir,
             template_dir = template_dir,
             TR           = TR, # repitition time in seconds
+            participants = participants
             )   
-        # higher_level.localizers_randomise_input('letters')       # concatenates all subjects' cope1 in 4th dimension (localizers)
-        # higher_level.localizers_randomise_input('colors')       # concatenates all subjects' cope1 in 4th dimension (localizers)
+        higher_level.dataframe_choose_pairs()                  # all group1 and group2's choices in a single dataframe
+        # higher_level.dataframe_subjects_iconic_memory()       # generates the dataframe for iconic memory higher level analysis
+        # higher_level.dataframe_anova_iconic_memory()          # generates the dataframe for the ANOVA in JASP
+        # higher_level.plot_anova_iconic_memory()                 # plot ANOVA 2x2 (collapsed over groups)
+    
+        # higher_level.dataframe_subjects_cieluv()              # converts from hexcodes to cieluv all subjects letters
+        # higher_level.dataframe_subjects_consistency()         # generates the dataframe for the consistency score all subjects all letters
+        # higher_level.dataframe_anova_consistency()            # generates the dataframe for the ANOVA in JASP
+        # higher_level.plot_anova_consistency()                 # plot ANOVA 2x2 (collapsed over groups)
+        
+        # higher_level.correlation_consistency_iconic_memory()  # test correlation in the letter conditions between consistency scores and iconic memory performance
+        
+        # higher_level.localizers_randomise_input('letters')    # concatenates all subjects' cope1 in 4th dimension (localizers)
+        # higher_level.localizers_randomise_input('colors')     # concatenates all subjects' cope1 in 4th dimension (localizers)
         
         # higher_level.rsa_letters_ev_conditions()      # outputs a DF with the letter and color conditions (general)
         # higher_level.rsa_letters_conditions()         # concatenates all subjects events files for letter-color conditions
         # higher_level.rsa_letters_combine_events()     # concatenates all subjects events files trial-wise
-        # higher_level.labels_harvard_oxford()          # combine harvard oxford cortical+subcortical atlases
-        # higher_level.labels_emotion_rois()              # labels the emotion brain regions for hilde, removes overlapping voxels
-        # higher_level.probabilities_emotion_rois()     # output probabilities for each of the emotional ROIs (Hilde)
-        # higher_level.colizoli_rois()                  # combines the VWFA, V4 and parietal ROIs
-        
-        # higher_level.roy_rsa_letters()                # for each letter in rsa_letters, extract stats in whole brain/rois
-        # higher_level.hilde_rsa_letters()              # for each letter in rsa_letters, extract stats in whole brain/rois
-        # higher_level.kelly_rsa_letters()              # for each letter in rsa_letters, extract stats in whole brain/rois
-        
-        # higher_level.coen_reorder_cortical_labels()     # makes a new 3D nifit image with reordered brain labels
-        # higher_level.timeseries_sessions_rsa(brain='rois')                  # coen - cortex, take mean over conditions to reduce data
-        higher_level.timeseries_sessions_rsa(brain='cortex')                # coen - cortex, take mean over conditions to reduce data
-        # higher_level.timeseries_conditions_rsa(brain='rois',kernel=10)      # coen - cortex, take mean over conditions to reduce data
-        # higher_level.timeseries_conditions_rsa(brain='cortex',kernel=10)    # coen - cortex, take mean over conditions to reduce data
-        
-        # higher_level.housekeeping_dcm()                 # copies and splits the nifti files for the SPM first level input
-        
-        # higher_level.qualia()                           # computes the PA score for participants
-        
-        # higher_level.kelly_project_mask3D()             # takes the mask_idx and projects it back into 3D
-        
-        ## NOT USING
-        # higher_level.timeseries_trials_rsa(kernel=10)   # for each letter-color condition in RSA task, extract time series data
-        # higher_level.timeseries_letters_rsa(kernel=10)  # coen's functional connectivity analysis

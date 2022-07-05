@@ -19,11 +19,41 @@ import pandas as pd
 import numpy as np
 from scipy import stats
 import itertools 
+from colorspace.colorlib import hexcols
+import matplotlib
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 from IPython import embed as shell # for Oly's debugging only
 
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
+sns.set(style='ticks', font='Arial', font_scale=1, rc={
+    'axes.linewidth': 1,
+    'axes.labelsize': 7,
+    'axes.titlesize': 7,
+    'xtick.labelsize': 7,
+    'ytick.labelsize': 7,
+    'legend.fontsize': 7,
+    'xtick.major.width': 1,
+    'ytick.major.width': 1,
+    'text.color': 'Black',
+    'axes.labelcolor':'Black',
+    'xtick.color':'Black',
+    'ytick.color':'Black',} )
+sns.plotting_context()
+
+############################################
+# PLOT SIZES: (cols,rows)
+# a single plot, 1 row, 1 col (2,2)
+# 1 row, 2 cols (2*2,2*1)
+# 2 rows, 2 cols (2*2,2*2)
+# 2 rows, 3 cols (2*3,2*2)
+# 1 row, 4 cols (2*4,2*1)
+# Nsubjects rows, 2 cols (2*2,Nsubjects*2)
+
 class higher_level_class(object):
-    def __init__(self, subjects, sessions, analysis_dir, deriv_dir, mask_dir, template_dir, TR):        
+    def __init__(self, subjects, sessions, analysis_dir, deriv_dir, mask_dir, template_dir, TR, participants):        
         self.subjects       = subjects
         self.sessions       = sessions
         self.analysis_dir   = str(analysis_dir)
@@ -31,6 +61,7 @@ class higher_level_class(object):
         self.mask_dir       = str(mask_dir)
         self.template_dir   = str(template_dir)
         self.TR             = str(TR)
+        self.participants   = participants # dataframe participants file
 
         if not os.path.isdir(self.mask_dir):
             os.mkdir(self.mask_dir)
@@ -50,7 +81,17 @@ class higher_level_class(object):
             os.mkdir(os.path.join(self.higher_level_dir,'task-letters'))
         if not os.path.isdir(os.path.join(self.higher_level_dir,'task-rsa')):
             os.mkdir(os.path.join(self.higher_level_dir,'task-rsa'))
-        
+        if not os.path.isdir(os.path.join(self.higher_level_dir,'task-iconic_memory')):
+            os.mkdir(os.path.join(self.higher_level_dir,'task-iconic_memory'))
+        if not os.path.isdir(os.path.join(self.higher_level_dir,'task-consistency')):
+            os.mkdir(os.path.join(self.higher_level_dir,'task-consistency'))
+        if not os.path.isdir(os.path.join(self.higher_level_dir,'task-choose_pairs')):
+            os.mkdir(os.path.join(self.higher_level_dir,'task-choose_pairs'))
+            
+        self.figure_dir =  os.path.join(self.higher_level_dir,'figures')
+        if not os.path.isdir(self.figure_dir):
+            os.mkdir(self.figure_dir)
+            
         # brain atlases 
         # note: 'maxprob-thr0-2mm' files have labels in single volume, while the 'prob-2mm' files contain probabilities for each label as time axis
         self.mni        = os.path.join(self.mask_dir,'MNI152_T1_2mm.nii.gz')
@@ -69,7 +110,323 @@ class higher_level_class(object):
         self.letters = [
             'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
         ]
-       
+    
+    def dataframe_choose_pairs(self,):
+        # put all of group 1 and group 2's color choices together in a single dataframe
+        DFOUT = pd.DataFrame()
+        for s,subject in enumerate(self.subjects):
+            if int(subject) < 200: # group 1 get colors file
+                this_df = pd.read_csv(os.path.join(self.deriv_dir,'sub-{}'.format(subject),'sub-{}_colors.tsv'.format(subject)),sep='\t')
+            else: # group 2 get preference file
+                this_df = pd.read_csv(os.path.join(self.deriv_dir,'sub-{}'.format(subject),'ses-01','behav','sub-{}_prefs.tsv'.format(subject,'ses-01')),sep='\t')
+            this_df = this_df.loc[:, ~this_df.columns.str.contains('^Unnamed')] # remove all unnamed columns
+            DFOUT = pd.concat([DFOUT,this_df],axis=0) #concant on rows\
+        DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-choose_pairs','task-choose_pairs_subjects.tsv'),sep='\t')
+        print('success: dataframe_choose_pairs')
+        
+        
+        
+    def dataframe_subjects_iconic_memory(self,):
+        # concantenates all behavioral logfiles of the iconic memory task
+        # saves as large TSV file in higher_level/iconic_memory directory
+        # counts missing, then drops missings trials
+        # adds column for group membership
+        
+        DFOUT = pd.DataFrame()
+        for s,subject in enumerate(self.subjects):
+            for ss,session in enumerate(self.sessions):
+                this_df_path = os.path.join(self.deriv_dir,'sub-{}'.format(subject),session,'behav','sub-{}_{}_task-iconic_behav.tsv'.format(subject,session))
+                this_df = pd.read_csv(this_df_path, dtype={'subject':np.int32, 'session':np.int32, 'letter_set':np.int32, 'trained':np.int32, 'trial_number':np.int32,
+                'block_trial_number':np.int32,'target_position':np.int32,'correct':np.int32},sep='\t')
+                
+                DFOUT = pd.concat([DFOUT,this_df],axis=0) #concant on rows
+        DFOUT = DFOUT.loc[:, ~DFOUT.columns.str.contains('^Unnamed')] # remove all unnamed columns
+        
+        ########## COUNT MISSING TRIALS PER SUBJECT ##########
+        MISSING = DFOUT.groupby(['subject','session']).count().rsub(DFOUT.groupby(['subject','session']).size(), axis=0)['RT']
+        MISSING = pd.DataFrame(MISSING)
+        MISSING.to_csv(os.path.join(self.higher_level_dir,'task-iconic_memory','task-iconic_memory_missing.tsv'),sep='\t')
+        
+        ########## DROP MISSING TRIALS ##########
+        DFOUT.dropna(subset=['RT'],inplace=True)
+    
+        ########## ADD COLUMN FOR GROUP ##########
+        group = [
+            # updating
+            (DFOUT['subject'] < 200), # group 1
+            (DFOUT['subject'] >= 200) # group 2
+            ]
+        values = [1,2]
+        DFOUT['group'] = np.select(group, values)
+
+        # resave log file with new columns in higher_level folder
+        DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-iconic_memory','task-iconic_memory_subjects.tsv'),sep='\t')
+        print('success: dataframe_subjects_iconic_memory')
+      
+    def dataframe_anova_iconic_memory(self,):
+        # create dataframe for JASP input: mixed ANOVA
+        # group (1 vs. 2), session (1 vs. 2), letter condition (trained vs. untrained)
+        
+        DFIN = pd.read_csv(os.path.join(self.higher_level_dir,'task-iconic_memory','task-iconic_memory_subjects.tsv'),sep='\t')
+        
+        # groupby
+        G = DFIN.groupby(['group','session','trained','subject'])['correct'].mean()
+        # unstack: subjects as rows, cols = session x letter condition and group membership
+        G0 = G.unstack(level=1)
+        G1 = G0.unstack(level=1)
+        G1.to_csv(os.path.join(self.higher_level_dir,'task-iconic_memory','task-iconic_memory_anova.tsv'),sep='\t')
+        print('success: dataframe_anova_iconic_memory')
+    
+    def plot_anova_iconic_memory(self,):
+        # plot the bar graphs for the 2x2 ANOVA (collapse over groups)
+        
+        DF = pd.read_csv(os.path.join(self.higher_level_dir,'task-iconic_memory','task-iconic_memory_anova.tsv'),sep='\t')
+        DF = DF.multiply(100) # for percentage
+        
+        labels = ['Pre', 'Post']
+        untrained_means = [DF.mean()[2],DF.mean()[4]]
+        trained_means = [DF.mean()[3],DF.mean()[5]]
+            
+        untrained_sems = [stats.sem(DF)[2],stats.sem(DF)[4]]
+        trained_sems = [stats.sem(DF)[3],stats.sem(DF)[5]]
+
+        x = np.arange(len(labels))  # the label locations
+        width = 0.45  # the width of the bars
+
+        fig = plt.figure(figsize=(2,2))
+        ax = fig.add_subplot(111)
+        
+        rects1 = ax.bar(x - width/2, untrained_means, yerr=untrained_sems, width=width, label='Untrained',color='black',alpha=0.3,edgecolor=None,linewidth=0)
+        rects2 = ax.bar(x + width/2, trained_means, yerr=trained_sems, width=width, label='Trained',color='black',alpha=0.6,edgecolor=None,linewidth=0)
+        # chance level
+        # ax.axhline(0.125, lw=1, alpha=0.3, color = 'k') # Add horizontal line at t=0
+        # Add some text for labels, title and custom x-axis tick labels, etc.
+        ax.set_ylim([30,50])
+        ax.set_ylabel('Accuracy')
+        ax.set_title('Iconic Memory')
+        ax.set_xticks(x)
+        ax.set_xticklabels(labels)
+        ax.legend(loc='upper left')
+
+        sns.despine(offset=10, trim=True)
+        plt.tight_layout()
+        fig.savefig(os.path.join(self.figure_dir,'anova_iconic_memory.pdf'))
+        print('success: dataframe_anova_iconic_memory')
+        
+    def dataframe_subjects_cieluv(self,):
+        # concantenates all behavioral logfiles of the consistency task
+        # converts RGB to CIELUV space (save as separate data frame in higher_level/consistency directory)
+        
+        ################################################################################################
+        # converts RGB to CIELUV space (save as separate data frame in higher_level/consistency directory)
+        DFOUT = pd.DataFrame() 
+        for s,subject in enumerate(self.subjects):
+            # check if missing file either session
+            if int(self.participants['consistency1'][s]) and int(self.participants['consistency2'][s]): 
+                for ss,session in enumerate(self.sessions):
+                    print(subject)
+                    print(session)
+                    this_df_path = os.path.join(self.deriv_dir,'sub-{}'.format(subject),session,'behav','sub-{}_{}_task-consistency_events.tsv'.format(subject,session))
+
+                    try: # have for comma vs. tab separated
+                        this_df = pd.read_csv(this_df_path,header=0)
+                    except:
+                        this_df = pd.read_csv(this_df_path,header=0,sep='\t')
+                    if len(this_df.columns.values) < 2:
+                        this_df = pd.read_csv(this_df_path,header=0,sep='\t')
+                        
+                    ########## DROP MISSING LETTERS ##########
+                    this_df.dropna(subset=['hex'],inplace=True)
+                    ########## COLOR CONVERSION ##########
+                    c = hexcols(this_df['hex'])
+                    # c.set_whitepoint('#FFFFFF')
+                    c.to("CIELUV") # covert to CIELUV space, happens in place
+                    LUV = c.get() # dictionary object for each dimension
+                    L = list(LUV.values())[0] # CIELUV values
+                    U = list(LUV.values())[1]
+                    V = list(LUV.values())[2]
+                    this_df[list(LUV)[0]] = L # store as separate columns
+                    this_df[list(LUV)[1]] = U
+                    this_df[list(LUV)[2]] = V
+                    this_df['session'] = np.repeat(ss+1,len(this_df))
+                    this_df = this_df.loc[:, ~this_df.columns.str.contains('^Unnamed')] # remove all unnamed columns
+                    
+                    ########## ADD COLUMN FOR GROUP ##########
+                    group = [
+                        # updating
+                        (this_df['subject'] < 200), # group 1
+                        (this_df['subject'] >= 200) # group 2
+                        ]
+                    values = [1,2]
+                    this_df['group'] = np.select(group, values)
+                    
+                    DFOUT = pd.concat([DFOUT,this_df[['subject','session','group','choice','letter','hex','rgb','L','U','V']]],axis=0) #concant on rows
+            DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-consistency','task-consistency_cieluv_subjects.tsv'),sep='\t') # save
+        print('success: dataframe_subjects_cieluv')
+        
+        
+    def dataframe_subjects_consistency(self,):        
+        # calculates Euclidean distance between choice 1 and 2 for each letter, session, subject. 
+        # Save dataframe higher_level/consistency directory)
+        # adds column for group membership
+
+        CHOICES = pd.read_csv(os.path.join(self.higher_level_dir,'task-consistency','task-consistency_cieluv_subjects.tsv'),sep='\t') # save
+        DFOUT = pd.DataFrame(columns=['subject','session','group','letter','trained','distance']) 
+        counter = 0
+        for s,subject in enumerate(np.unique(CHOICES['subject'])):         
+            
+            # load colors file to match letters to training conditions
+            this_colors = pd.read_csv(os.path.join(self.deriv_dir,'sub-{}'.format(subject),'sub-{}_colors.tsv'.format(subject)),sep='\t')
+               
+            for ss,session in enumerate(np.unique(CHOICES['session'])):
+                # select current data
+                    this_df1 = CHOICES[(CHOICES['subject']==subject) & (CHOICES['session']==session) & (CHOICES['choice']==1)] # select choice 1
+                    this_df2 = CHOICES[(CHOICES['subject']==subject) & (CHOICES['session']==session) & (CHOICES['choice']==2)] # select choice 2
+
+                    # loop through letters, check whether all letters are included
+                    for L in list(set(np.array(this_df1['letter'])).intersection(np.array(this_df2['letter']))):
+                        
+                        ########## DISTANCE ##########
+                        this_letter1 = this_df1[(this_df1['letter']==L)]
+                        this_letter2 = this_df2[(this_df2['letter']==L)]
+                        a = np.array(this_letter1[['L','U','V']])
+                        b = np.array(this_letter2[['L','U','V']])
+                        EDIST = np.sqrt(np.sum(np.square(a-b)))
+                        
+                        ########## TRAINED LETTER? ##########
+                        trained = len(list(set(L).intersection(np.array(this_colors['letter'])))) > 0
+                        
+                        ########## ADD ROW TO OUTPUT DATAFRAME ##########
+                        DFOUT.loc[counter] = [
+                            subject,            # subject number
+                            session,            # session
+                            np.unique(this_df1['group'])[0],   # group
+                            L,                  # letter 
+                            trained,            # trained letter?
+                            EDIST,              # Euclidean distance in CIELUV space
+                        ]          
+                        DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-consistency','task-consistency_cieluv_letters.tsv'),sep='\t')
+                        counter += 1        
+        print('success: dataframe_subjects_consistency')
+    
+    def dataframe_anova_consistency(self,):
+        # create dataframe for JASP input: mixed ANOVA
+        # group (1 vs. 2), session (1 vs. 2), letter condition (trained vs. untrained)
+        
+        DFIN = pd.read_csv(os.path.join(self.higher_level_dir,'task-consistency','task-consistency_cieluv_letters.tsv'),sep='\t')
+        
+        # groupby
+        G = DFIN.groupby(['group','session','trained','subject'])['distance'].mean()
+        # unstack: subjects as rows, cols = session x letter condition and group membership
+        G0 = G.unstack(level=1)
+        G1 = G0.unstack(level=1)
+        G1.to_csv(os.path.join(self.higher_level_dir,'task-consistency','task-consistency_anova.tsv'),sep='\t')
+        print('success: dataframe_anova_consistency')
+    
+    def plot_anova_consistency(self,):
+        # plot the bar graphs for the 2x2 ANOVA (collapse over groups)
+        
+        DF = pd.read_csv(os.path.join(self.higher_level_dir,'task-consistency','task-consistency_anova.tsv'),sep='\t')
+
+        labels = ['Pre', 'Post']
+        untrained_means = [DF.mean()[2],DF.mean()[4]]
+        trained_means = [DF.mean()[3],DF.mean()[5]]
+            
+        untrained_sems = [stats.sem(DF)[2],stats.sem(DF)[4]]
+        trained_sems = [stats.sem(DF)[3],stats.sem(DF)[5]]
+
+        x = np.arange(len(labels))  # the label locations
+        width = 0.45  # the width of the bars
+
+        fig = plt.figure(figsize=(2,2))
+        ax = fig.add_subplot(111)
+        
+        rects1 = ax.bar(x - width/2, untrained_means, yerr=untrained_sems, width=width, label='Untrained',color='black',alpha=0.3,edgecolor=None,linewidth=0)
+        rects2 = ax.bar(x + width/2, trained_means, yerr=trained_sems, width=width, label='Trained',color='black',alpha=0.6,edgecolor=None,linewidth=0)
+
+        # Add some text for labels, title and custom x-axis tick labels, etc.
+        # ax.set_ylim([0.3,0.5])
+        ax.set_ylabel('Distance')
+        ax.set_title('Consistency')
+        ax.set_xticks(x)
+        ax.set_xticklabels(labels)
+        ax.legend(loc='lower left')
+
+        sns.despine(offset=10, trim=True)
+        plt.tight_layout()
+        fig.savefig(os.path.join(self.figure_dir,'anova_consistency.pdf'))
+        print('success: dataframe_anova_consistency')
+        
+    def correlation_consistency_iconic_memory(self,):
+        # test the correlation in the letter conditions between consistency scores and iconic memory performance 
+        
+        IM = pd.read_csv(os.path.join(self.higher_level_dir,'task-iconic_memory','task-iconic_memory_anova.tsv'),sep='\t')
+        CON = pd.read_csv(os.path.join(self.higher_level_dir,'task-consistency','task-consistency_anova.tsv'),sep='\t')
+        
+        # remove missing subjects        
+        missing = list(set(np.array(IM['subject'])).difference(np.array(CON['subject'])))
+        IM = IM[np.array(IM['subject'])!=missing]
+        IM = IM.multiply(100) # for percentage 
+        CON = CON[np.array(CON['subject'])!=missing]
+        #
+        fig = plt.figure(figsize=(8,4))
+        
+        ########################
+        # subplot 1 trained
+        ax = fig.add_subplot(121)
+        # PRE TRAINING
+        x = np.array(CON['session1_trained'])
+        y = np.array(IM['session1_trained'])
+        r,pval = stats.pearsonr(x,y)
+        ax.plot(x, y, 'o',color='purple',alpha=0.5,label='pre r={},p={}'.format(np.round(r,2),np.round(pval,3)))
+        m, b = np.polyfit(x, y, 1)
+        ax.plot(x, m*x+b,color='purple',alpha=0.5)
+        # POST TRAINING
+        x = np.array(CON['session2_trained'])
+        y = np.array(IM['session2_trained'])
+        r,pval = stats.pearsonr(x,y)
+        ax.plot(x, y, 'o',color='purple',alpha=1, label='post r={},p={}'.format(np.round(r,2),np.round(pval,3)))
+        m, b = np.polyfit(x, y, 1)
+        ax.plot(x, m*x+b,color='purple',alpha=1)
+        
+        ax.set_ylim([0,75])
+        ax.set_xlim([10,160])
+        ax.set_xlabel('Consistency color distance')
+        ax.set_ylabel('Iconic memory accuracy')
+        ax.set_title('Trained letters N={}'.format(len(x)))
+        ax.legend(loc='lower left')
+                
+        ########################
+        # subplot 2 untrained
+        ax = fig.add_subplot(122)
+
+        x = np.array(CON['session1_untrained'])
+        y = np.array(IM['session1_untrained'])
+        r,pval = stats.pearsonr(x,y)
+        ax.plot(x, y, 'o',color='purple',alpha=0.5,label='pre r={},p={}'.format(np.round(r,2),np.round(pval,3)))
+        m, b = np.polyfit(x, y, 1)
+        ax.plot(x, m*x+b,color='purple',alpha=0.5)
+        
+        x = np.array(CON['session2_untrained'])
+        y = np.array(IM['session2_untrained'])
+        r,pval = stats.pearsonr(x,y)
+        ax.plot(x, y, 'o',color='purple',alpha=1,label='post r={},p={}'.format(np.round(r,2),np.round(pval,3)))
+        m, b = np.polyfit(x, y, 1)
+        ax.plot(x, m*x+b,color='purple',alpha=1)
+        
+        ax.set_ylim([0,75])
+        ax.set_xlim([10,160])
+        ax.set_xlabel('Consistency color distance')
+        ax.set_ylabel('Iconic memory accuracy')
+        ax.set_title('Untrained letters N={}'.format(len(x)))
+        ax.legend(loc='lower left')
+                
+        # whole figure format
+        sns.despine(offset=10, trim=True)
+        plt.tight_layout()
+        fig.savefig(os.path.join(self.figure_dir,'correlation_consistency_iconic_memory.pdf'))
+        print('success: correlation_consistency_iconic_memory')
+        
     def localizers_randomise_input(self,task):
         # Localizers (letters, colors), cope1 was contrast of interest
         # For randomise input, we need the 3D cope1 images stacked for all subjects in the 4th dimension
@@ -152,475 +509,7 @@ class higher_level_class(object):
         DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format('rsa'),'task-rsa_letters_conditions.tsv'), sep='\t')
         print('success: rsa_letters_combine_colors')
     
-    def labels_harvard_oxford(self,):
-        # outputs the labels and probabilities as a vector
-        # harvard oxford (sub)cortical atlas
-        # note that subcortical atlas has left/right hemispheres as separate ROIs
-        
-        for atlas in ['cort',]:
-            DFOUT = pd.DataFrame() 
-            # load 
-            mask        = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=bool) # binary mask
-            labels      = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=float) # labels as integers in mask
-            probability = np.array(nib.load(self.ho_cortical_prob).get_data(),dtype=float) # ROIs in time axis
-            
-            # add column labels
-            DFOUT['{}_labels'.format(atlas)]  = labels[mask] # flatten
-            
-            # loop through all labels and extract probabilities
-            for this_label in np.arange(np.max(labels)):                
-                roi = probability[:,:,:,int(this_label)] # time axis for current ROI
-                DFOUT['{}_{}'.format(atlas,int(this_label+1))]  = roi[mask] # save probabilities as new column
-            DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format('rsa'),'harvard_oxford_{}_probabilities_flattened.tsv'.format(atlas)),sep='\t')
-        print('success: labels_harvard_oxford')
-    
-    def probabilities_emotion_rois(self,):
-        # outputs the probabilities of each brain region as columns
-        # used a combination of the harvard oxford cortical and subcortical atlases
-        # there are many overlapping voxels, i.e., voxels that have non-zero probabilities in 2+ ROIs
-        
-        roi_path = os.path.join(self.mask_dir,'hilde_brain_regions')
-        DFOUT = pd.DataFrame() 
-        for roi in os.listdir(roi_path):
-            # load             
-            mask        = np.array(nib.load(os.path.join(self.mask_dir,'emotion_brain_regions_mask.nii.gz')).get_data(),dtype=bool) # binary mask
-            probability = np.array(nib.load(os.path.join(roi_path,roi)).get_data(),dtype=float) # ROIs in time axis
-            # save probabilities as new column
-            DFOUT[roi[:-7]]  = probability[mask] # (remove trailing '.nii.gz')
-            DFOUT.to_csv(os.path.join(self.higher_level_dir,'task-{}'.format('rsa'),'hilde_brain_region_probabilities.tsv'),sep='\t')
-            print(roi)
-        print('success: labels_harvard_oxford')
-    
-    def colizoli_rois(self,):
-        # makes a cluster mask of the 3 ROIs from the 2016,2017 papers
-        # 1 = VWFA is the dutch>chinese contrast, randomise 1 sample with cluster threshold 3.1, masked LH inf temp gyrus
-        # 2 = v4 is significant from current color localizer, randomise 1 sample with cluster threshold 3.1, 
-        # 3 = parietal lobe is correlation between trained>untrained black with the Stroop effect cluster_mask_zstat2
-        
-        outFile  = os.path.join(self.mask_dir, 'colizoli_rois.nii.gz')
-        vwfa     = nib.load(os.path.join(self.mask_dir,'colizoli_vwfa_roi.nii.gz')).get_data() # from dutch>chinese contrast 2016
-        v4       = nib.load(os.path.join(self.mask_dir,'task-colors_roi.nii.gz')).get_data() # significant from current color localizer
-        parietal = nib.load(os.path.join(self.mask_dir,'colizoli_parietal_roi.nii.gz')).get_data() # from color-letter stroop contrast2 2016
-        
-        # remove overlap color and vwfa rois
-        v4 = np.where(v4==vwfa,0,v4)
-        vwfa = np.where(v4==vwfa,0,vwfa)
-         
-        v4 = np.where(v4==1,2,0) # v4 is label 2
-        parietal = np.where(parietal==1,3,0) # parietal label 3
-        
-        ROI = vwfa+v4+parietal # combine into a single 3D volume
-        # save as nifti file
-        outData = nib.Nifti1Image(ROI, affine=nib.load(self.mni).affine, header=nib.load(self.mni).header) # pass affine and header from last MNI image
-        outData.set_data_dtype(np.float32)
-        nib.save(outData, outFile)
-        
-        print('success: colizoli_rois')
-        
-    def roy_rsa_letters(self,task='rsa'):
-        # Use output from the rsa_letters analysis
-        # For each letter, extract the t-stats from all voxels
-        
-        # # using Harvard Oxford cortical
-        # mask = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=bool) # boolean mask
-        # labels = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=float) # labels
-        
-        roy_path = '/project/2422045.01/roy/'
-        
-        # DFOUT = pd.read_csv(os.path.join(roy_path,'roy_task-{}_letters_rois_zstats.tsv'.format(task)),sep='\t')
-        # shell()
-        
-        # VWFA,V4,parietal (Colizoli 2016,2017)
-        rois = os.path.join(self.mask_dir, 'colizoli_rois.nii.gz')
-        mask = np.array(nib.load(rois).get_data(),dtype=bool) # boolean mask
-        labels = np.array(nib.load(rois).get_data(),dtype=float) # labels
-        
-        DFOUT = pd.DataFrame() # output tstat dataframe for all subjects
-        for s,subject in enumerate(self.subjects):
-            for sess,session in enumerate(self.sessions):
-                # path to first level feat directory
-                this_path = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_letters_sub-{}_{}.feat'.format(task,subject,session),'stats')
-                
-                # 52 EVs alphabet in black, then alphabet in color
-                for cope in np.arange(1,53):
-                    this_df = pd.DataFrame() # temporary DF for concatenation
-                    BOLD = os.path.join(this_path,'zstat{}.nii.gz'.format(cope)) 
-                    # statistic
-                    nii = nib.load(BOLD).get_data()[mask] # flattens
-                    # columns
-                    this_df['subject']  = np.repeat(subject,len(nii))
-                    this_df['session']  = np.repeat(sess+1,len(nii))
-                    this_df['ev']       = np.repeat(cope,len(nii))
-                    this_df['zstat']    = nii
-                    this_df['brain_labels']  = labels[mask] # flatten
-                    this_df['mask_idx']      = np.arange(len(nii))
 
-                    # concat data frames
-                    DFOUT = pd.concat([DFOUT,this_df],axis=0)
-        DFOUT.to_csv(os.path.join(roy_path,'roy_task-{}_letters_rois_zstats.tsv'.format(task)),sep='\t')
-        print('success: roy_rsa_letters')
-    
-    
-    def hilde_rsa_letters(self,task='rsa'):
-        # Use output from the rsa_letters analysis
-        # For each letter, extract the t-stats from all voxels in "emotional ROIs"
-        
-        hilde_path = '/project/2422045.01/hilde/'
-        
-        # using Harvard Oxford cortical
-        emotion_rois = os.path.join(self.mask_dir,'hilde_brain_region_labels.nii.gz')
-        mask = np.array(nib.load(emotion_rois).get_data(),dtype=bool) # boolean mask
-        labels = np.array(nib.load(emotion_rois).get_data(),dtype=float) # labels
-        
-        DFOUT = pd.DataFrame() # output tstat dataframe for all subjects
-        for s,subject in enumerate(self.subjects):
-            for sess,session in enumerate(self.sessions):
-                # path to first level feat directory
-                this_path = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_letters_sub-{}_{}.feat'.format(task,subject,session),'stats')
-                
-                # 52 EVs alphabet in black, then alphabet in color
-                for cope in np.arange(1,53):
-                    this_df = pd.DataFrame() # temporary DF for concatenation
-                    BOLD = os.path.join(this_path,'zstat{}.nii.gz'.format(cope)) 
-                    # statistic
-                    nii = nib.load(BOLD).get_data()[mask] # flattens
-                    # columns
-                    this_df['subject']  = np.repeat(subject,len(nii))
-                    this_df['session']  = np.repeat(sess+1,len(nii))
-                    this_df['ev']       = np.repeat(cope,len(nii))
-                    this_df['zstat']    = nii
-                    this_df['brain_labels']  = labels[mask] # flatten
-                    this_df['mask_idx']      = np.arange(len(nii))
-
-                    # concat data frames
-                    DFOUT = pd.concat([DFOUT,this_df],axis=0)
-        DFOUT.to_csv(os.path.join(hilde_path,'hilde_task-{}_letters_labels_zstats.tsv'.format(task)),sep='\t')
-        print('success: hilde_rsa_letters')
-        
-        
-    def kelly_rsa_letters(self,task='rsa'):
-        # Use output from the rsa_letters analysis
-        # For each letter, extract the z-stats from OCCIPITAL LOBE
-        # use occipital lobe mask from MNI atlas = label #5
-        
-        kelly_path = '/project/2422045.01/kelly/'
-        
-        N = 5 # label number
-        mni_labels = np.array(nib.load(self.mni_labels).get_data(),dtype=float)
-        mask = np.array(np.where(mni_labels==N,1,0),dtype=bool) # binary mask, this roi
-                
-        DFOUT = pd.DataFrame() # output tstat dataframe for all subjects
-        for s,subject in enumerate(self.subjects):
-            for sess,session in enumerate(self.sessions):
-                # path to first level feat directory
-                this_path = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_letters_sub-{}_{}.feat'.format(task,subject,session),'stats')
-                
-                # 52 EVs alphabet in black, then alphabet in color
-                for cope in np.arange(1,53):
-                    this_df = pd.DataFrame() # temporary DF for concatenation
-                    BOLD = os.path.join(this_path,'zstat{}.nii.gz'.format(cope)) 
-                    # statistic
-                    nii = nib.load(BOLD).get_data()[mask] # flattens
-                    # columns
-                    this_df['subject']  = np.repeat(subject,len(nii))
-                    this_df['session']  = np.repeat(sess+1,len(nii))
-                    this_df['ev']       = np.repeat(cope,len(nii))
-                    this_df['zstat']    = nii
-                    this_df['brain_labels']  = np.repeat(N,len(nii)) # flatten
-                    this_df['mask_idx']      = np.arange(len(nii))
-                    
-                    print(subject)
-                    print(session)
-                    # concat data frames
-                    DFOUT = pd.concat([DFOUT,this_df],axis=0)
-        DFOUT.to_csv(os.path.join(kelly_path,'kelly_task-{}_letters.tsv'.format(task)),sep='\t')
-        print('success: kelly_rsa_letters')    
-        
-    def coen_reorder_cortical_labels(self,):
-        # reorders the harvard oxford cortical label's for Coen's functional connectivity analysis
-        # new_order column in 
-        coen_path = '/project/2422045.01/coen/'
-        outFile  = os.path.join(self.mask_dir, 'coen_harvard_oxford_cortical_rois.nii.gz')
-        
-        DF = pd.read_csv(os.path.join(coen_path,'new_cortical_labels.csv'))
-        
-        atlas_nifti = nib.load(self.ho_cortical_labels) # labels
-        atlas_labels = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=float) # labels
-        
-        new_atlas = np.zeros(atlas_labels.shape)
-        
-        original_order = np.array(DF['original_order'])
-        new_order = np.array(DF['new_order'])
-        
-        for roi_num,label in enumerate(original_order):
-            new_atlas = np.where(atlas_labels==label,new_order[roi_num],new_atlas)
-            
-            
-        outData = nib.Nifti1Image(new_atlas, affine=nib.load(self.mni).affine, header=nib.load(self.mni).header) # pass affine and header from last MNI image
-        outData.set_data_dtype(np.float32)
-        nib.save(outData, outFile)
-        print('success: coen_reorder_cortical_labels')    
-        
-        
-    def timeseries_trials_rsa(self,kernel,task='rsa'):
-        # For each trial in RSA task, extract time series data
-        # Timeseries with length = kernel (#samples)
-        # Input is the same input to the first level analysis rsa_letters
-                
-        # using Harvard Oxford cortical
-        mask = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=bool) # boolean mask
-        labels = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=float) # labels
-        
-        DFOUT = pd.DataFrame() # output tstat dataframe for all subjects
-        for s,subject in enumerate(self.subjects):
-            for sess,session in enumerate(self.sessions):
-                # need trial-wise information with event onsets
-                events = pd.read_csv(os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_events.tsv'.format(task,subject,session)),sep='\t')
-                events = events.loc[:, ~events.columns.str.contains('^Unnamed')] # drop unnamed columns
-                BOLD_path = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_bold_mni.nii.gz'.format(task,subject,session)) 
-                BOLD = nib.load(BOLD_path).get_data() # numerical data 4D 
-                
-                # convert stimulus onset to TR, round to nearest TR
-                events['nearest_TR'] = np.round(events['onset']/float(self.TR))
-                TRs = np.array(events['nearest_TR'])
-                
-                this_df = [] # temporary list for concatenation
-                # loop through trials in events dataframe
-                for trial in np.arange(events.shape[0]):
-                    start_tr = int(TRs[trial])-1 # start at TR-1 for indexing 
-                    stop_tr = int(TRs[trial])-1+kernel # extract time series with length = kernel
-                    this_series = BOLD[:,:,:,start_tr:stop_tr] # minus 1 for index of TR   
-                    this_series_flat =  this_series[mask]  # flatten 3D brain to 1D
-                    # trials x voxels x kernel
-                    this_df.append(this_series_flat)
-                
-                this_df = np.array(this_df) # trials x voxels x kernel
-                # output as numpy array
-                
-                # grouped = events.groupby(['letter','trial_type_color'])
-                shell()
-        print('success: timeseries_trials_rsa')
-    
-    def timeseries_letters_rsa(self,kernel,task='rsa'):
-        # For each letter-color condition in RSA task, extract time series data (a-z black, then a-z color)
-        # Timeseries with length = kernel (#samples)
-        # Input is the same input to the first level analysis rsa_letters
-        
-        coen_path = '/project/2422045.01/coen/'
-        
-        # VWFA,color localizer current study,parietal (Colizoli 2016,2017)
-        # rois = os.path.join(self.mask_dir, 'colizoli_rois.nii.gz')
-        # mask = np.array(nib.load(rois).get_data(),dtype=bool) # boolean mask
-        # labels = np.array(nib.load(rois).get_data(),dtype=float) # labels
-        
-        # # using Harvard Oxford cortical
-        mask = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=bool) # boolean mask
-        labels = np.array(nib.load(self.ho_cortical_labels).get_data(),dtype=float) # labels
-        
-        DFOUT = pd.DataFrame() # output tstat dataframe for all subjects
-        for s,subject in enumerate(self.subjects):            
-            for sess,session in enumerate(self.sessions):
-                # need trial-wise information with event onsets
-                events = pd.read_csv(os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_events.tsv'.format(task,subject,session)),sep='\t')
-                events = events.loc[:, ~events.columns.str.contains('^Unnamed')] # drop unnamed columns
-                ######## drop GREY color oddball trials ########
-                events = events[events['trial_type_color']!='grey'] # drop unnamed columns
-                ################################################
-                BOLD_path = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_bold_mni.nii.gz'.format(task,subject,session)) 
-                BOLD = nib.load(BOLD_path).get_data() # numerical data 4D 
-
-                # convert stimulus onset to TR, round to nearest TR
-                events['nearest_TR'] = np.round(events['onset']/float(self.TR))
-                
-                # loop through trials in events dataframe
-                for C in np.unique(events['trial_type_color']):
-                    # loop letters
-                    for L in self.letters:
-                        # check if letter-color condition exists, get only those trials in events file
-                        this_ev = events[(events['letter']==L) & (events['trial_type_color']==C)]
-                        TRs = np.array(this_ev['nearest_TR'])
-                        
-                        if not this_ev.empty:
-                            # CUT OUT TIME SERIES 
-                            this_ts_df = [] # temporary DF for letter-color condition all trials
-                            # go through onsets only in current letter-color condition
-                            for trial in np.arange(this_ev.shape[0]):
-                                start_tr = int(TRs[trial])-1 # start at TR-1 for indexing 
-                                stop_tr = int(TRs[trial])-1+kernel # extract time series with length = kernel
-                                # if stop_tr is longer than the BOLD time series, it crashes (hack by adding zeros to end)
-                                if BOLD.shape[-1] < stop_tr:
-                                    # need to add zeros (np.nans?)
-                                    for extra in range(stop_tr-BOLD.shape[-1]): # for each additional time point, add zero to 4th dimension
-                                        BOLD = np.append(BOLD, BOLD[:,:,:,0,np.newaxis], axis=3)
-                                this_series = BOLD[:,:,:,start_tr:stop_tr] # minus 1 for index of TR   
-                                this_series_flat =  this_series[mask]  # flatten 3D brain to 1D
-                                this_ts_df.append(this_series_flat)
-                            # take mean timeseries kernel of all trials in current letter-color condition
-                            nii = np.mean(np.array(this_ts_df),axis=0)
-
-                            this_df = pd.DataFrame() # temporary DF for concatenation, this subject, session
-                            # trials x voxels x kernel
-                            this_df['subject']  = np.repeat(subject,len(nii))
-                            this_df['session']          = np.repeat(sess+1,len(nii))
-                            this_df['letter']           = np.repeat(L,len(nii))
-                            this_df['trial_type_color'] = np.repeat(C,len(nii))
-                            this_df['brain_labels']     = labels[mask] # flatten
-                            this_df['mask_idx']         = np.arange(len(nii))
-                        
-                            nii = pd.DataFrame(nii)
-                            # concat data frames
-                            this_df = pd.concat([nii,this_df],axis=1) # add kernel as columns in front 
-                            DFOUT = pd.concat([this_df,DFOUT],axis=0) # add entire DF as rows to bottom
-        DFOUT.to_csv(os.path.join(coen_path,'task-{}_letters_timeseries_cortex.tsv'.format(task)),sep='\t')
-        print('success: timeseries_letters_rsa')
-    
-    def timeseries_conditions_rsa(self,kernel,brain,task='rsa'):
-        # For each letter-color condition in RSA task, extract time series data (a-z black, then a-z color)
-        # Timeseries with length = kernel (#samples)
-        # Input is the same input to the first level analysis rsa_letters
-        
-        
-        if brain == 'rois':
-            # VWFA,color localizer current study,parietal (Colizoli 2016,2017)
-            rois = os.path.join(self.mask_dir, 'colizoli_rois.nii.gz')
-            mask = np.array(nib.load(rois).get_data(),dtype=bool) # boolean mask
-            labels = np.array(nib.load(rois).get_data(),dtype=float) # labels
-            coen_path = '/project/2422045.01/coen/letter_files/rois_synesthesia/'
-        else: # cortex
-            # using Harvard Oxford cortical
-            cortex = os.path.join(self.mask_dir, 'coen_harvard_oxford_cortical_rois.nii.gz')
-            mask = np.array(nib.load(cortex).get_data(),dtype=bool) # boolean mask
-            labels = np.array(nib.load(cortex).get_data(),dtype=float) # labels
-            coen_path = '/project/2422045.01/coen/letter_files/rois_cortex/'
-            
-        
-        DFOUT = pd.DataFrame() # output tstat dataframe for all subjects
-        for s,subject in enumerate(self.subjects):
-            # DFOUT = pd.DataFrame() # output tstat dataframe for each subject (memory error)
-            
-            for sess,session in enumerate(self.sessions):
-                # need trial-wise information with event onsets
-                events = pd.read_csv(os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_events.tsv'.format(task,subject,session)),sep='\t')
-                events = events.loc[:, ~events.columns.str.contains('^Unnamed')] # drop unnamed columns
-                ######## drop oddball trials ########
-                events = events[events['oddball']==0] # drop oddballs
-                ################################################
-                BOLD_path = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_bold_mni.nii.gz'.format(task,subject,session)) 
-                BOLD = nib.load(BOLD_path).get_data() # numerical data 4D 
-
-                # convert stimulus onset to TR, round to nearest TR
-                events['nearest_TR'] = np.round(events['onset']/float(self.TR))
-                
-                # loop through trials in events dataframe
-                for C in np.unique(events['trial_type_color']):
-                    
-                    # loop letters
-                    for L in np.unique(events['trial_type_letter']):
-                        # check if letter-color condition exists, get only those trials in events file
-                        this_ev = events[(events['trial_type_letter']==L) & (events['trial_type_color']==C)]
-                        TRs = np.array(this_ev['nearest_TR'])
-                        
-                        if not this_ev.empty:
-                            # CUT OUT TIME SERIES 
-                            this_ts_df = [] # temporary DF for letter-color condition all trials
-                            # go through onsets only in current letter-color condition
-                            for trial in np.arange(this_ev.shape[0]):
-                                start_tr = int(TRs[trial])-1 # start at TR-1 for indexing 
-                                stop_tr = int(TRs[trial])-1+kernel # extract time series with length = kernel
-                                # if stop_tr is longer than the BOLD time series, it crashes (hack by adding zeros to end)
-                                if BOLD.shape[-1] < stop_tr:
-                                    # need to add zeros (np.nans?)
-                                    for extra in range(stop_tr-BOLD.shape[-1]): # for each additional time point, add zero to 4th dimension
-                                        BOLD = np.append(BOLD, BOLD[:,:,:,0,np.newaxis], axis=3)
-                                this_series = BOLD[:,:,:,start_tr:stop_tr] # minus 1 for index of TR   
-                                this_series_flat =  this_series[mask]  # flatten 3D brain to 1D
-                                this_ts_df.append(this_series_flat)
-                            # take mean timeseries kernel of all trials in current letter-color condition
-                            nii = np.mean(np.array(this_ts_df),axis=0)
-
-                            this_df = pd.DataFrame() # temporary DF for concatenation, this subject, session
-                            # trials x voxels x kernel
-                            this_df['subject']  = np.repeat(subject,len(nii))
-                            this_df['session']          = np.repeat(sess+1,len(nii))
-                            this_df['trial_type_letter']= np.repeat(L,len(nii))
-                            this_df['trial_type_color'] = np.repeat(C,len(nii))
-                            this_df['brain_labels']     = labels[mask] # flatten
-                            this_df['mask_idx']         = np.arange(len(nii))
-                        
-                            nii = pd.DataFrame(nii)
-                            # concat data frames
-                            this_df = pd.concat([nii,this_df],axis=1) # add kernel as columns in front 
-                            DFOUT = pd.concat([this_df,DFOUT],axis=0) # add entire DF as rows to bottom
-            # DFOUT.to_csv(os.path.join(coen_path,'task-{}_sub-{}_letters_timeseries_cortex.tsv'.format(task,subject)),sep='\t')
-        DFOUT.to_csv(os.path.join(coen_path,'task-{}_letters_timeseries_{}.tsv'.format(task,brain)),sep='\t')
-        print('success: timeseries_conditions_rsa')
-    
-    def timeseries_sessions_rsa(self,brain,task='rsa'):
-        # Within session - correlate all brain regions: full time series
-                
-        if brain == 'rois':         
-            # VWFA,color localizer current study,parietal (Colizoli 2016,2017)
-            rois = os.path.join(self.mask_dir, 'colizoli_rois.nii.gz')
-            mask = np.array(nib.load(rois).get_data(),dtype=bool) # boolean mask
-            labels = np.array(nib.load(rois).get_data(),dtype=float) # labels
-            labels = labels[mask] # 2D
-            coen_path = '/project/2422045.01/coen/session_files/rois_synesthesia/'
-        else: # cortex
-            # using Harvard Oxford cortical (reordered)
-            cortex = os.path.join(self.mask_dir, 'coen_harvard_oxford_cortical_rois.nii.gz')
-            mask = np.array(nib.load(cortex).get_data(),dtype=bool) # boolean mask
-            labels = np.array(nib.load(cortex).get_data(),dtype=float) # labels
-            labels = labels[mask] # 2D
-            coen_path = '/project/2422045.01/coen/session_files/rois_cortex/'
-            
-        def stack(df):
-            df = df.stack().rename_axis(('Region x', 'Region y')).reset_index(name='value').drop_duplicates(subset='value', keep='first') #.sort_values('value', ascending=False)
-            df = df.loc[~(df['Region x'] == df['Region y'])]
-            df.reset_index(drop=True, inplace=True)
-            return df
-            
-        for sess,session in enumerate(self.sessions):
-            DFOUT = pd.DataFrame() # one DF for each session
-            for s,subject in enumerate(self.subjects):
-                
-                # output is the concantenated bold of all runs per session (input to first level)
-                N1 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_{}.feat'.format(task,subject,session,'run-01'),'filtered_func_data_mni.nii.gz')) # preprocessed run 1
-                N2 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_{}.feat'.format(task,subject,session,'run-02'),'filtered_func_data_mni.nii.gz')) # preprocessed run 2
-                N3 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_{}.feat'.format(task,subject,session,'run-03'),'filtered_func_data_mni.nii.gz')) # preprocessed run 3
-                N4 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_sub-{}_{}_{}.feat'.format(task,subject,session,'run-04'),'filtered_func_data_mni.nii.gz')) # preprocessed run 4
-                # make 2D 
-                BOLD1 = N1.get_data()[mask] #2D
-                BOLD2 = N2.get_data()[mask]
-                BOLD3 = N3.get_data()[mask]
-                BOLD4 = N4.get_data()[mask]
-                
-                # zscore each run before concantenation
-                BOLD1 = stats.zscore(BOLD1)
-                BOLD2 = stats.zscore(BOLD2)
-                BOLD3 = stats.zscore(BOLD3)
-                BOLD4 = stats.zscore(BOLD4)
-                
-                # concatenate
-                BOLD = np.concatenate([BOLD1,BOLD2,BOLD3,BOLD4],axis=-1)
-                
-                # get mean time series within each brain region
-                DF = pd.DataFrame(BOLD)
-                DF['labels'] = labels
-                DFG = DF.groupby(['labels']).mean() 
-                
-                # correlation matrix
-                DFG = DFG.transpose()
-                DFG = DFG.corr('pearson') 
-                
-                # put into the right format
-                df_stacked = stack(DFG) 
-                DFOUT['sub-{}'.format(subject)] = df_stacked['value'] # columns are subjects, rows are nxm brain region correlations
-
-            # rows = subjects, columns = brain region pairs
-            DFOUT = DFOUT.T
-            DFOUT.columns=list(itertools.combinations(np.unique(DF['labels']), 2))
-            DFOUT.to_csv(os.path.join(coen_path,'df_{}_{}_stacked.csv'.format(brain,session)))       
-        print('success: timeseries_sessions_rsa')
         
     def housekeeping_dcm(self,task='rsa'):
         # For each subject and session of the RSA task, unzips then splits the nifti files into the DCM folder
@@ -697,51 +586,4 @@ class higher_level_class(object):
         DF.to_csv(os.path.join(self.higher_level_dir,'participants_qualia.csv'))
         # PA = projector - associator
     
-    def kelly_project_mask3D(self,):
-        # Take the mask_idx and project it back into a 3D nifti file
-        # use occipital lobe mask from MNI atlas = label #5
-        
-        kelly_path = '/project/2422045.01/kelly/'
-        
-        save_file = 'permutationImportanceSession1'
-        DFIN = pd.read_csv(os.path.join(kelly_path,'{}.csv'.format(save_file)),header=None)
-        DFIN.columns = ['mask_idx','f-score']
-        
-        N = 5
-        mni_labels = np.array(nib.load(self.mni_labels).get_data(),dtype=float)
-        mask_roi = np.array(np.where(mni_labels==N,1,0),dtype=bool) # binary mask, this roi
-        mask_mni = np.array(nib.load(self.mni_labels).get_data(),dtype=bool)
-        
-        
-        # roi label=5 flattened out 
-        nii = mni_labels[mask_roi] # flattens
-        mask_idx = np.arange(len(nii))
-        
-        # whole brain MNI space flattened out
-        nii_mni = mni_labels[mask_mni] # flattens
-        # mask_mni_idx = np.arange(len(nii_mni))
-        
-        # flattened boolean index of whole brain where label==5
-        roi_idx = nii_mni==5
-        
-        # this is the value we want to plot on the brain
-        # we first, have to fill in the empty/missing mask_idx as zeros
-        zstat = np.zeros(np.sum(roi_idx))
-        zstat[np.array(DFIN['mask_idx'])] = np.array(DFIN['f-score'])
 
-        # replace indices with this value
-        nii_mni[roi_idx] = zstat
-        
-        # make all other voxels 0
-        nii_mni = np.where(roi_idx,nii_mni,0)
-        
-        # need to reshape back to 3D
-        # put phasics back into MNI space
-        mni_out = np.zeros((mask_mni.shape[0],mask_mni.shape[1],mask_mni.shape[2]))
-        mni_out[mask_mni] = nii_mni
-        
-        mni_out_file = nib.Nifti1Image(mni_out, affine=nib.load(self.mni_labels).affine, header=nib.load(self.mni_labels).header)
-        mni_out_file.set_data_dtype(np.float32)
-        nib.save(mni_out_file, os.path.join(kelly_path,'mask_idx_label{}_{}.nii.gz'.format(N,save_file)))
-        
-        print('success: kelly_project_mask3D')

@@ -413,7 +413,9 @@ class preprocess_class(object):
             self.preprocessing_job.write(cmd)   # feat command
             self.preprocessing_job.write("\n\n")  # new line
             self.preprocessing_job.close()
-        print('success: {}'.format(FSF_filename))
+            print('success: {}'.format(FSF_filename))
+        else:
+            print('cannot make FSF: missing {}'.format(BOLD))
         
     def transform_2_mni(self, task, bold_run='', linear=0):
         """ Use the registration from the preprocessing FEAT output to transform the filtered_func_data.nii.gz to MNI space (non-linear)
@@ -422,9 +424,11 @@ class preprocess_class(object):
         See here: https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FLIRT/FAQ#How_do_I_transform_a_mask_with_FLIRT_from_one_space_to_another.3F
         """
         
-        # TIME SERIES TO BE TRANSFORMED
-        EPI = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,self.session,bold_run),'filtered_func_data.nii.gz')
-        if os.path.exists(EPI): ##### SKIP IF EPI FILE DOES NOT EXIST #####
+        ##### SKIP IF BOLD INPUT FILE DOES NOT EXIST #####
+        BOLD = os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_task-{}{}_bold.nii.gz'.format(self.subject,self.session,task,bold_run))
+        if os.path.exists(BOLD):
+            # TIME SERIES TO BE TRANSFORMED
+            EPI = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,self.session,bold_run),'filtered_func_data.nii.gz')
             # EPI time series output non-linear NIFTI
             EPI_MNI = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,self.session,bold_run),'filtered_func_data_mni.nii.gz')
             # standard space
@@ -503,9 +507,11 @@ class preprocess_class(object):
             self.preprocessing_job.write("\n\n")  # new line
             self.preprocessing_job.close()
         else:
-            # TIME SERIES TO BE TRANSFORMED
-            EPI = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,self.session,bold_run),'filtered_func_data')
-            if os.path.exists(EPI):  ##### SKIP IF EPI FILE DOES NOT EXIST #####
+            ##### SKIP IF BOLD INPUT FILE DOES NOT EXIST #####
+            BOLD = os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_task-{}{}_bold.nii.gz'.format(self.subject,self.session,task,bold_run))
+            if os.path.exists(BOLD):  ##### SKIP IF EPI FILE DOES NOT EXIST #####
+                # TIME SERIES TO BE TRANSFORMED
+                EPI = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,self.session,bold_run),'filtered_func_data')
                 EPI_NATIVE = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}.feat'.format(task,self.subject,self.session,bold_run),'filtered_func_data_native')
                 native_target = os.path.join(self.preprocess_dir,'{}_native_target'.format(self.subject))
         
