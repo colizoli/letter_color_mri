@@ -191,9 +191,12 @@ if run_higher_level:
             template_dir = template_dir,
             TR           = TR, # repitition time in seconds
             participants = participants
-            )   
-        # higher_level.dataframe_choose_pairs()                  # all group1 and group2's choices in a single dataframe
-        higher_level.plot_choose_pairs()                        # pie charts for frequency of color choices 
+            )  
+        # higher_level.dataframe_qualia()                         # calculates the PA score from the questionnaire
+        higher_level.plot_qualia()                              # plots histograms and means of the PA scores
+        
+        # higher_level.dataframe_choose_pairs()                 # all group1 and group2's choices in a single dataframe
+        # higher_level.plot_choose_pairs()                      # pie charts for frequency of color choices
         
         # higher_level.dataframe_subjects_iconic_memory()       # generates the dataframe for iconic memory higher level analysis
         # higher_level.dataframe_anova_iconic_memory()          # generates the dataframe for the ANOVA in JASP

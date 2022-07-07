@@ -17,6 +17,7 @@ import shutil as sh
 import nibabel as nib
 import pandas as pd
 import numpy as np
+import scipy as sp
 from scipy import stats
 import itertools 
 from colorspace.colorlib import hexcols
@@ -116,7 +117,108 @@ class higher_level_class(object):
             ['b','c','d','e','g','n','o','p','q','r','w','x','y'], # 0 False 
             ['a','f','h','i','j','k','l','m','s','t','u','v','z']  # 1 True 
         ]
+        
+    def dataframe_qualia(self,):    
+        # calculate the PA score from the Reading Questionnaire
+        # see PAscoring 2020.xls for details
+        # PA score = projector - associator
+        
+        flip_scores = ['7', '15', '5', '6', '8', '16'] # flip the response direction of the Likert scale from 5 to 1 for these questions
+        associator = ['7', '15', '5', '6', '8', '16', '10', '3', '14', '12', '18', '1'] # include the "not" questions
+        projector = ['7', '15', '5', '6', '8', '16', '17', '2', '9', '11', '4', '13']
+        
+        ## use original scoring:
+        # associator = [ '10', '3', '14', '12', '18', '1']
+        # projector = ['17', '2', '9', '11', '4', '13']
+
+        DF = pd.read_csv(os.path.join(self.higher_level_dir,'task-questionnaires','participants_qualia.tsv'),sep='\t')
+        DF = DF.loc[:, ~DF.columns.str.contains('^Unnamed')] # remove all unnamed columns
+        
+        DF2 = DF.copy()
+        DF2[flip_scores] = np.max(DF[flip_scores]) + 1 - DF[flip_scores] # flip the likert scale
+        
+        DF2['associator'] = np.mean(DF[associator],axis=1)
+        DF2['projector'] = np.mean(DF[projector],axis=1)
+        DF['PA_score'] = DF2['projector'] - DF2['associator']
+        
+        ########## ADD COLUMN FOR GROUP ##########
+        group = [
+            # updating
+            (DF['subject'] < 200), # group 1
+            (DF['subject'] >= 200) # group 2
+            ]
+        values = [1,2]
+        DF['group'] = np.select(group, values)
+        
+        DF.to_csv(os.path.join(self.higher_level_dir,'task-questionnaires','participants_qualia.tsv'),sep='\t')
+        print('success: dataframe_qualia')
     
+    def plot_qualia(self,):
+        # plots histograms of the PA scores, whole sample and per group
+        # plots means of the PA scores, whole sample and per group
+        
+        ######### HISTOGRAM #########
+        DF = pd.read_csv(os.path.join(self.higher_level_dir,'task-questionnaires','participants_qualia.tsv'),sep='\t')
+        DF.dropna(inplace=True)
+        fig = plt.figure(figsize=(6,4))
+        
+        ######### whole sample #########
+        ax = fig.add_subplot(231) 
+        PA = np.array(DF['PA_score'])
+        ax.hist(PA,bins=10,rwidth=2)
+        ax.set_xlabel('PA score')
+        ax.set_ylabel('Frequency')
+        ax.set_title('N={}'.format(len(PA)))
+        # ax.axvline(0, lw=1, alpha=0.3, color = 'k') # Add vertical line at t=0
+        ax.set_xlim([-1.5,1.5]) # centered around 0
+        ax.set_ylim([0,20]) # centered around 0
+        
+        ######### group 1 #########
+        ax = fig.add_subplot(232) 
+        PA1 = np.array(DF[DF['group'] == 1]['PA_score'])
+        
+        n,bins,patches = ax.hist(PA1,bins=10,rwidth=2)
+        
+        ax.set_xlabel('PA score')
+        ax.set_ylabel('Frequency')
+        ax.set_title('Group 1 N={}'.format(len(PA1)))
+        # ax.axvline(0, lw=1, alpha=0.3, color = 'k') # Add vertical line at t=0
+        ax.set_xlim([-1.5,1.5]) # centered around 0
+        ax.set_ylim([0,20]) # centered around 0
+        
+        ######### group 2 #########
+        ax = fig.add_subplot(233) 
+        PA2 = np.array(DF[DF['group'] == 2]['PA_score'])
+        # make sure to use the same bins as group 1
+        ax.hist(PA2,bins=bins,rwidth=2)
+        
+        ax.set_xlabel('PA score')
+        ax.set_ylabel('Frequency')
+        ax.set_title('Group 2 N={}'.format(len(PA2)))
+        # ax.axvline(0, lw=1, alpha=0.3, color = 'k') # Add vertical line at t=0
+        ax.set_xlim([-1.5,1.5]) # centered around 0
+        ax.set_ylim([0,20]) # centered around 0
+        
+        ######### MEANS #########
+        ax = fig.add_subplot(234) 
+
+        xlabels = ['All','Group 1','Group2']
+        means = [np.mean(PA),np.mean(PA1),np.mean(PA2)]
+        sems = [stats.sem(PA),stats.sem(PA1),stats.sem(PA2)]
+        xind = np.arange(len(means))
+
+        ax.bar(xind, means, yerr=sems, color='green',alpha=0.5)
+        
+        ax.set_xticklabels(xlabels)
+        ax.set_ylabel('PA score')
+        # stats.ttest_ind(PA1,PA2)
+        
+        ## whole figure
+        sns.despine(offset=10, trim=True)
+        plt.tight_layout()
+        fig.savefig(os.path.join(self.figure_dir,'histogram_PA_scores.pdf'))
+        print('success: plot_qualia')
+        
     def dataframe_choose_pairs(self,):
         # put all of group 1 and group 2's color choices together in a single dataframe
         DFOUT = pd.DataFrame()
@@ -671,28 +773,7 @@ class higher_level_class(object):
                 self.dcm_housekeeping.close()
 
         print('success: housekeeping_dcm')
-        
-    def qualia(self,):    
-        # calculate the PA score from the Reading Questionnaire
-        # see PAscoring 2020.xls for details
-        # PA score = projector - associator
-        
-        flip_scores = ['7', '15', '5', '6', '8', '16'] # flip the response direction of the Likert scale from 5 to 1 for these questions
-        # associator = ['7', '15', '5', '6', '8', '16', '10', '3', '14', '12', '18', '1']
-        # projector = ['7', '15', '5', '6', '8', '16', '17', '2', '9', '11', '4', '13']
-        
-        associator = [ '10', '3', '14', '12', '18', '1']
-        projector = ['17', '2', '9', '11', '4', '13']
-                
-        DF = pd.read_csv(os.path.join(self.higher_level_dir,'participants_qualia.csv'))
-        
-        DF2 = DF.copy()
-        DF2[flip_scores] = np.max(DF[flip_scores]) + 1 - DF[flip_scores] # flip the likert scale
-        
-        DF2['associator'] = np.mean(DF[associator],axis=1)
-        DF2['projector'] = np.mean(DF[projector],axis=1)
-        DF['PA_score'] = DF2['projector'] - DF2['associator']
-        DF.to_csv(os.path.join(self.higher_level_dir,'participants_qualia.csv'))
+
         # PA = projector - associator
     
 
