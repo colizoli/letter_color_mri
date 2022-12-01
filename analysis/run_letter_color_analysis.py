@@ -61,7 +61,7 @@ run_higher_level = True    # group-level analyses and statistics
 # Notes
 # sub-211_ses-02 has no events file for RSA run 2 (need to adjust all first level functions)
 # sub-107_ses-01 no T1 anatomical, have to overwrite in preprocessing FSF by hand to use session 2's T1
-participants    = pd.read_csv(os.path.join(analysis_dir,'participants.csv'), dtype=str) # open in textmate, not excel!
+participants    = pd.read_csv(os.path.join(analysis_dir,'participants_full_mri.csv'), dtype=str) # open in textmate, not excel!
 mri_subjects    = participants['mri_subjects']
 subjects_group  = participants['subjects']
 sessions        = ['ses-01','ses-02']
@@ -182,6 +182,8 @@ if run_first_level:
 # Higher-level class
 # -----------------------
 if run_higher_level:
+    participants    = pd.read_csv(os.path.join(analysis_dir,'participants_full_behav.csv'), dtype=str) # open in textmate, not excel!
+    
         higher_level = letter_color_higher_level.higher_level_class(
             subjects     = subjects_group,
             sessions     = sessions,
@@ -192,8 +194,11 @@ if run_higher_level:
             TR           = TR, # repitition time in seconds
             participants = participants
             )  
-        # higher_level.dataframe_qualia()                         # calculates the PA score from the questionnaire
-        higher_level.plot_qualia()                              # plots histograms and means of the PA scores
+        
+        higher_level.dataframe_trained_letters()                # all subjects letter conditions and colors 
+        
+        # higher_level.dataframe_qualia()                       # calculates the PA score from the questionnaire
+        # higher_level.plot_qualia()                            # plots histograms and means of the PA scores
         
         # higher_level.dataframe_choose_pairs()                 # all group1 and group2's choices in a single dataframe
         # higher_level.plot_choose_pairs()                      # pie charts for frequency of color choices
