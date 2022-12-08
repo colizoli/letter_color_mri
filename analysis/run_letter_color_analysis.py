@@ -51,9 +51,9 @@ timing_files_dir = os.path.join(deriv_dir,'timing_files')   # custom 3 column fo
 # -----------------------
 # Levels (switch ON/OFF)
 # ----------------------- 
-run_preprocessing = False    # motion correction, unwarping, registration, filtering, retroicor
-run_first_level = False     # concatenate runs, timing files, 1st level GLMs
-run_higher_level = True    # group-level analyses and statistics
+run_preprocessing   = True    # motion correction, unwarping, registration, filtering, retroicor
+run_first_level     = False     # concatenate runs, timing files, 1st level GLMs
+run_higher_level    = False    # group-level analyses and statistics
 
 # -----------------------
 # Participants
@@ -95,9 +95,9 @@ if run_preprocessing:
             ###################################################################
             # check if T1 exists for current session. If not, use other session
             if int(participants[t1[ss]][s]):
-                T1_PATH = os.path.join(deriv_dir,subjects_group[s],session,'anat','{}_{}_T1w_brain.nii.gz'.format(subjects_group[s],session))
+                T1_PATH = os.path.join(deriv_dir,'sub-{}'.format(subjects_group[s]),session,'anat','{}_{}_T1w_brain.nii.gz'.format(subjects_group[s],session))
             else:
-                T1_PATH = os.path.join(deriv_dir,subjects_group[s],sessions[~ss],'anat','{}_{}_T1w_brain.nii.gz'.format(subjects_group[s],sessions[~ss]))
+                T1_PATH = os.path.join(deriv_dir,'sub-{}'.format(subjects_group[s]),sessions[~ss],'anat','{}_{}_T1w_brain.nii.gz'.format(subjects_group[s],sessions[~ss]))
             
             ######################################################################
             # initialize class
@@ -182,9 +182,9 @@ if run_first_level:
 # Higher-level class
 # -----------------------
 if run_higher_level:
-    participants    = pd.read_csv(os.path.join(analysis_dir,'participants_full_behav.csv'), dtype=str) # open in textmate, not excel!
-    
-        higher_level = letter_color_higher_level.higher_level_class(
+    ### PARTICIPANT LIST FOR BEHAVIOR ONLY
+    participants = pd.read_csv(os.path.join(analysis_dir,'participants_full_behav.csv'), dtype=str) # open in textmate, not excel!
+    higher_level = letter_color_higher_level.higher_level_class(
             subjects     = subjects_group,
             sessions     = sessions,
             analysis_dir = analysis_dir,
@@ -193,30 +193,30 @@ if run_higher_level:
             template_dir = template_dir,
             TR           = TR, # repitition time in seconds
             participants = participants
-            )  
+            )
         
-        higher_level.dataframe_trained_letters()                # all subjects letter conditions and colors 
-        
-        # higher_level.dataframe_qualia()                       # calculates the PA score from the questionnaire
-        # higher_level.plot_qualia()                            # plots histograms and means of the PA scores
-        
-        # higher_level.dataframe_choose_pairs()                 # all group1 and group2's choices in a single dataframe
-        # higher_level.plot_choose_pairs()                      # pie charts for frequency of color choices
-        
-        # higher_level.dataframe_subjects_iconic_memory()       # generates the dataframe for iconic memory higher level analysis
-        # higher_level.dataframe_anova_iconic_memory()          # generates the dataframe for the ANOVA in JASP
-        # higher_level.plot_anova_iconic_memory()                 # plot ANOVA 2x2 (collapsed over groups)
+    higher_level.dataframe_trained_letters()                # all subjects letter conditions and colors 
     
-        # higher_level.dataframe_subjects_cieluv()              # converts from hexcodes to cieluv all subjects letters
-        # higher_level.dataframe_subjects_consistency()         # generates the dataframe for the consistency score all subjects all letters
-        # higher_level.dataframe_anova_consistency()            # generates the dataframe for the ANOVA in JASP
-        # higher_level.plot_anova_consistency()                 # plot ANOVA 2x2 (collapsed over groups)
-        
-        # higher_level.correlation_consistency_iconic_memory()  # test correlation in the letter conditions between consistency scores and iconic memory performance
-        
-        # higher_level.localizers_randomise_input('letters')    # concatenates all subjects' cope1 in 4th dimension (localizers)
-        # higher_level.localizers_randomise_input('colors')     # concatenates all subjects' cope1 in 4th dimension (localizers)
-        
-        # higher_level.rsa_letters_ev_conditions()      # outputs a DF with the letter and color conditions (general)
-        # higher_level.rsa_letters_conditions()         # concatenates all subjects events files for letter-color conditions
-        # higher_level.rsa_letters_combine_events()     # concatenates all subjects events files trial-wise
+    # higher_level.dataframe_qualia()                       # calculates the PA score from the questionnaire
+    # higher_level.plot_qualia()                            # plots histograms and means of the PA scores
+    
+    # higher_level.dataframe_choose_pairs()                 # all group1 and group2's choices in a single dataframe
+    # higher_level.plot_choose_pairs()                      # pie charts for frequency of color choices
+    
+    # higher_level.dataframe_subjects_iconic_memory()       # generates the dataframe for iconic memory higher level analysis
+    # higher_level.dataframe_anova_iconic_memory()          # generates the dataframe for the ANOVA in JASP
+    # higher_level.plot_anova_iconic_memory()                 # plot ANOVA 2x2 (collapsed over groups)
+
+    # higher_level.dataframe_subjects_cieluv()              # converts from hexcodes to cieluv all subjects letters
+    # higher_level.dataframe_subjects_consistency()         # generates the dataframe for the consistency score all subjects all letters
+    # higher_level.dataframe_anova_consistency()            # generates the dataframe for the ANOVA in JASP
+    # higher_level.plot_anova_consistency()                 # plot ANOVA 2x2 (collapsed over groups)
+    
+    # higher_level.correlation_consistency_iconic_memory()  # test correlation in the letter conditions between consistency scores and iconic memory performance
+    
+    # higher_level.localizers_randomise_input('letters')    # concatenates all subjects' cope1 in 4th dimension (localizers)
+    # higher_level.localizers_randomise_input('colors')     # concatenates all subjects' cope1 in 4th dimension (localizers)
+    
+    # higher_level.rsa_letters_ev_conditions()      # outputs a DF with the letter and color conditions (general)
+    # higher_level.rsa_letters_conditions()         # concatenates all subjects events files for letter-color conditions
+    # higher_level.rsa_letters_combine_events()     # concatenates all subjects events files trial-wise

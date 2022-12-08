@@ -276,7 +276,7 @@ class preprocess_class(object):
         if os.path.exists(inFile):
             outFile = os.path.join(self.deriv_dir,self.subject,self.session,'anat','{}_{}_T1w_{}.nii.gz'.format(self.subject, self.session, postfix))
             # bet inFile outFile
-            cmd = 'bet {} {} -R -f 0.5'.format(inFile, outFile)
+            cmd = 'bet {} {}'.format(inFile, outFile)
             print(cmd)
             results = subprocess.call(cmd, shell=True, bufsize=0)
 
