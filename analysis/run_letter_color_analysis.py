@@ -95,9 +95,9 @@ if run_preprocessing:
             ###################################################################
             # check if T1 exists for current session. If not, use other session
             if int(participants[t1[ss]][s]):
-                T1_PATH = os.path.join(deriv_dir,'sub-{}'.format(subjects_group[s]),session,'anat','{}_{}_T1w_brain.nii.gz'.format(subjects_group[s],session))
+                T1_PATH = os.path.join(deriv_dir,'sub-{}'.format(subjects_group[s]),session,'anat','sub-{}_{}_T1w_brain.nii.gz'.format(subjects_group[s],session))
             else:
-                T1_PATH = os.path.join(deriv_dir,'sub-{}'.format(subjects_group[s]),sessions[~ss],'anat','{}_{}_T1w_brain.nii.gz'.format(subjects_group[s],sessions[~ss]))
+                T1_PATH = os.path.join(deriv_dir,'sub-{}'.format(subjects_group[s]),sessions[~ss],'anat','sub-{}_{}_T1w_brain.nii.gz'.format(subjects_group[s],sessions[~ss]))
             
             ######################################################################
             # initialize class
