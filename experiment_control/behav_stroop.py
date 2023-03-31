@@ -2,17 +2,17 @@
 Single-letter behavioral stroop task
 O.Colizoli 2023
 """
-# data saved in ~/logfiles_main/sub-XXX
+# data saved in ~/source/sub-XXX/ses-X
 
 # Import necessary modules
 import os, time  # for paths and data
-import random, copy
+import random
 from psychopy import core, visual, event, data, sound, gui, monitors
 import numpy as np
 import pandas as pd
 import general_parameters as p # for letter sets, counterbalancing
 #from rusocsci import buttonbox
-from IPython import embed as shell
+# from IPython import embed as shell
 
 debug_mode = True
 
@@ -92,9 +92,17 @@ if subject_ID:
     stim_instr  = visual.TextStim(win, color='black', pos=(0.0, 0.0), wrapWidth=p.ww)  # can't really center, and TextBox doesn't work, stupid!
     stim_fix    = visual.TextStim(win, text='+', color='black', pos=(0.0, 0.0), height=p.fh)
     stim_letter = visual.TextStim(win, color ='black', pos=(0.0, p.sp), height=p.lh2, font=p.font_trained) 
-    # stim_sq     = visual.Rect(win, width=sqw, height=sqh, pos=(0.0, 0.0))
     feed_miss   = visual.TextStim(win, text='Too slow!', color='blue', pos=(0.0, 50.0))  # can't really center, and TextBox doesn't work, stupid!
+    stim_sq1    = visual.Rect(win, width=50, height=50, pos=(-100.0, -200.0))
+    stim_sq2    = visual.Rect(win, width=50, height=50, pos=(-50, -200.0))
+    stim_sq3    = visual.Rect(win, width=50, height=50, pos=(50.0, -200.0))
+    stim_sq4    = visual.Rect(win, width=50, height=50, pos=(100, -200.0))
     clock       = core.Clock()
+    # show button options as colored squares
+    stim_sq1.setColor(subj_colors[0],'rgb255')
+    stim_sq2.setColor(subj_colors[1],'rgb255')
+    stim_sq3.setColor(subj_colors[2],'rgb255')
+    stim_sq4.setColor(subj_colors[3],'rgb255')
     
     # Set conditions and stimulus list    
     ALL_TRIALS  = pd.concat([stroop_trials]*REPS, ignore_index=True)    
@@ -106,7 +114,7 @@ if subject_ID:
     stim_instr.setText(welcome_txt)
     stim_instr.draw()
     win.flip()
-    core.wait(2)
+    core.wait(1)
     event.waitKeys(keyList = buttons+['q']) # MONITOR FOR POSSIBLE KEY PRESS
     
     #b = bb.waitButtons()
@@ -158,6 +166,10 @@ if subject_ID:
         stim_letter.setText(this_letter)
         stim_letter.setColor('black')
         stim_letter.draw()
+        # stim_sq1.draw() # draw button options
+        # stim_sq2.draw() # draw button options
+        # stim_sq3.draw() # draw button options
+        # stim_sq4.draw() # draw button options
         win.flip()
         stim_onset = clock.getTime() # letter stimulus onset locked to black letter
         core.wait(t_black)
@@ -166,6 +178,10 @@ if subject_ID:
         stim_letter.setText(this_letter)
         stim_letter.setColor(this_color,'rgb255')
         stim_letter.draw()
+        # stim_sq1.draw() # draw button options
+        # stim_sq2.draw() # draw button options
+        # stim_sq3.draw() # draw button options
+        # stim_sq4.draw() # draw button options
         win.flip()
         color_onset = clock.getTime()
         response = event.waitKeys(keyList=buttons+['q'],timeStamped=clock, maxWait=t_stim) # Remove letter if key is pressed

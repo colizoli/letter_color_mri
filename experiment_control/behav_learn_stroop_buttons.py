@@ -1,12 +1,12 @@
 """
-Single-letter behavioral stroop task
+Train button-color responses for the behavioral stroop task
 O.Colizoli 2023
 """
-# data saved in ~/logfiles_main/sub-XXX
+# data saved in ~/source/sub-XXX/ses-X
 
 # Import necessary modules
 import os, time  # for paths and data
-import random, copy
+import random
 from psychopy import core, visual, event, data, sound, gui, monitors
 import numpy as np
 import pandas as pd
@@ -29,12 +29,11 @@ buttons = ["z","x","n","m"] # colors 1,2,3,4 in order
 ### PARAMETERS ###
 # Timing in seconds
 REPS    = 12   # how many times to repeat all trials in training_balancing
-t_black = .2   # black letter
 t_stim  = 1.5  # stimulus duration of colored letter, maximum RT
-t_ITI   = [1,2.5]  # feedback (ITI)
+t_ITI   = [0.3,0.7]  # feedback (ITI)
         
 ## load CSV file for balancing stimuli
-stroop_trials = pd.read_csv(os.path.join(cwd, 'stimuli','trials_stroop.csv'),sep='\t')
+button_trials = [1,2,3,4]
 
 # Get subject number
 g = gui.Dlg()
@@ -69,9 +68,9 @@ if subject_ID:
         os.makedirs(logfile_dir)
     ## output file name with time stamp prevents any overwriting of data
     timestr = time.strftime("%Y%m%d-%H%M%S") 
-    output_filename = os.path.join(logfile_dir,'sub-{}_ses-{}_task-stroop_{}.csv'.format(subject_ID,session,timestr ))
+    output_filename = os.path.join(logfile_dir,'sub-{}_ses-{}_task-buttons_{}.csv'.format(subject_ID,session,timestr ))
     # output dataframe
-    cols = ['subject','session','group','trial_num','letter','r','g','b','congruent','correct_button','button_pressed','correct','RT','ITI','black_letter_duration']
+    cols = ['subject','session','group','trial_num','r','g','b','correct_button','button_pressed','correct','RT','ITI']
     DF = pd.DataFrame(columns=cols)
     
     # Set-up window:
@@ -81,9 +80,9 @@ if subject_ID:
     win.setMouseVisible(False)
     
     # Set-up stimuli and timing
-    welcome_txt = 'Single-Letter Stroop Task! \
-    \nYou will see letters appear one at a time on the screen.\
-    \nInstructions: Indicate the COLOR of the letter as fast AND as accurately as possible.\
+    welcome_txt = 'Learn Button-Color Associations! \
+    \nYou will see colors appear one at a time on the screen.\
+    \nInstructions: Press the correct button for each COLOR as fast AND as accurately as possible.\
     \n\n\n<Press any button to continue>'
     
     pauze = 'Take a short break now.\
@@ -91,14 +90,15 @@ if subject_ID:
 
     stim_instr  = visual.TextStim(win, color='black', pos=(0.0, 0.0), wrapWidth=p.ww)  # can't really center, and TextBox doesn't work, stupid!
     stim_fix    = visual.TextStim(win, text='+', color='black', pos=(0.0, 0.0), height=p.fh)
-    stim_letter = visual.TextStim(win, color ='black', pos=(0.0, p.sp), height=p.lh2, font=p.font_trained) 
-    # stim_sq     = visual.Rect(win, width=sqw, height=sqh, pos=(0.0, 0.0))
+    stim_sq     = visual.Rect(win, width=100, height=100, pos=(0.0, 0.0))
+    feed_good   = visual.TextStim(win, text='Great!', color='green', pos=(0.0, 50.0))  # can't really center, and TextBox doesn't work, stupid!
+    feed_error  = visual.TextStim(win, text='Wrong!', color='red', pos=(0.0, 50.0))  # can't really center, and TextBox doesn't work, stupid!
     feed_miss   = visual.TextStim(win, text='Too slow!', color='blue', pos=(0.0, 50.0))  # can't really center, and TextBox doesn't work, stupid!
     clock       = core.Clock()
     
     # Set conditions and stimulus list    
-    ALL_TRIALS  = pd.concat([stroop_trials]*REPS, ignore_index=True)    
-    ALL_TRIALS = ALL_TRIALS.sample(frac=1).reset_index(drop=True) ## SHUFFLE ORDER OF TRIALS
+    ALL_TRIALS  = button_trials*REPS  
+    random.shuffle(ALL_TRIALS) ## SHUFFLE ORDER OF TRIALS (shuffle returns none)
     # if debug_mode:
     #     ALL_TRIALS = ALL_TRIALS.iloc[0:5,:] # just get first N trials
         
@@ -137,11 +137,7 @@ if subject_ID:
             pass
                 
         # current trial letter + color values
-        this_color_idx  = int(ALL_TRIALS['color'][t]) - 1
-        this_letter_idx = int(ALL_TRIALS['letter'][t]) - 1
-        
-        # get current letter
-        this_letter = subj_letters[this_letter_idx]
+        this_color_idx  = int(ALL_TRIALS[t]) - 1
         
         # get current color
         this_color = subj_colors[this_color_idx]
@@ -152,22 +148,12 @@ if subject_ID:
         # Target stimuli current trial        
         print('########## Trial {} #########'.format(t+1))
         print('Color of current trial: {}'.format(this_color))
-        print('Letter of current trial: {}'.format(this_letter))
         
-        # BLACK LETTER STIMULUS 200 ms fixed duration
-        stim_letter.setText(this_letter)
-        stim_letter.setColor('black')
-        stim_letter.draw()
+        # COLORED SQUARE STIMULUS wait for response
+        stim_sq.setColor(this_color,'rgb255')
+        stim_sq.draw()
         win.flip()
-        stim_onset = clock.getTime() # letter stimulus onset locked to black letter
-        core.wait(t_black)
-        
-        # COLORED LETTER STIMULUS wait for response
-        stim_letter.setText(this_letter)
-        stim_letter.setColor(this_color,'rgb255')
-        stim_letter.draw()
-        win.flip()
-        color_onset = clock.getTime()
+        stim_onset = clock.getTime()
         response = event.waitKeys(keyList=buttons+['q'],timeStamped=clock, maxWait=t_stim) # Remove letter if key is pressed
         
         # if too slow/missed, warn the participant!
@@ -179,11 +165,26 @@ if subject_ID:
             stim_fix.setColor('blue')
             stim_fix.draw()
             win.flip()
-            core.wait(1.5)
+            core.wait(1)
         else: # button pressed + RT
             button_pressed = response[0][0]
             RT = response[0][1] - stim_onset # clock time minus stim onset of black letter
             
+            if correct_button == button_pressed: # correct!
+                # correct!
+                feed_good.draw()
+                stim_fix.setColor('green')
+                stim_fix.draw()
+                win.flip()
+                core.wait(1)
+            else:
+                # error!
+                feed_error.draw()
+                stim_fix.setColor('red')
+                stim_fix.draw()
+                win.flip()
+                core.wait(1)
+                
         # q quits the experiment
         if button_pressed == 'q':
             core.quit()
@@ -196,23 +197,20 @@ if subject_ID:
         core.wait(ITI)
         
         # output data frame on each trial, duration (seconds)  
-        # cols = ['subject','session','group','trial_num','letter','r','g','b','congruent','correct_button','button_pressed','correct','RT','ITI','black_letter_duration']
+        # cols = ['subject','session','group','trial_num','r','g','b','correct_button','button_pressed','correct','RT','ITI']
         DF.loc[t] = [
             int(subject_ID),                    # subject
             session,                            # session
             group[0],                           # group
             t,                                  # trial_number
-            this_letter,                        # letter
             int(this_color[0]),                 # r
             int(this_color[1]),                 # g
             int(this_color[2]),                 # b
-            int(ALL_TRIALS['congruent'][t]),    # congruent boolean
             correct_button,                     # correct button
             button_pressed,                     # button pressed by participant
             correct_button == button_pressed,   # correct response if correct_button == button_pressed
             round(RT,8),                        # RT
             ITI,                                # ITI
-            color_onset - stim_onset            # black letter duration
                     ]     
                                     
         DF.to_csv(output_filename,sep='\t')
