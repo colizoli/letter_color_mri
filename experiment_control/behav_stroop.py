@@ -82,8 +82,9 @@ if subject_ID:
     
     # Set-up stimuli and timing
     welcome_txt = 'Single-Letter Stroop Task! \
-    \nYou will see letters appear one at a time on the screen.\
+    \n\nYou will see letters appear one at a time on the screen.\
     \nInstructions: Indicate the COLOR of the letter as fast AND as accurately as possible.\
+    \nThe response options are shown in the colored squares below.\
     \n\n\n<Press any button to continue>'
     
     pauze = 'Take a short break now.\
@@ -93,10 +94,10 @@ if subject_ID:
     stim_fix    = visual.TextStim(win, text='+', color='black', pos=(0.0, 0.0), height=p.fh)
     stim_letter = visual.TextStim(win, color ='black', pos=(0.0, p.sp), height=p.lh2, font=p.font_trained) 
     feed_miss   = visual.TextStim(win, text='Too slow!', color='blue', pos=(0.0, 50.0))  # can't really center, and TextBox doesn't work, stupid!
-    stim_sq1    = visual.Rect(win, width=50, height=50, pos=(-100.0, -200.0))
-    stim_sq2    = visual.Rect(win, width=50, height=50, pos=(-50, -200.0))
-    stim_sq3    = visual.Rect(win, width=50, height=50, pos=(50.0, -200.0))
-    stim_sq4    = visual.Rect(win, width=50, height=50, pos=(100, -200.0))
+    stim_sq1    = visual.Rect(win, width=50, height=50, pos=(-100, -200))
+    stim_sq2    = visual.Rect(win, width=50, height=50, pos=(-50, -200))
+    stim_sq3    = visual.Rect(win, width=50, height=50, pos=(0, -200))
+    stim_sq4    = visual.Rect(win, width=50, height=50, pos=(50, -200))
     clock       = core.Clock()
     # show button options as colored squares
     stim_sq1.setColor(subj_colors[0],'rgb255')
@@ -113,6 +114,10 @@ if subject_ID:
     # Welcome instructions
     stim_instr.setText(welcome_txt)
     stim_instr.draw()
+    stim_sq1.draw() # draw button options
+    stim_sq2.draw() # draw button options
+    stim_sq3.draw() # draw button options
+    stim_sq4.draw() # draw button options
     win.flip()
     core.wait(1)
     event.waitKeys(keyList = buttons+['q']) # MONITOR FOR POSSIBLE KEY PRESS
@@ -132,6 +137,10 @@ if subject_ID:
                 # take a break!
                 stim_instr.setText(pauze)
                 stim_instr.draw()
+                stim_sq1.draw() # draw button options
+                stim_sq2.draw() # draw button options
+                stim_sq3.draw() # draw button options
+                stim_sq4.draw() # draw button options
                 win.flip()
                 core.wait(0.5)
                 event.waitKeys(keyList = buttons+['q']) # MONITOR FOR POSSIBLE KEY PRESS
@@ -166,10 +175,6 @@ if subject_ID:
         stim_letter.setText(this_letter)
         stim_letter.setColor('black')
         stim_letter.draw()
-        stim_sq1.draw() # draw button options
-        stim_sq2.draw() # draw button options
-        stim_sq3.draw() # draw button options
-        stim_sq4.draw() # draw button options
         win.flip()
         stim_onset = clock.getTime() # letter stimulus onset locked to black letter
         core.wait(t_black)
@@ -178,10 +183,6 @@ if subject_ID:
         stim_letter.setText(this_letter)
         stim_letter.setColor(this_color,'rgb255')
         stim_letter.draw()
-        stim_sq1.draw() # draw button options
-        stim_sq2.draw() # draw button optionsq
-        stim_sq3.draw() # draw button options
-        stim_sq4.draw() # draw button options
         win.flip()
         color_onset = clock.getTime()
         response = event.waitKeys(keyList=buttons+['q'],timeStamped=clock, maxWait=t_stim) # Remove letter if key is pressed

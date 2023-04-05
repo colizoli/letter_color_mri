@@ -5,6 +5,8 @@ CHOOSING LETTER-COLOR ASSOCIATIONS TASK
 O.Colizoli & M.Blasco Oliver, 2019
 Outputs a TSV file for sub-101 and sub-201 (Group2 gets Group1's preferences)
 """
+# data saved in ~/colors/sub-XXX/ses-X for group 1 (and a copy of this file for their yoked partner in group 2)
+# data saved in ~/source/sub-XXX/ses-X for group 2 (their actual preferences, but not what they read in the books!)
 
 ### Import Libraries ###
 import os, time # for paths and data
@@ -12,10 +14,10 @@ from psychopy import core, visual, event, gui, monitors
 import random
 import numpy as np
 import pandas as pd
-#from IPython import embed as shell # only used for debugging
+from IPython import embed as shell
 import general_parameters as gp # letter conditions, counterbalancing
 
-debug_mode = True
+debug_mode = False
 
 #########################################
 ################# TEXTS #################
@@ -179,7 +181,7 @@ if subject_ID:
     # G2
     else: # save elsewhere in 'prefs' folder
         subject_yoked = subject_ID-100
-        pref_dir = os.path.join(cwd,'LogFiles','sub-{}'.format(subject_ID),'sess-{}'.format(session),'behav')  # system independent
+        pref_dir = os.path.join(cwd,'source','sub-{}'.format(subject_ID),'sess-{}'.format(session),'behav')  # system independent
         if not os.path.isdir(pref_dir):
             os.makedirs(pref_dir)
         output_filename = os.path.join(pref_dir,'sub-{}_prefs_{}.tsv'.format(subject_ID,timestr ))
@@ -225,26 +227,8 @@ if subject_ID:
     
     letter_holder = [letter_01,letter_02,letter_03,letter_04,letter_05,letter_06,letter_07,
                      letter_08,letter_09,letter_10,letter_11,letter_12,letter_13]
-                     
-    # Color circles RGB tones
-    colorpatch_01 = visual.Circle(win=win,radius=cp_size,fillColor=color_dict[1],fillColorSpace = 'rgb255', pos =(colp_x1,let_col_y1[0]), opacity = 1.0)
-    colorpatch_02 = visual.Circle(win=win,radius=cp_size,fillColor=color_dict[2],fillColorSpace = 'rgb255', pos =(colp_x1,let_col_y1[1]), opacity = 1.0)
-    colorpatch_03 = visual.Circle(win=win,radius=cp_size,fillColor=color_dict[3],fillColorSpace = 'rgb255', pos =(colp_x1,let_col_y1[2]), opacity = 1.0)
-    colorpatch_04 = visual.Circle(win=win,radius=cp_size,fillColor=color_dict[4],fillColorSpace = 'rgb255', pos =(colp_x1,let_col_y1[3]), opacity = 1.0)
-    colorpatch_05 = visual.Circle(win=win,radius=cp_size,fillColor=color_dict[5],fillColorSpace = 'rgb255', pos =(colp_x1,let_col_y1[4]), opacity = 1.0)
-    colorpatch_06 = visual.Circle(win=win,radius=cp_size,fillColor=color_dict[6],fillColorSpace = 'rgb255', pos =(colp_x1,let_col_y1[5]), opacity = 1.0)
-    colorpatch_07 = visual.Circle(win=win,radius=cp_size,fillColor=color_dict[7],fillColorSpace = 'rgb255', pos =(colp_x1,let_col_y1[6]), opacity = 1.0)
-    colorpatch_08 = visual.Circle(win=win,radius=cp_size,fillColor=color_dict[8],fillColorSpace = 'rgb255', pos =(colp_x2,let_col_y2[0]), opacity = 1.0)
-    colorpatch_09 = visual.Circle(win=win,radius=cp_size,fillColor=color_dict[9],fillColorSpace = 'rgb255', pos =(colp_x2,let_col_y2[1]), opacity = 1.0)
-    colorpatch_10 = visual.Circle(win=win,radius=cp_size,fillColor=color_dict[10],fillColorSpace = 'rgb255', pos =(colp_x2,let_col_y2[2]), opacity = 1.0)
-    colorpatch_11 = visual.Circle(win=win,radius=cp_size,fillColor=color_dict[11],fillColorSpace = 'rgb255', pos =(colp_x2,let_col_y2[3]), opacity = 1.0)
-    colorpatch_12 = visual.Circle(win=win,radius=cp_size,fillColor=color_dict[12],fillColorSpace = 'rgb255', pos =(colp_x2,let_col_y2[4]), opacity = 1.0)
-    colorpatch_13 = visual.Circle(win=win,radius=cp_size,fillColor=color_dict[13],fillColorSpace = 'rgb255', pos =(colp_x2,let_col_y2[5]), opacity = 1.0)
-
-    colorpatch_holder = [colorpatch_01,colorpatch_02,colorpatch_03,colorpatch_04,colorpatch_05,colorpatch_06,colorpatch_07,
-                         colorpatch_08,colorpatch_09,colorpatch_10,colorpatch_11,colorpatch_12,colorpatch_13]
-
- # Color codes 01-13
+    
+    # Color codes 01-13
     colorcode_01 = visual.TextStim(win, text = colorcodes[0], color='black', pos=(coln_x1,let_col_y1[0]), height = cc_size)
     colorcode_02 = visual.TextStim(win, text = colorcodes[1], color='black', pos=(coln_x1,let_col_y1[1]), height = cc_size)
     colorcode_03 = visual.TextStim(win, text = colorcodes[2], color='black', pos=(coln_x1,let_col_y1[2]), height = cc_size)
@@ -261,6 +245,27 @@ if subject_ID:
     
     colorcode_holder = [colorcode_01,colorcode_02,colorcode_03,colorcode_04,colorcode_05,colorcode_06,colorcode_07,
                         colorcode_08,colorcode_09,colorcode_10,colorcode_11,colorcode_12,colorcode_13]
+    
+    # Color circles RGB tones
+
+    colorpatch_01 = visual.Circle(win=win,radius=cp_size,fillColor=color_dict[1],colorSpace = 'rgb255', pos =(colp_x1,let_col_y1[0]), opacity = 1.0)
+    colorpatch_02 = visual.Circle(win=win,radius=cp_size,fillColor=color_dict[2],colorSpace = 'rgb255', pos =(colp_x1,let_col_y1[1]), opacity = 1.0)
+    colorpatch_03 = visual.Circle(win=win,radius=cp_size,fillColor=color_dict[3],colorSpace = 'rgb255', pos =(colp_x1,let_col_y1[2]), opacity = 1.0)
+    colorpatch_04 = visual.Circle(win=win,radius=cp_size,fillColor=color_dict[4],colorSpace = 'rgb255', pos =(colp_x1,let_col_y1[3]), opacity = 1.0)
+    colorpatch_05 = visual.Circle(win=win,radius=cp_size,fillColor=color_dict[5],colorSpace = 'rgb255', pos =(colp_x1,let_col_y1[4]), opacity = 1.0)
+    colorpatch_06 = visual.Circle(win=win,radius=cp_size,fillColor=color_dict[6],colorSpace = 'rgb255', pos =(colp_x1,let_col_y1[5]), opacity = 1.0)
+    colorpatch_07 = visual.Circle(win=win,radius=cp_size,fillColor=color_dict[7],colorSpace = 'rgb255', pos =(colp_x1,let_col_y1[6]), opacity = 1.0)
+    colorpatch_08 = visual.Circle(win=win,radius=cp_size,fillColor=color_dict[8],colorSpace = 'rgb255', pos =(colp_x2,let_col_y2[0]), opacity = 1.0)
+    colorpatch_09 = visual.Circle(win=win,radius=cp_size,fillColor=color_dict[9],colorSpace = 'rgb255', pos =(colp_x2,let_col_y2[1]), opacity = 1.0)
+    colorpatch_10 = visual.Circle(win=win,radius=cp_size,fillColor=color_dict[10],colorSpace = 'rgb255', pos =(colp_x2,let_col_y2[2]), opacity = 1.0)
+    colorpatch_11 = visual.Circle(win=win,radius=cp_size,fillColor=color_dict[11],colorSpace = 'rgb255', pos =(colp_x2,let_col_y2[3]), opacity = 1.0)
+    colorpatch_12 = visual.Circle(win=win,radius=cp_size,fillColor=color_dict[12],colorSpace = 'rgb255', pos =(colp_x2,let_col_y2[4]), opacity = 1.0)
+    colorpatch_13 = visual.Circle(win=win,radius=cp_size,fillColor=color_dict[13],colorSpace = 'rgb255', pos =(colp_x2,let_col_y2[5]), opacity = 1.0)
+
+    colorpatch_holder = [colorpatch_01,colorpatch_02,colorpatch_03,colorpatch_04,colorpatch_05,colorpatch_06,colorpatch_07,
+                         colorpatch_08,colorpatch_09,colorpatch_10,colorpatch_11,colorpatch_12,colorpatch_13]
+
+
     # Choices holders: colored letter
 #    pos_choice = [(200,150),(200,100),(200,50),(200,0),(200,-50),(200,-100),(200,-150),
 #                  (250,125),(250,75),(250,25),(250,-25),(250,-75),(250,-125)]
@@ -315,46 +320,30 @@ if subject_ID:
         print('##### Trial {} #####'.format(trial))
         
         # Show list of stimuli:
-#        for l in letter_holder:
-#            l.draw()
-#        for cc in colorcode_holder:
-#            cc.draw()
-#        for cp in colorpatch_holder:
-#            cp.draw()
-        
-        letter_01.draw()
-        letter_02.draw()
-        letter_03.draw()
-        letter_04.draw()
-        letter_05.draw()
-        letter_06.draw()
-        letter_07.draw()
-        letter_08.draw()
-        letter_09.draw()
-        letter_10.draw()
-        letter_11.draw()
-        letter_12.draw()
-        letter_13.draw()
-        
-        win.flip()
-
+        for l in letter_holder:
+            l.setAutoDraw(True)
+        for cc in colorcode_holder:
+            cc.setAutoDraw(True)
+        for cp in colorpatch_holder:
+            cp.setAutoDraw(True)
+    
         # Ask letter
-        letter_ask.draw()
+        letter_ask.setAutoDraw(True)
         win.flip()            
         
         ## Record keypresses for letter display
         letter_resp = show_input(win,response_input=letter_input,type_input='letter',options=letters) # fix backspace
-        letter_input.draw()
+        letter_input.setAutoDraw(True)
         print('Letter response: ', letter_resp)
         
         # Ask color:
-        color_ask.draw()
+        color_ask.setAutoDraw(True)
         win.flip()
         
         ## Record keypresses for letter display
         color_resp = show_input(win,response_input=color_input,type_input='color',options=colorcode_input_str)
         print('Color response: ', color_resp)
-        color_input.draw()
+        color_input.setAutoDraw(True)
         
         # Assign color to letter:
         pairs_dict[letter_resp] = color_resp
@@ -368,12 +357,12 @@ if subject_ID:
                     #Colored letter
                     globals() ['choice_{}'.format(let)].setText(let)
                     globals() ['choice_{}'.format(let)].setColor(color_dict[col])
-                    globals() ['choice_{}'.format(let)].draw()
+                    globals() ['choice_{}'.format(let)].setAutoDraw(True)
                     # Color number
                     globals() ['choicecode_{}'.format(let)].setText(col)
-                    globals() ['choicecode_{}'.format(let)].draw()
+                    globals() ['choicecode_{}'.format(let)].setAutoDraw(True)
                 else:
-                    choice_None.draw()
+                    choice_None.setAutoDraw(True)
 
         win.flip()
         
@@ -394,14 +383,14 @@ if subject_ID:
             print('- Non-letter {} removed from dictionary'.format(no_let[nl]))
         
         # Remove answers
-        letter_ask.draw()
-        color_ask.draw()
-        color_input.draw()
-        letter_input.draw()
+        letter_ask.setAutoDraw(False)
+        color_ask.setAutoDraw(False)
+        color_input.setAutoDraw(False)
+        letter_input.setAutoDraw(False)
         
         final_choice_ask.draw()
         win.flip()
-        choice_None.draw()
+        choice_None.setAutoDraw(False)
         
         keys=[]
         final_choice = event.waitKeys(keyList=['y','return'])

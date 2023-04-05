@@ -8,7 +8,7 @@ Each letter of the alphabet in random order x 2
 Color wheel opens at a randomized color on each trial (but does not turn)
 Python 2..7
 """
-# data saved in ~/LogFiles/sub-XXX
+# data saved in ~/source/sub-xxx/ses-x
 
 # Import necessary modules
 import random

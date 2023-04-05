@@ -81,8 +81,9 @@ if subject_ID:
     
     # Set-up stimuli and timing
     welcome_txt = 'Learn Button-Color Associations! \
-    \nYou will see colors appear one at a time on the screen.\
+    \n\nYou will see colors appear one at a time on the screen.\
     \nInstructions: Press the correct button for each COLOR as fast AND as accurately as possible.\
+    \nThe response options are shown in the colored squares below.\
     \n\n\n<Press any button to continue>'
     
     pauze = 'Take a short break now.\
@@ -94,7 +95,17 @@ if subject_ID:
     feed_good   = visual.TextStim(win, text='Great!', color='green', pos=(0.0, 50.0))  # can't really center, and TextBox doesn't work, stupid!
     feed_error  = visual.TextStim(win, text='Wrong!', color='red', pos=(0.0, 50.0))  # can't really center, and TextBox doesn't work, stupid!
     feed_miss   = visual.TextStim(win, text='Too slow!', color='blue', pos=(0.0, 50.0))  # can't really center, and TextBox doesn't work, stupid!
+    stim_sq1    = visual.Rect(win, width=50, height=50, pos=(-100.0, -200.0))
+    stim_sq2    = visual.Rect(win, width=50, height=50, pos=(-50, -200.0))
+    stim_sq3    = visual.Rect(win, width=50, height=50, pos=(50.0, -200.0))
+    stim_sq4    = visual.Rect(win, width=50, height=50, pos=(100, -200.0))
     clock       = core.Clock()
+    
+    # show button options as colored squares in instructions
+    stim_sq1.setColor(subj_colors[0],'rgb255')
+    stim_sq2.setColor(subj_colors[1],'rgb255')
+    stim_sq3.setColor(subj_colors[2],'rgb255')
+    stim_sq4.setColor(subj_colors[3],'rgb255')
     
     # Set conditions and stimulus list    
     ALL_TRIALS  = button_trials*REPS  
@@ -105,6 +116,10 @@ if subject_ID:
     # Welcome instructions
     stim_instr.setText(welcome_txt)
     stim_instr.draw()
+    stim_sq1.draw() # draw button options
+    stim_sq2.draw() # draw button options
+    stim_sq3.draw() # draw button options
+    stim_sq4.draw() # draw button options
     win.flip()
     core.wait(2)
     event.waitKeys(keyList = buttons+['q']) # MONITOR FOR POSSIBLE KEY PRESS
@@ -124,6 +139,10 @@ if subject_ID:
                 # take a break!
                 stim_instr.setText(pauze)
                 stim_instr.draw()
+                stim_sq1.draw() # draw button options
+                stim_sq2.draw() # draw button options
+                stim_sq3.draw() # draw button options
+                stim_sq4.draw() # draw button options
                 win.flip()
                 core.wait(0.5)
                 event.waitKeys(keyList = buttons+['q']) # MONITOR FOR POSSIBLE KEY PRESS

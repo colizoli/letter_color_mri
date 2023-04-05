@@ -4,6 +4,7 @@
 ICONIC MEMORY TASK
 O.Colizoli & M.Blasco Oliver, 2019
 """
+# no data saved for practice trials
 
 # Import necessary modules
 from psychopy import core, visual, event, gui, monitors, data, misc
@@ -20,7 +21,7 @@ import general_parameters as gp # for letter sets, counterbalancing, iconic memo
 debug_mode = False
 
 ## load CSV file for balancing stimuli
-trials_IM = pd.read_csv(os.path.join('stimuli','trials_IconicMemory.csv'))
+trials_IM = pd.read_csv(os.path.join('stimuli','trials_iconic_memory.csv'))
 REPS = 1 # number of times to repeat trials_IM
 
 #Get subject number
