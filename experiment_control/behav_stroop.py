@@ -166,10 +166,10 @@ if subject_ID:
         stim_letter.setText(this_letter)
         stim_letter.setColor('black')
         stim_letter.draw()
-        # stim_sq1.draw() # draw button options
-        # stim_sq2.draw() # draw button options
-        # stim_sq3.draw() # draw button options
-        # stim_sq4.draw() # draw button options
+        stim_sq1.draw() # draw button options
+        stim_sq2.draw() # draw button options
+        stim_sq3.draw() # draw button options
+        stim_sq4.draw() # draw button options
         win.flip()
         stim_onset = clock.getTime() # letter stimulus onset locked to black letter
         core.wait(t_black)
@@ -178,10 +178,10 @@ if subject_ID:
         stim_letter.setText(this_letter)
         stim_letter.setColor(this_color,'rgb255')
         stim_letter.draw()
-        # stim_sq1.draw() # draw button options
-        # stim_sq2.draw() # draw button options
-        # stim_sq3.draw() # draw button options
-        # stim_sq4.draw() # draw button options
+        stim_sq1.draw() # draw button options
+        stim_sq2.draw() # draw button optionsq
+        stim_sq3.draw() # draw button options
+        stim_sq4.draw() # draw button options
         win.flip()
         color_onset = clock.getTime()
         response = event.waitKeys(keyList=buttons+['q'],timeStamped=clock, maxWait=t_stim) # Remove letter if key is pressed

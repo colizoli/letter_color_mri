@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 import general_parameters as p # for letter sets, counterbalancing
 #from rusocsci import buttonbox
-from IPython import embed as shell
+#from IPython import embed as shell
 
 debug_mode = True
 
@@ -29,7 +29,7 @@ buttons = ["z","x","n","m"] # colors 1,2,3,4 in order
 ### PARAMETERS ###
 # Timing in seconds
 REPS    = 12   # how many times to repeat all trials in training_balancing
-t_stim  = 1.5  # stimulus duration of colored letter, maximum RT
+t_stim  = 1.0  # stimulus duration of colored letter, maximum RT
 t_ITI   = [0.3,0.7]  # feedback (ITI)
         
 ## load CSV file for balancing stimuli

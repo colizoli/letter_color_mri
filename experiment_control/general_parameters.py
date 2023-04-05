@@ -16,6 +16,8 @@ black               = [0,0,0] # background screen color
 lh  = 100 # letter size
 fh  = 50  # fixation cross height
 ww = 1000 # wrap width of instructions text
+sp  = 15.0  # raise y of symbol position letters
+lh2 = 120   # letter size RSA arial black
 
 # font styles
 font_english    = "Tahoma"
