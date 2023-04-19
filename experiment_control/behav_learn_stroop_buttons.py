@@ -28,9 +28,9 @@ buttons = ["z","x","n","m"] # colors 1,2,3,4 in order
 
 ### PARAMETERS ###
 # Timing in seconds
-REPS    = 12   # how many times to repeat all trials in training_balancing
+REPS    = 48   # how many times to repeat all trials in button_trials
 t_stim  = 1.0  # stimulus duration of colored letter, maximum RT
-t_ITI   = [0.3,0.7]  # feedback (ITI)
+t_ITI   = [0.8,1.2]  # feedback (ITI)
         
 ## load CSV file for balancing stimuli
 button_trials = [1,2,3,4]
