@@ -31,7 +31,7 @@ buttons = ["z","x","n","m"] # colors 1,2,3,4 in order
 REPS    = 10   # how many times to repeat all trials in trials_stroop
 t_black = .2   # black letter
 t_stim  = 1.5  # stimulus duration of colored letter, maximum RT
-t_ITI   = [1,2.5]  # feedback (ITI)
+t_ITI   = [1,1.5]  # feedback (ITI)
         
 ## load CSV file for balancing stimuli
 stroop_trials = pd.read_csv(os.path.join(cwd, 'stimuli','trials_stroop.csv'),sep='\t')
