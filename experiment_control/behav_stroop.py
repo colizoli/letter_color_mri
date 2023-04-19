@@ -28,7 +28,7 @@ buttons = ["z","x","n","m"] # colors 1,2,3,4 in order
 
 ### PARAMETERS ###
 # Timing in seconds
-REPS    = 12   # how many times to repeat all trials in training_balancing
+REPS    = 10   # how many times to repeat all trials in trials_stroop
 t_black = .2   # black letter
 t_stim  = 1.5  # stimulus duration of colored letter, maximum RT
 t_ITI   = [1,2.5]  # feedback (ITI)
@@ -185,7 +185,8 @@ if subject_ID:
         stim_letter.draw()
         win.flip()
         color_onset = clock.getTime()
-        response = event.waitKeys(keyList=buttons+['q'],timeStamped=clock, maxWait=t_stim) # Remove letter if key is pressed
+        # response = event.waitKeys(keyList=buttons+['q'],timeStamped=clock, maxWait=t_stim) # Maximum duration
+        response = event.waitKeys(keyList=buttons+['q'],timeStamped=clock) # No maximum duration
         
         # if too slow/missed, warn the participant!
         if not response:
