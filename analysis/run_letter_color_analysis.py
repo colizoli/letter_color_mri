@@ -67,7 +67,6 @@ subjects_group  = participants['subjects']
 sessions        = ['ses-01','ses-02']
 # the following is for indexing any missing files
 t1              = ['t1_1','t1_2']
-fieldmap        = ['fieldmap1','fieldmap2']
 loc_letters     = ['loc-letters1','loc-letters2']
 loc_colors      = ['loc-colors1','loc-colors2']
 rsa             = [ ['rsa1_1','rsa2_1','rsa3_1','rsa4_1'],
@@ -77,19 +76,11 @@ rsa             = [ ['rsa1_1','rsa2_1','rsa3_1','rsa4_1'],
 # Preprocessing class
 # -----------------------
 # Values for unwarping in FEAT, based on BOLD data
-EPI_TE      = 0.0396*1000       # echo time EPI in ms
-EPI_EECHO   = 0.000580009*1000  # effective echo spacing EPI in ms
 TR          = 1.5       # repetition time in seconds
 FWHM        = 3         # smoothing kernel in mm (localizers only)
 
 if run_preprocessing:
     for s,subject in enumerate(mri_subjects): # go in order of mri
-        ######################################################################
-        # check if field map exists in both sessions (identical preprocessing for each session)
-        if int(participants[fieldmap[0]][s]) and int(participants[fieldmap[1]][s]):
-            UNWARP = 1
-        else: # otherwise, turn off unwarping for both sessions current subject
-            UNWARP = 0
         ######################################################################
         for ss,session in enumerate(sessions): # loop sessions
             ###################################################################
@@ -111,36 +102,22 @@ if run_preprocessing:
                 deriv_dir       = deriv_dir,
                 mask_dir        = mask_dir,
                 template_dir    = template_dir,
-                timing_files_dir = timing_files_dir,
-                EPI_TE          = EPI_TE,
-                EPI_EECHO       = EPI_EECHO,
                 FWHM            = FWHM,
-                UNWARP          = UNWARP,
-                T1_PATH         = T1_PATH
+                t1_path         = t1_path
                 )            
-            # preprocess.dicom2bids()       # convert DICOMS from scanner to nifti in bids format
-            # preprocess.housekeeping()     # copies event files, rename file names to be bids compliant and same b/t mri & behavior
-            # preprocess.raw_copy()         # copy from bids_raw directory into derivaties to prevent overwriting
-            # preprocess.bet_brains_T1()      # brain extraction T1 always check visually!
-            # preprocess.bet_brains_fmap()    # B0 unwarping needs 'tight' brain extracted magnitude images of field map, better too small than too big!
-            # preprocess.prepare_fmap()       # prepares the field map image in radians/sec
+            # preprocess.dicom2bids()               # convert DICOMS from scanner to nifti in bids format
+            # preprocess.housekeeping()             # copies event files, rename file names to be bids compliant and same b/t mri & behavior
+            # preprocess.raw_copy()                 # copy from bids_raw directory into derivaties to prevent overwriting
+            # preprocess.bet_brains_T1()            # brain extraction T1 always check visually!
+            preprocess.create_native_target()     # create the subject-specific native space target for all tasks
+            # preprocess.native_target_2_mni()      # register the subject-specific native space target to MNI space via the T1 (save transforms)
             
             #### Everything below here writes commands to a batch job ####
-            preprocess.preprocess_fsf('letters')          # generate FSF file for preprocessing in FEAT (run from command line - batch)
-            preprocess.preprocess_fsf('colors')           # generate FSF file for preprocessing in FEAT (run from command line - batch)
-            preprocess.preprocess_fsf('rsa','_run-01')    # generate FSF file for preprocessing in FEAT (run from command line - batch)
-            preprocess.preprocess_fsf('rsa','_run-02')    # generate FSF file for preprocessing in FEAT (run from command line - batch)
-            preprocess.preprocess_fsf('rsa','_run-03')    # generate FSF file for preprocessing in FEAT (run from command line - batch)
-            preprocess.preprocess_fsf('rsa','_run-04')    # generate FSF file for preprocessing in FEAT (run from command line - batch)
+            # preprocess.motion_correction()        # motion correct to the subject-specific native space targetå
+            # preprocess.preprocess_fsf()           # generate FSF file for preprocessing in FEAT (run from command line - batch)
             
-            preprocess.transform_2_mni('letters')           # transforms the preprocessed time series to MNI space
-            preprocess.transform_2_mni('colors')            # transforms the preprocessed time series to MNI space
-            
-            preprocess.transform_2_native_target('rsa','_run-01')   # register to session 1 native space
-            preprocess.transform_2_native_target('rsa','_run-02')   # register to session 1 native space
-            preprocess.transform_2_native_target('rsa','_run-03')   # register to session 1 native space
-            preprocess.transform_2_native_target('rsa','_run-04')   # register to session 1 native space
-            
+            # preprocess.transform_2_mni('letters')           # transforms the preprocessed time series to MNI space
+            # preprocess.transform_2_mni('colors')            # transforms the preprocessed time series to MNI space
             
             
 # -----------------------
