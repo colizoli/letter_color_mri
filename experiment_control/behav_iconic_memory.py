@@ -95,7 +95,7 @@ You can take a short break now. \n\n\n\n\
 
 break_block_txt = "Well done! You have completed {}/8 blocks. \n\
 You can take a short break now. \n\n\n\
-Note that from now one, the letters you will see will be different\n\n\n\
+Note that from now on, the letters you will see will be different.\n\n\n\
 *** Press [SPACEBAR] to continue ***"
 
 end_txt = 'Well done! You have finished the experiment.\nThank you!\n\n\n\n\
