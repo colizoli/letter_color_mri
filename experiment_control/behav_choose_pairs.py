@@ -207,7 +207,7 @@ if subject_ID:
     letter_input    = visual.TextStim(win, color= 'black', pos=(sign_x_let,input_y),height=30)
     color_input     = visual.TextStim(win, color= 'black', pos=(sign_x_col,input_y),height=30)
 
-    final_choice_ask = visual.TextStim(win, text = 'Continue choosing [ENTER]\nor Final choice [y]', color='black', pos=(sign_x_choice,ask_y), height = 20)
+    final_choice_ask = visual.TextStim(win, text = 'Continue choosing [ENTER]\nor FINAL CHOICE [press right arrow ->]', color='black', pos=(sign_x_choice,ask_y), height = 20)
     keep_choosing    = visual.TextStim(win, text = 'Letters with no color or repeated colors. \nPlease, continue choosing. ', color='black', pos=(sign_x_choice,ask_y-40), height = 20)
     
     # Letters to be trained
@@ -393,10 +393,10 @@ if subject_ID:
         choice_None.setAutoDraw(False)
         
         keys=[]
-        final_choice = event.waitKeys(keyList=['y','return'])
+        final_choice = event.waitKeys(keyList=['right','return'])
         print('- final choice:', final_choice[0])
         
-        if final_choice[0] == 'y':
+        if final_choice[0] == 'right':
             
             #Select choosen colors and check empty ones:
             chosen_colors = []
