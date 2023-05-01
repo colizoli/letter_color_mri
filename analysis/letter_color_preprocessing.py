@@ -14,7 +14,7 @@ fsl
 
 """
 
-import os, subprocess, sys
+import os, subprocess, sys, glob
 import shutil as sh
 import nibabel as nib
 import pandas as pd
@@ -104,6 +104,9 @@ class preprocess_class(object):
             os.mkdir(os.path.join(self.preprocess_dir, 'task-letters'))
         if not os.path.isdir(os.path.join(self.preprocess_dir, 'task-rsa')):
             os.mkdir(os.path.join(self.preprocess_dir, 'task-rsa'))
+            
+        # path to processed physiology files
+        self.phys_dir = os.path.join(self.raw_dir, 'physiology_processed')
         
         # path to registration target for both sessions (output)
         self.native_target_dir = os.path.join(self.preprocess_dir, 'native_targets', self.subject)
@@ -301,43 +304,32 @@ class preprocess_class(object):
         
         print('success: copy_logfiles')
     
-    def copy_physio(self, behav_sess):
-        """Copy Physio?
+    def copy_physio(self, ):
+        """Copy the physio files into the bids_raw directory.
         
-        Args:
-            behav_sess (str): The session string within the behavioral logfile names.
+        Notes: 
+            First run the separate script process_source_physio.py
+            Already renamed and runs are matched.
         """
         ###################
-        # copy colors file
+        # copy subject's files current session
         ###################
-        src = os.path.join(self.raw_dir, 'logfiles', self.subject, '{}_colors.tsv'.format(self.subject))
-        dst = os.path.join(self.raw_dir, 'nifti', self.subject, '{}_colors.tsv'.format(self.subject))
-        sh.copyfile(src, dst)
-        print('colors: src={} , dst={}'.format(src,dst))
+        
+        subj_fns = glob.glob(os.path.join(self.phys_dir, '{}_{}_*_physio.tsv'.format(self.subject,self.session)))
+        
+        for phys in subj_fns:
+            
+            src = os.path.join(self.phys_dir, phys) # from physiology_processed
+            # change back to self.raw_dir!
+            dst = os.path.join(self.deriv_dir, self.subject, self.session, 'func', phys.split("/")[-1])
+            sh.copyfile(src, dst)
+            print('copying: src={} , dst={}'.format(src,dst))
 
-        ###################
-        # copy 'behav' folder
-        ###################
-        src = os.path.join(self.raw_dir, 'logfiles', self.subject, behav_sess, 'behav')
-        dst = os.path.join(self.raw_dir, 'nifti', self.subject, self.session, 'behav')
-        sh.copytree(src, dst)
-        print('behav: src={} , dst={}'.format(src,dst))
-        
-        ###################
-        # copy mri event files into existing 'func' folder
-        ###################
-        # loop through functional files
-        for f in os.listdir(os.path.join(self.raw_dir, 'logfiles', self.subject, behav_sess, 'func')):
-            src = os.path.join(self.raw_dir, 'logfiles', self.subject, behav_sess, 'func', f)
-            dst = os.path.join(self.raw_dir, 'nifti', self.subject, self.session, 'func', f)
-            sh.copy(src, dst)
-        print('func: src={} , dst={}'.format(src,dst))
-        
         print('success: copy_physio')
     
     
     def housekeeping(self, ):
-        """Rename then copies events and log files into the bids_raw directory with the NIFTI files.
+        """Rename then copies events, log, and physio files into the bids_raw directory with the NIFTI files.
         
         Notes:
             WARNING!! don't remove timestamps twice on same participant by rerunning remove_timestamps_logfiles().
@@ -351,6 +343,7 @@ class preprocess_class(object):
         # ## WARNING!! don't remove timestamps twice on same participant
         # self.remove_timestamps_logfiles(behav_sess) # removes the trailing timestamps from the psychopy output
         # self.copy_logfiles(behav_sess)              # copy logfiles to bids_raw folder with mri data
+        self.copy_physio()                            # copy processed physio files into bids_raw directory after process_source_physio()
         print('success: housekeeping')
     
     

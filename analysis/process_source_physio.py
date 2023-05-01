@@ -27,11 +27,13 @@ DataFile=sub-211_sess-1.eeg
 MarkerFile=sub-211_sess-1.vmrk
 
 change:
-sub-211_sess-1
-sub-201_sess-1
-sub-136_sess-1
 sub-103_sess-1
 sub-109_sess-1
+sub-119_sess-1
+sub-136_sess-1
+sub-201_sess-1
+sub-211_sess-1
+sub-213_sess-2
 """
 
 import os
@@ -224,22 +226,18 @@ def descriptives_physio():
     print('success: descriptives_physio')
 
 
-def copy_physio():
-    """Copy extracted runs to the subject bids_raw folder
+def rename_physio():
+    """Rename extracted physiological runs to psychopy tasks.
     
     Notes:
     ------
         The localizers had 248 TRs, the RSA runs had 496 or 497 TRs
         Match from end of session: LOC2 first, RSA1 last
+        When ready copy the files from the main script: run_letter_color_analysis.py
     """
     df_all = pd.read_csv(os.path.join(output_dir, 'descriptives_physio.csv'))
     
-    runs = ['task-loc2', 'task-loc1', 'task-rsa_run-04', 'task-rsa_run-03', 'task-rsa_run-02', 'task-rsa_run-01']
-    
-    # first match localizers
-    df = df_all[df_all['trs'] == 248].copy()
-        
-    
+    runs = ['task-loc2', 'task-loc1', 'task-rsa_run-04', 'task-rsa_run-03', 'task-rsa_run-02', 'task-rsa_run-01']        
     
     # loop over subjects and copy to correct functional folder
     dfs = pd.read_csv(os.path.join(subject_dir, 'participants_full_mri.csv'))
@@ -250,11 +248,8 @@ def copy_physio():
         for sess in ['ses-01', 'ses-02']:
             subj_fns = glob.glob(os.path.join(output_dir, 'sub-{}_{}_run-*_physio.tsv'.format(subj,sess)))
             
-            if not subj == 201:
-            #     subj_fns = subj_fns[::-1] # started with localizer
-            # else:
-            #     runs = runs[::-1]
-            #   
+            if not subj == 201: # localizer first
+
                 subj_fns = subj_fns[::-1] # started with localizer
                 if len(subj_fns) == 6:
                     for rcounter, phys in enumerate(subj_fns):
@@ -273,27 +268,7 @@ def copy_physio():
                     flag_subjects.append('sub-{} {}'.format(subj, sess))
     print('WARNING: check the following by hand and correct')
     print(flag_subjects)
-                
-            
-    # df_out = pd.DataFrame(columns=['subject','session','check'])
-#
-#
-#     counter = 0
-#     for s, subj in enumerate(dfs['subjects']):
-#         for sess in ['ses-01', 'ses-02']:
-#             # current subject and session
-#             mask = (df['subject']==subj) & (df['session']==sess)
-#             this_df = df[mask]
-#
-#             # output row of data frame
-#             df_out.loc[counter] = [
-#                 int(subj),                          # subject
-#                 sess,                               # session
-#                 int(1),                             # check
-#             ]
-#             df_out.to_csv(os.path.join(output_dir, 'check_physio.csv'))
-#             counter += 1
-    print('success: check_physio')
+    print('success: rename_physio')
     
     
 # -----------------------
@@ -302,5 +277,4 @@ def copy_physio():
 if __name__ == "__main__":
     # loop_raw_physio()
     # descriptives_physio()
-    copy_physio()
-    # match_physio_runs()
+    rename_physio()
