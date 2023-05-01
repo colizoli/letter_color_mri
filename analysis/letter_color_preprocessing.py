@@ -22,7 +22,57 @@ import numpy as np
 from IPython import embed as shell # for Oly's debugging only
 
 class preprocess_class(object):
-    def __init__(self, subject, mri_subject, session, analysis_dir, source_dir, raw_dir, deriv_dir, mask_dir, template_dir, FWHM, t1_path):        
+    """
+    Define a class for the preprocessing of the MRI data.
+    
+    Args:
+        subject (str): Subject number main experiment.
+        mri_subject (str): The chronological subject number from scanner.
+        session (str): Current session out of two.
+        analysis_dir (str): Path to the analysis scripts.
+        source_dir (str): Path to the DICOM files for the MRI acquisition.
+        raw_dir (str): Path to the NIFTI files after converstion from DICOM.
+        deriv_dir (str): Path to the derivatives directory.
+        mask_dir (str): Path to the directory with MRI masks.
+        template_dir (str): Path to the directory with the FEAT/FSL template files.
+        FWHM (int): Smoothing kernel for localizer analysis (full-width half maximum)
+        t1_sess (str): Session to use for T1 in FEAT.
+        
+    Attributes:
+        subject (str): Subject number main experiment.
+        mri_subject (str): The chronological subject number from scanner.
+        session (str): Current session out of two.
+        analysis_dir (str): Path to the analysis scripts.
+        source_dir (str): Path to the DICOM files for the MRI acquisition.
+        raw_dir (str): Path to the NIFTI files after converstion from DICOM.
+        deriv_dir (str): Path to the derivatives directory.
+        mask_dir (str): Path to the directory with MRI masks.
+        template_dir (str): Path to the directory with the FEAT/FSL template files.
+        FWHM (str): Smoothing kernel for localizer analysis (full-width half maximum)
+        t1_sess (str): Session to use for T1 in FEAT.
+        preprocess_dir (str): Path to the preprocessing directory.
+        native_target (str): Path to the target image for current subject (no nifti extension in file name).
+        native_target_dir (str): Path to the subjects native target directory.
+        motion_dir (str): Path to motion correction output (mcflirt)
+        preprocessing_job_path (str): Path to the text file for batch scripting (Unix).
+    
+    Methods:
+        __init__(subject, mri_subject, session, analysis_dir, source_dir, raw_dir, deriv_dir, mask_dir, template_dir, FWHM, t1_path)
+        dicom2bids()
+        rename_logfiles(behav_sess)
+        remove_timestamps_logfiles(behav_sess)
+        copy_logfiles(behav_sess)
+        housekeeping()
+        raw_copy()
+        bet_brains_T1( postfix='brain')
+        create_native_target(task='rsa', session='ses-01', bold_run='run-03')
+        native_target_2_mni()
+        motion_correction()
+        preprocess_fsf()
+        transform_2_mni(task, bold_run='', linear=0)
+    """
+    
+    def __init__(self, subject, mri_subject, session, analysis_dir, source_dir, raw_dir, deriv_dir, mask_dir, template_dir, FWHM, t1_sess):        
         self.subject        = 'sub-'+str(subject)
         self.mri_subject    = 'sub-'+str(mri_subject)
         self.session        = str(session)
@@ -33,10 +83,7 @@ class preprocess_class(object):
         self.mask_dir       = str(mask_dir)
         self.template_dir   = str(template_dir)
         self.FWHM           = str(FWHM)
-        self.t1_path        = str(t1_path) # with _brain extension
-        
-        # path to registration target for both sessions (output)
-        self.native_target = os.path.join(self.preprocess_dir,'{}_native_target.nii.gz'.format(self.subject))
+        self.t1_sess        = str(t1_sess) # with _brain extension
             
         if not os.path.isdir(self.raw_dir):
             os.mkdir(self.raw_dir)
@@ -47,30 +94,45 @@ class preprocess_class(object):
         if not os.path.isdir(self.template_dir):
             os.mkdir(self.template_dir)
         
-        self.preprocess_dir = os.path.join(self.deriv_dir,'preprocessing')
+        self.preprocess_dir = os.path.join(self.deriv_dir, 'preprocessing')
         if not os.path.isdir(self.preprocess_dir):
             os.mkdir(self.preprocess_dir)
         
-        if not os.path.isdir(os.path.join(self.preprocess_dir,'task-colors')):
-            os.mkdir(os.path.join(self.preprocess_dir,'task-colors'))
-        if not os.path.isdir(os.path.join(self.preprocess_dir,'task-letters')):
-            os.mkdir(os.path.join(self.preprocess_dir,'task-letters'))
-        if not os.path.isdir(os.path.join(self.preprocess_dir,'task-rsa')):
-            os.mkdir(os.path.join(self.preprocess_dir,'task-rsa'))
+        if not os.path.isdir(os.path.join(self.preprocess_dir, 'task-colors')):
+            os.mkdir(os.path.join(self.preprocess_dir, 'task-colors'))
+        if not os.path.isdir(os.path.join(self.preprocess_dir, 'task-letters')):
+            os.mkdir(os.path.join(self.preprocess_dir, 'task-letters'))
+        if not os.path.isdir(os.path.join(self.preprocess_dir, 'task-rsa')):
+            os.mkdir(os.path.join(self.preprocess_dir, 'task-rsa'))
         
+        # path to registration target for both sessions (output)
+        self.native_target_dir = os.path.join(self.preprocess_dir, 'native_targets', self.subject)
+        if not os.path.isdir(self.native_target_dir):
+            os.makedirs(self.native_target_dir)
+    
+        self.native_target = os.path.join(self.native_target_dir, '{}_native_target'.format(self.subject))
+        
+        # path to motion correction output (command line)
+        self.motion_dir = os.path.join(self.preprocess_dir, 'motion_correction', self.subject, self.session)
+        if not os.path.isdir(self.motion_dir):
+            os.makedirs(self.motion_dir)
+                
         # write unix commands to job to run in parallel
-        self.preprocessing_job_path = os.path.join(self.analysis_dir,'jobs','job_preprocessing_{}.txt'.format(self.subject))
+        self.preprocessing_job_path = os.path.join(self.analysis_dir, 'jobs', 'job_preprocessing_{}.txt'.format(self.subject))
         if self.session == 'ses-01':
             self.preprocessing_job = open(self.preprocessing_job_path, "w")
             self.preprocessing_job.write("#!/bin/bash\n")
             self.preprocessing_job.close()
     
+    
     def dicom2bids(self, ):
-        """ Convert MRI data from dicom to nifti format, then structures them according to the bids standard. 
-        Takes about 15 minutes per session.
-        Requirements:
-            dcm2niix (conda install -c conda-forge dcm2niix)
-            dcm2bids (python -m pip install dcm2bids) 
+        """Convert MRI data from dicom to nifti format and structure files according to the BIDS standard. 
+        
+        Notes:
+            Takes about 15 minutes per session.
+            Requirements:
+                dcm2niix (conda install -c conda-forge dcm2niix)
+                dcm2bids (python -m pip install dcm2bids) 
         """
         # for coverting from source directories to bids file names
         if self.session == 'ses-01':
@@ -94,8 +156,12 @@ class preprocess_class(object):
         print('converting {} convert2bids_letter-color_main_{}.json'.format(self.mri_subject,self.subject))
         print('success: dicom2bids')
     
+    
     def rename_logfiles(self, behav_sess):
-        """ Renames the log files to match MRI files: e.g., sess-2 -> ses-02
+        """Rename the log files to match MRI files: e.g., sess-2 -> ses-02.
+        
+        Args:
+            behav_sess (str): The session string within the behavioral logfile names.
         """
         ###################
         # RENAME 'behav' 'sess-1' to 'ses-01' in logfiles/behav folder before copying
@@ -106,7 +172,6 @@ class preprocess_class(object):
                 f_new = f.replace(behav_sess, self.session)
                 os.rename(os.path.join(dir_path,f),os.path.join(dir_path,f_new)) # old,new
                 print('old={} , new={}'.format(f,f_new))
-        
         
         ###################
         # RENAME 'func' 'sess-1' to 'ses-01' in logfiles/func folder before copying
@@ -168,9 +233,12 @@ class preprocess_class(object):
                     
         print('success: rename_logfiles')
     
+    
     def remove_timestamps_logfiles(self, behav_sess):
-        """ removes the trailing timestamps from the psychopy output
-         e.g. last 16 characters _00200312-125726
+        """Remove the trailing timestamps from the psychopy output: last 16 characters _00200312-125726.
+        
+        Args:
+            behav_sess (str): The session string within the behavioral logfile names.
         """
         T = 16 # length of trailing characters to remove
         
@@ -200,7 +268,10 @@ class preprocess_class(object):
         print('success: remove_timestamps_logfiles')
         
     def copy_logfiles(self, behav_sess):
-        """ copies events and log files into the bids_raw directory with the nifti files
+        """Copy events and log files into the bids_raw directory with the NIFTI files.
+        
+        Args:
+            behav_sess (str): The session string within the behavioral logfile names.
         """
         ###################
         # copy colors file
@@ -231,7 +302,10 @@ class preprocess_class(object):
         print('success: copy_logfiles')
     
     def copy_physio(self, behav_sess):
-        """ copies events and log files into the bids_raw directory with the nifti files
+        """Copy Physio?
+        
+        Args:
+            behav_sess (str): The session string within the behavioral logfile names.
         """
         ###################
         # copy colors file
@@ -259,11 +333,14 @@ class preprocess_class(object):
             sh.copy(src, dst)
         print('func: src={} , dst={}'.format(src,dst))
         
-        print('success: copy_logfiles')
+        print('success: copy_physio')
     
     
     def housekeeping(self, ):
-        """ Renames then copies events and log files into the bids_raw directory with the nifti files
+        """Rename then copies events and log files into the bids_raw directory with the NIFTI files.
+        
+        Notes:
+            WARNING!! don't remove timestamps twice on same participant by rerunning remove_timestamps_logfiles().
         """
         if self.session == 'ses-01':
             behav_sess = 'sess-1' #old 
@@ -278,8 +355,11 @@ class preprocess_class(object):
     
     
     def raw_copy(self,):
-        """ Copy from bids_raw directory into derivatives folder for further processing/analysis.
-        All further analysis should be run within the derivatives folder.
+        """Copy the entire bids_raw directory into derivatives folder for further processing/analysis.
+        
+        Notes:
+            The bids_raw directory should be backed up on the DAC. 
+            All further analysis should be run within the derivatives folder.
         """
         if os.path.isdir(os.path.join(self.deriv_dir, self.subject, self.session)):
             print('Target folder already exists. No files will be copied. Delete existing session from derivatives if intended.')
@@ -298,8 +378,13 @@ class preprocess_class(object):
 
 
     def bet_brains_T1(self, postfix='brain'):
-        """ Runs brain extraction on all T1s.
-        Always check visually in fsleyes.
+        """Run brain extraction on all T1s.
+        
+        Args:
+            postfix (str): The string to add to the end of the brain-extracted images (default 'brain').
+        
+        Notes:
+            Always check visually in fsleyes.
         """
         mri_in = os.path.join(self.deriv_dir,self.subject,self.session,'anat','{}_{}_T1w.nii.gz'.format(self.subject, self.session))
         
@@ -319,50 +404,52 @@ class preprocess_class(object):
     
     
     def create_native_target(self, task='rsa', session='ses-01', bold_run='run-03'):
-        """Create the egistration target in native space for ALL tasks. 
+        """Create the registration target in native space for ALL tasks. 
         
         Args:
-            task (str): rsa or localizer task to use for target
-            session (str): ses-01 or ses-02 to use for target
-            bold_run (str): the bold run to use for target
+            task (str): The task to use for the registration target ('rsa' or 'loc').
+            session (str): The session to use for the registration target ('ses-01' or 'ses-02').
+            bold_run (str): The bold run to use for registration target.
         
         Notes:
         ------
-            The target is the first session, 3rd run (RSA3), motion corrected and then mean image.
+            The target should be the first session, 3rd run (RSA3), motion corrected and then mean image.
             Path is defined at class level: self.native_target
         """        
         # path to raw bold file as input to create registration target
         mri_in = os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_task-{}_{}_bold.nii.gz'.format(self.subject, self.session, task, bold_run))
-        mri_out = os.path.join(self.preprocess_dir, '{}_{}_task-{}_{}_bold_mcf.nii.gz'.format(self.subject, self.session, task, bold_run))
+        mri_mcf = os.path.join(self.native_target_dir, '{}_{}_task-{}_{}_bold_mcf'.format(self.subject, self.session, task, bold_run))
         
         ###################
         # motion correction (default target middle volume)
         ###################
-        cmd = 'mcflirt -in {} -stages 4 -sinc_final -o {}'.format(mri_in, mri_out)
-        print(cmd)
-        results = subprocess.call(cmd, shell=True, bufsize=0)
+        cmd1 = 'mcflirt -in {} -stages 4 -sinc_final -o {}'.format(mri_in, mri_mcf)
+        print(cmd1)
+        # results = subprocess.call(cmd, shell=True, bufsize=0)
         
         ###################
         # mean image
         ###################
-        cmd = 'fslmaths {} -Tmean {}'.format(mri_out, self.native_target)
-        print(cmd)
-        results = subprocess.call(cmd, shell=True, bufsize=0)
+        cmd2 = 'fslmaths {}.nii.gz -Tmean {}.nii.gz'.format(mri_mcf, self.native_target)
+        print(cmd2)
+        # results = subprocess.call(cmd, shell=True, bufsize=0)
         
         ###################
         # brain extraction
         ###################
-        cmd = 'bet {} {}'.format(self.native_target, '_brain')
-        print(cmd)
-        results = subprocess.call(cmd, shell=True, bufsize=0)
+        cmd3 = 'bet {}.nii.gz {}.nii.gz'.format(self.native_target, self.native_target+'_brain')
+        print(cmd3)
+        # results = subprocess.call(cmd, shell=True, bufsize=0)
         
-
-        # open preprocessing job and write command as new line
-        # cmd = 'cp {} {}'.format(src,dst)
-        # self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
-        # self.preprocessing_job.write(cmd)   # command
-        # self.preprocessing_job.write("\n\n")  # new line
-        # self.preprocessing_job.close()
+        # open preprocessing job and write commands as new line
+        self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
+        self.preprocessing_job.write(cmd1)   # command
+        self.preprocessing_job.write("\n\n")  # new line
+        self.preprocessing_job.write(cmd2)   # command
+        self.preprocessing_job.write("\n\n")  # new line
+        self.preprocessing_job.write(cmd3)   # command
+        self.preprocessing_job.write("\n\n")  # new line
+        self.preprocessing_job.close()
         print('success: create_native_target')
     
     
@@ -370,58 +457,102 @@ class preprocess_class(object):
         """Compute the registration from the subject-specific native target to MNI space via the T1.
         
         Notes:
-        ------
-        FLIRT to T1 then FNIRT to MNI.
-        Save transformation matrices to apply later.
+            FLIRT to T1 then FNIRT to MNI.
+            Save transformation matrices to apply later.
         """
-        # path to registration target for both sessions (output)
-        # split self.native target and add _mni to end
-        mri_out = os.path.join(self.preprocess_dir,'{}_native_target_mni.nii.gz'.format(self.subject))
-        
-        example_func = self.native_target
+        # native space       
+        example_func                = self.native_target
+        highres_head                = os.path.join(self.deriv_dir,self.subject,self.session,'anat','{}_{}_T1w.nii.gz'.format(self.subject, self.t1_sess))
+        highres                     = os.path.join(self.deriv_dir,self.subject,self.session,'anat','{}_{}_T1w_brain.nii.gz'.format(self.subject, self.t1_sess))   
+        # standard space files in self.mask_dir
+        T1_2_MNI152_2mm             = os.path.join(self.mask_dir, 'T1_2_MNI152_2mm.cnf') # config file
+        standard                    = os.path.join(self.mask_dir, 'MNI152_T1_2mm_brain.nii.gz') #path to MNI (brain?)
+        standard_head               = os.path.join(self.mask_dir, 'MNI152_T1_2mm.nii.gz') 
+        standard_mask               = os.path.join(self.mask_dir, 'MNI152_T1_2mm_brain_mask.nii.gz') 
+        # define paths
+        example_func2highres        = os.path.join(self.native_target_dir, 'example_func2highres') # define path to output
+        highres2example_func        = os.path.join(self.native_target_dir, 'highres2example_func') # define path to output
+        highres2standard            = os.path.join(self.native_target_dir, 'highres2example_func') # define path to output
+        highres2standard_head       = os.path.join(self.native_target_dir, 'highres2standard_head') # define path to output
+        highres2standard_warp       = os.path.join(self.native_target_dir, 'highres2standard_warp') # define path to output
+        highres2highres_jac         = os.path.join(self.native_target_dir, 'highres2highres_jac') # define path to output
+        standard2highres            = os.path.join(self.native_target_dir, 'standard2highres')
+        example_func2standard       = os.path.join(self.native_target_dir, 'example_func2standard')
+        example_func2standard_warp  = os.path.join(self.native_target_dir, 'example_func2standard_warp')
+        standard2example_func       = os.path.join(self.native_target_dir, 'standard2example_func')
         
         ###################
-        # FLIRT to T1
+        # FLIRT then FNIRT
         ###################
         # /usr/local/fsl/bin/epi_reg --epi=example_func --t1=highres_head --t1brain=highres --out=example_func2highres
-        #
+        cmd1 = 'epi_reg --epi={}.nii.gz --t1={} --t1brain={} --out={}.nii.gz'.format(example_func, highres_head, highres, example_func2highres)
+        
         # /usr/local/fsl/bin/convert_xfm -inverse -omat highres2example_func.mat example_func2highres.mat
-        #
+        cmd2 = 'convert_xfm -inverse -omat {}.mat {}.mat'.format(highres2example_func, example_func2highres)
+        
         # /usr/local/fsl/bin/flirt -in highres -ref standard -out highres2standard -omat highres2standard.mat -cost corratio -dof 12 -searchrx -90 90 -searchry -90 90 -searchrz -90 90 -interp trilinear
-        #
+        cmd3 = ('flirt -in {} -ref {} -out {}.nii.gz -omat {}.mat -cost corratio -dof 12'
+                '-searchrx -90 90 -searchry -90 90 -searchrz -90 90 -interp trilinear'.format(highres, standard, highres2standard, highres2standard)
+                )
+        
         # /usr/local/fsl/bin/fnirt --iout=highres2standard_head --in=highres_head --aff=highres2standard.mat --cout=highres2standard_warp --iout=highres2standard --jout=highres2highres_jac --config=T1_2_MNI152_2mm --ref=standard_head --refmask=standard_mask --warpres=10,10,10
-        #
+        cmd4 = ('fnirt --iout={}.nii.gz --in={} --aff={}.mat'
+                ' --cout={}.nii.gz --iout={}.nii.gz --jout={}.nii.gz'
+                ' --config={} --ref={} --refmask={}'
+                ' --warpres=10,10,10'.format(
+                    highres2standard_head, 
+                    highres_head, 
+                    highres2standard, 
+                    highres2standard_warp, 
+                    highres2standard, 
+                    highres2highres_jac, 
+                    T1_2_MNI152_2mm, 
+                    standard_head, 
+                    standard_mask
+                    )
+                )
+        
         # /usr/local/fsl/bin/applywarp -i highres -r standard -o highres2standard -w highres2standard_warp
-        #
+        cmd5 = 'applywarp -i {} -r {} -o {}.nii.gz -w {}.nii.gz'.format(highres, standard, highres2standard, highres2standard_warp)
+        
         # /usr/local/fsl/bin/convert_xfm -inverse -omat standard2highres.mat highres2standard.mat
-        #
+        cmd6 = 'convert_xfm -inverse -omat {}.mat {}.mat'.format(standard2highres, highres2standard)
+        
         # /usr/local/fsl/bin/convert_xfm -omat example_func2standard.mat -concat highres2standard.mat example_func2highres.mat
-        #
+        cmd7 = 'convert_xfm -omat {}.mat -concat {}.mat {}.mat'.format(example_func2standard, highres2standard, example_func2highres)
+        
         # /usr/local/fsl/bin/convertwarp --ref=standard --premat=example_func2highres.mat --warp1=highres2standard_warp --out=example_func2standard_warp
-        #
+        cmd8 = 'convertwarp --ref={} --premat={}.mat --warp1={}.nii.gz --out={}.nii.gz'.format(standard, example_func2highres, highres2standard_warp, example_func2standard_warp)
+        
         # /usr/local/fsl/bin/applywarp --ref=standard --in=example_func --out=example_func2standard --warp=example_func2standard_warp
-        #
+        cmd9 = 'applywarp --ref={} --in={} --out={}.nii.gz --warp={}.nii.gz'.format(standard, example_func, example_func2standard, example_func2standard_warp)
+        
         # /usr/local/fsl/bin/convert_xfm -inverse -omat standard2example_func.mat example_func2standard.mat
+        cmd10 = 'convert_xfm -inverse -omat {}.mat {}.mat'.format(standard2example_func, example_func2standard)
         
-        
-        
-        cmd = 'flirt -in {} -o {}'.format(self.native_target, mri_out)
-        print(cmd)
-        results = subprocess.call(cmd, shell=True, bufsize=0)
-        
-        ###################
-        # FNIRT to MNI
-        ###################
-        cmd = 'fslmaths {} -Tmean {}'.format(mri_out, native_target)
-        print(cmd)
-        results = subprocess.call(cmd, shell=True, bufsize=0)
-        
-        
-        # open preprocessing job and write command as new line
-        # self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
-        # self.preprocessing_job.write(cmd)   # command
-        # self.preprocessing_job.write("\n\n")  # new line
-        # self.preprocessing_job.close()
+        # open preprocessing job and write commands as new line
+        self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
+        self.preprocessing_job.write(cmd1)   # command
+        self.preprocessing_job.write("\n\n")  # new line
+        self.preprocessing_job.write(cmd2)   # command
+        self.preprocessing_job.write("\n\n")  # new line
+        self.preprocessing_job.write(cmd3)   # command
+        self.preprocessing_job.write("\n\n")  # new line
+        self.preprocessing_job.write(cmd4)   # command
+        self.preprocessing_job.write("\n\n")  # new line
+        self.preprocessing_job.write(cmd5)   # command
+        self.preprocessing_job.write("\n\n")  # new line
+        self.preprocessing_job.write(cmd6)   # command
+        self.preprocessing_job.write("\n\n")  # new line
+        self.preprocessing_job.write(cmd7)   # command
+        self.preprocessing_job.write("\n\n")  # new line
+        self.preprocessing_job.write(cmd8)   # command
+        self.preprocessing_job.write("\n\n")  # new line
+        self.preprocessing_job.write(cmd9)   # command
+        self.preprocessing_job.write("\n\n")  # new line
+        self.preprocessing_job.write(cmd10)   # command
+        self.preprocessing_job.write("\n\n")  # new line
+        self.preprocessing_job.close()
         print('success: native_target_2_mni')
     
     
@@ -429,35 +560,39 @@ class preprocess_class(object):
         """Run motion correction with subject-specific native target as reference volume.
         
         Notes:
-        ------
-        Call MCFLIRT from command line (FEAT has no option for overriding default reference volume.)
-        Save motion matrices to add to first level GLM.
+            Call MCFLIRT from command line (FEAT has no option for overriding default reference volume.)
+            Save motion matrices to add to first level GLM.
         """
         # go into subject's session's func folder and motion correct all nii.gz files
-        for task in ['letters','colors','rsa_run-01','rsa_run-02','rsa_run-03','rsa_run-04']:
-            # raw bold data 
-            mri_in = os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_task-{}_bold.nii.gz'.format(self.subject,self.session,task))
-            
-            if os.path.exists(mri_in): ##### SKIP IF BOLD FILE DOES NOT EXIST #####
-                # save in preprocessing folder of task
-                mri_out = os.path.join(self.preprocess_dir,'task-{}'.format(task),'{}_{}_task-{}_bold_mcf'.format(self.subject,self.session,task))
-        
+        for bold in os.listdir(os.path.join(self.deriv_dir,self.subject,self.session,'func')):
+            if '.nii.gz' in bold:          
+                # save in preprocessing folder of task, have to split 'nii.gz' twice to get base
+                fname, extension = os.path.splitext(bold)
+                fname, extension = os.path.splitext(fname)
+                bold_out = os.path.join(self.motion_dir, fname+'_mcf')
+                bold_in = os.path.join(self.deriv_dir,self.subject,self.session,'func', bold)
                 ###################
-                # motion correction (default target middle volume)
+                # motion correction (reference = native target)
                 ###################
-                cmd = 'mcflirt -in {} -r {} -stages 4 -sinc_final -o {} -stats -mats -plots'.format(mri_in, self.native_target, mri_out)
+                cmd = 'mcflirt -in {} -r {}.nii.gz -stages 4 -sinc_final -o {} -stats -mats -plots'.format(bold_in, self.native_target, bold_out)
                 print(cmd)
-                results = subprocess.call(cmd, shell=True, bufsize=0)
-                # # open preprocessing job and write command as new line
-                # self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
-                # self.preprocessing_job.write(cmd)   # command
-                # self.preprocessing_job.write("\n\n")  # new line
-                # self.preprocessing_job.close()                    
+                # results = subprocess.call(cmd, shell=True, bufsize=0)
+
+                # open preprocessing job and write command as new line
+                self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
+                self.preprocessing_job.write(cmd)   # command
+                self.preprocessing_job.write("\n\n")  # new line
+                self.preprocessing_job.close()                
         print('success: motion_correction')
         
         
     def preprocess_fsf(self, ):
-        # Creates the FSF files for each subject's first level analysis        
+        """Creates the FSF files for each subject's preprocessing in FEAT.
+        
+        Notes:
+            Smoothing is on only for the localizers.
+            Uses the preprocessing_template.fsf to search/replace the markers.
+        """    
         
         template_filename = os.path.join(self.template_dir,'preprocessing_template.fsf')
         
@@ -529,8 +664,11 @@ class preprocess_class(object):
             else:
                 print('cannot make FSF: missing {}'.format(BOLD))
         
+        
     def transform_2_mni(self, task, bold_run='', linear=0):
-        """ Use the registration from the preprocessing FEAT output to transform the filtered_func_data.nii.gz to MNI space (non-linear)
+        """Use the registration from the preprocessing FEAT output to transform the filtered_func_data.nii.gz to MNI space (non-linear)
+        
+        Notes:
         FLIRT and FNIRT registrations have already been calculated based on example_func.
         Here, we are just applying the existing FNIRT warps to the preprocessed data
         See here: https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FLIRT/FAQ#How_do_I_transform_a_mask_with_FLIRT_from_one_space_to_another.3F

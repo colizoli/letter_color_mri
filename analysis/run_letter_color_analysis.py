@@ -73,7 +73,7 @@ rsa             = [ ['rsa1_1','rsa2_1','rsa3_1','rsa4_1'],
                     ['rsa1_2','rsa2_2','rsa3_2','rsa4_2'] ] 
 
 # -----------------------
-# Preprocessing class
+# Run preprocessing class
 # -----------------------
 # Values for unwarping in FEAT, based on BOLD data
 TR          = 1.5       # repetition time in seconds
@@ -86,9 +86,9 @@ if run_preprocessing:
             ###################################################################
             # check if T1 exists for current session. If not, use other session
             if int(participants[t1[ss]][s]):
-                T1_PATH = os.path.join(deriv_dir,'sub-{}'.format(subjects_group[s]),session,'anat','sub-{}_{}_T1w_brain.nii.gz'.format(subjects_group[s],session))
+                t1_sess = session
             else:
-                T1_PATH = os.path.join(deriv_dir,'sub-{}'.format(subjects_group[s]),sessions[~ss],'anat','sub-{}_{}_T1w_brain.nii.gz'.format(subjects_group[s],sessions[~ss]))
+                t1_sess = sessions[~ss]
             
             ######################################################################
             # initialize class
@@ -103,17 +103,18 @@ if run_preprocessing:
                 mask_dir        = mask_dir,
                 template_dir    = template_dir,
                 FWHM            = FWHM,
-                t1_path         = t1_path
+                t1_sess         = t1_sess
                 )            
             # preprocess.dicom2bids()               # convert DICOMS from scanner to nifti in bids format
             # preprocess.housekeeping()             # copies event files, rename file names to be bids compliant and same b/t mri & behavior
             # preprocess.raw_copy()                 # copy from bids_raw directory into derivaties to prevent overwriting
             # preprocess.bet_brains_T1()            # brain extraction T1 always check visually!
+            #### Everything below here writes commands to a batch job ####
             preprocess.create_native_target()     # create the subject-specific native space target for all tasks
             # preprocess.native_target_2_mni()      # register the subject-specific native space target to MNI space via the T1 (save transforms)
             
-            #### Everything below here writes commands to a batch job ####
-            # preprocess.motion_correction()        # motion correct to the subject-specific native space targetå
+            preprocess.motion_correction()        # motion correct each run to the subject-specific native space target
+            shell()
             # preprocess.preprocess_fsf()           # generate FSF file for preprocessing in FEAT (run from command line - batch)
             
             # preprocess.transform_2_mni('letters')           # transforms the preprocessed time series to MNI space
@@ -121,7 +122,7 @@ if run_preprocessing:
             
             
 # -----------------------
-# First-level class
+# Run first-level class
 # -----------------------   
 if run_first_level:
     for s,subject in enumerate(subjects_group):
@@ -156,7 +157,7 @@ if run_first_level:
         # first_level.rsa_2x2_fsf()                         # generates the first level FSF for the 2x2 design
                 
 # -----------------------
-# Higher-level class
+# Run higher-level class
 # -----------------------
 if run_higher_level:
     ### PARTICIPANT LIST FOR BEHAVIOR ONLY

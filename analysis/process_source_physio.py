@@ -37,6 +37,7 @@ sub-109_sess-1
 import os
 import glob
 import mne
+import shutil as sh
 import pandas as pd
 import numpy as np
 from IPython import embed as shell # for Oly's debugging only
@@ -51,6 +52,7 @@ home_dir = '/project/3018051.01/'
 raw_dir    = os.path.join(home_dir, 'bids_raw','physiology')  # raw physiology files
 output_dir = os.path.join(home_dir, 'bids_raw','physiology_processed') # after split
 subject_dir    = os.path.join(home_dir, 'analysis')  # subject list
+bids_dir       = os.path.join(home_dir, 'derivatives')        # NIFTI versions of DICOM files for processing
 
 if not os.path.isdir(output_dir): # make the output directory if doesn't exist
     os.mkdir(output_dir)
@@ -123,6 +125,7 @@ def find_triggers(filename):
 
     return df_triggers # Return the resulting dataframe with triggers and run_gap
 
+
 def split_dataframe(filename, df, df_triggers):
     """Iterate through the run_gap and split the dataframe into multiple .csv files
     
@@ -134,17 +137,17 @@ def split_dataframe(filename, df, df_triggers):
     Notes:
     ------
         pandas.core.frame.DataFrames with index, heart rate, and respiration saved (cols) for each run
-        A run will get data from start to stop+TR+error (i.e., there will be extra data on tail ends)
+        A run will get data from start to stop+TR (at least 3 TRs distance, because sometimes 1 trigger is missed)
     """
     
     df.drop(['time'],axis=1,inplace=True) # time irrelevant, only row position important
     
-    # The run starts are where there are large run_gaps and first trigger
-    df_triggers['starts'] = np.array((df_triggers['run_gap'] > int((SAMPLE_RATE * TR) + SAMPLE_ERROR)) | (df_triggers['run_gap'] == 0), dtype=int)
-    
+    # The run starts are where there are large run_gaps (more than 3 TRs) and first trigger
+    df_triggers['starts'] = np.array((df_triggers['run_gap'] >= int(SAMPLE_RATE * TR * 3)) | (df_triggers['run_gap'] == 0) , dtype=int)
+        
     # get stops
     get_stops = np.array(np.diff(np.array(df_triggers['starts'])) > 0, dtype=int)
-    df_triggers['stops'] =  np.append(get_stops, [1]) # last trigger is a stop
+    df_triggers['stops'] =  np.append(get_stops, [1]) # last trigger is always a stop
     
     df_starts = df_triggers[df_triggers['starts']==1].copy() # get only starts 
     df_stops = df_triggers[df_triggers['stops']==1].copy() # get only stops
@@ -171,6 +174,7 @@ def split_dataframe(filename, df, df_triggers):
     # save triggers too
     df_triggers.to_csv(os.path.join(output_dir, path_subj + '_triggers.csv'))
     print('success: split_datarame')
+        
         
 def loop_raw_physio():
     """Loop through all files in "physiology" and run workflow.
@@ -219,46 +223,84 @@ def descriptives_physio():
             print('descriptives_physio: subject {} session {}'.format(subj, sess))
     print('success: descriptives_physio')
 
-def check_physio():
-    """Check how many physio runs each subject has.
+
+def copy_physio():
+    """Copy extracted runs to the subject bids_raw folder
     
     Notes:
     ------
         The localizers had 248 TRs, the RSA runs had 496 or 497 TRs
-        pandas.core.frame.DataFrames output with subject, session, runs, samples and TRs.
+        Match from end of session: LOC2 first, RSA1 last
     """
     df_all = pd.read_csv(os.path.join(output_dir, 'descriptives_physio.csv'))
     
-    # remove all runs with < 250  TRs
-    df = df_all[df_all['trs']>=248].copy()
+    runs = ['task-loc2', 'task-loc1', 'task-rsa_run-04', 'task-rsa_run-03', 'task-rsa_run-02', 'task-rsa_run-01']
     
-    df_out = pd.DataFrame(columns=['subject','session','check'])
+    # first match localizers
+    df = df_all[df_all['trs'] == 248].copy()
+        
     
+    
+    # loop over subjects and copy to correct functional folder
     dfs = pd.read_csv(os.path.join(subject_dir, 'participants_full_mri.csv'))
-    counter = 0
+    
+    flag_subjects = [] # to correct by hand
+    
     for s, subj in enumerate(dfs['subjects']):
         for sess in ['ses-01', 'ses-02']:
-            # current subject and session
-            mask = (df['subject']==subj) & (df['session']==sess) 
-            this_df = df[mask]
+            subj_fns = glob.glob(os.path.join(output_dir, 'sub-{}_{}_run-*_physio.tsv'.format(subj,sess)))
             
-            if this_df.shape[0] > 6: # should only be 6 EPI runs
-                # output row of data frame
-                df_out.loc[counter] = [
-                    int(subj),                          # subject
-                    sess,                               # session
-                    int(1),                             # check
-                ]
-                df_out.to_csv(os.path.join(output_dir, 'check_physio.csv'))
-                counter += 1
+            if not subj == 201:
+            #     subj_fns = subj_fns[::-1] # started with localizer
+            # else:
+            #     runs = runs[::-1]
+            #   
+                subj_fns = subj_fns[::-1] # started with localizer
+                if len(subj_fns) == 6:
+                    for rcounter, phys in enumerate(subj_fns):
+                        orig_fname = phys.split("/")[-1].split("_")
+
+                        old_name = phys
+                        new_name = os.path.join(output_dir, '{}_{}_{}_physio.tsv'.format(orig_fname[0], orig_fname[1], runs[rcounter]))
+                        print(old_name)
+                        print(new_name)
+                        print()
+                        
+                        os.rename(old_name, new_name)
+                        # cmd = sh.copyfile(src, dst)
+                else:
+                    #flag
+                    flag_subjects.append('sub-{} {}'.format(subj, sess))
+    print('WARNING: check the following by hand and correct')
+    print(flag_subjects)
+                
+            
+    # df_out = pd.DataFrame(columns=['subject','session','check'])
+#
+#
+#     counter = 0
+#     for s, subj in enumerate(dfs['subjects']):
+#         for sess in ['ses-01', 'ses-02']:
+#             # current subject and session
+#             mask = (df['subject']==subj) & (df['session']==sess)
+#             this_df = df[mask]
+#
+#             # output row of data frame
+#             df_out.loc[counter] = [
+#                 int(subj),                          # subject
+#                 sess,                               # session
+#                 int(1),                             # check
+#             ]
+#             df_out.to_csv(os.path.join(output_dir, 'check_physio.csv'))
+#             counter += 1
     print('success: check_physio')
     
-     
+    
 # -----------------------
 # Run
 # -----------------------   
 if __name__ == "__main__":
-    loop_raw_physio()
-    descriptives_physio()
-    check_physio()
+    # loop_raw_physio()
+    # descriptives_physio()
+    copy_physio()
     # match_physio_runs()
