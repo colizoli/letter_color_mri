@@ -112,7 +112,7 @@ if run_preprocessing:
             #### Everything below here writes commands to a batch job ####
             preprocess.create_native_target()     # create the subject-specific native space target for all tasks
             preprocess.native_target_2_mni()      # register the subject-specific native space target to MNI space via the T1 (save transforms)
-            # preprocess.motion_correction()        # motion correct each run to the subject-specific native space target
+            preprocess.motion_correction()        # motion correct each run to the subject-specific native space target
             shell()
             
             # preprocess.preprocess_fsf()           # after motion_correction, generate FSF file for preprocessing in FEAT (run from command line - batch)
