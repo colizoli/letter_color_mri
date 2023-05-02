@@ -552,7 +552,7 @@ class preprocess_class(object):
         
         
     def preprocess_fsf(self, ):
-        """Create the FSF files for each subject's preprocessing in FEAT.
+        """Create the FSF files for each subject's preprocessing in FEAT: high pass filtering, brain extraction, smoothing (localizers).
         
         Notes:
             Smoothing is on only for the localizers.
@@ -567,8 +567,6 @@ class preprocess_class(object):
             '[$NR_VOXELS]',     # total number of voxels
             '[$FWHM]',
             '[$INPUT_FILENAME]', # BOLD data
-            '[$T1_BRAIN]',
-            '[$MNI_BRAIN]'
         ]
         
         # all nii.gz files in func folder need to be preprocessed in FEAT
@@ -586,9 +584,6 @@ class preprocess_class(object):
                 FSF_filename = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_preprocessing_{}_{}{}.fsf'.format(task,self.subject,self.session,bold_run) ) # save fsf
                 # replacements
                 output_path = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}'.format(task,self.subject,self.session,bold_run)) 
-
-                t1_brain = self.t1_path
-                mni_brain  = os.path.join(self.mask_dir, 'MNI152_T1_2mm_brain.nii.gz')
         
                 if task == 'rsa':
                     FWHM = '0' # turn smoothing off for mulitvariate analyses
@@ -601,8 +596,6 @@ class preprocess_class(object):
                     NR_VOXELS,
                     FWHM,
                     mri_in,
-                    t1_brain,
-                    mni_brain
                 ]
         
                 # open the template file, load the text data
