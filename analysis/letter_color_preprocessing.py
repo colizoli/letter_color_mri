@@ -318,13 +318,10 @@ class preprocess_class(object):
         subj_fns = glob.glob(os.path.join(self.phys_dir, '{}_{}_*_physio.tsv'.format(self.subject,self.session)))
         
         for phys in subj_fns:
-            
             src = os.path.join(self.phys_dir, phys) # from physiology_processed
-            # change back to self.raw_dir!
-            dst = os.path.join(self.deriv_dir, self.subject, self.session, 'func', phys.split("/")[-1])
+            dst = os.path.join(self.raw_dir, self.subject, self.session, 'func', phys.split("/")[-1]) # bids_raw 
             sh.copyfile(src, dst)
             print('copying: src={} , dst={}'.format(src,dst))
-
         print('success: copy_physio')
     
     
@@ -343,7 +340,7 @@ class preprocess_class(object):
         # ## WARNING!! don't remove timestamps twice on same participant
         # self.remove_timestamps_logfiles(behav_sess) # removes the trailing timestamps from the psychopy output
         # self.copy_logfiles(behav_sess)              # copy logfiles to bids_raw folder with mri data
-        self.copy_physio()                            # copy processed physio files into bids_raw directory after process_source_physio()
+        # self.copy_physio()                            # copy processed physio files into bids_raw directory after process_source_physio()
         print('success: housekeeping')
     
     
@@ -454,74 +451,145 @@ class preprocess_class(object):
             Save transformation matrices to apply later.
         """
         # native space       
-        example_func                = self.native_target
-        highres_head                = os.path.join(self.deriv_dir,self.subject,self.session,'anat','{}_{}_T1w.nii.gz'.format(self.subject, self.t1_sess))
-        highres                     = os.path.join(self.deriv_dir,self.subject,self.session,'anat','{}_{}_T1w_brain.nii.gz'.format(self.subject, self.t1_sess))   
-        # standard space files in self.mask_dir
-        T1_2_MNI152_2mm             = os.path.join(self.mask_dir, 'T1_2_MNI152_2mm.cnf') # config file
-        standard                    = os.path.join(self.mask_dir, 'MNI152_T1_2mm_brain.nii.gz') #path to MNI (brain?)
-        standard_head               = os.path.join(self.mask_dir, 'MNI152_T1_2mm.nii.gz') 
-        standard_mask               = os.path.join(self.mask_dir, 'MNI152_T1_2mm_brain_mask.nii.gz') 
-        # define paths
-        example_func2highres        = os.path.join(self.native_target_dir, 'example_func2highres') # define path to output
-        highres2example_func        = os.path.join(self.native_target_dir, 'highres2example_func') # define path to output
-        highres2standard            = os.path.join(self.native_target_dir, 'highres2example_func') # define path to output
-        highres2standard_head       = os.path.join(self.native_target_dir, 'highres2standard_head') # define path to output
-        highres2standard_warp       = os.path.join(self.native_target_dir, 'highres2standard_warp') # define path to output
-        highres2highres_jac         = os.path.join(self.native_target_dir, 'highres2highres_jac') # define path to output
-        standard2highres            = os.path.join(self.native_target_dir, 'standard2highres')
-        example_func2standard       = os.path.join(self.native_target_dir, 'example_func2standard')
-        example_func2standard_warp  = os.path.join(self.native_target_dir, 'example_func2standard_warp')
-        standard2example_func       = os.path.join(self.native_target_dir, 'standard2example_func')
+        # example_func                = self.native_target
+        # highres_head                = os.path.join(self.deriv_dir,self.subject,self.session,'anat','{}_{}_T1w.nii.gz'.format(self.subject, self.t1_sess))
+        # highres                     = os.path.join(self.deriv_dir,self.subject,self.session,'anat','{}_{}_T1w_brain.nii.gz'.format(self.subject, self.t1_sess))
+        # # standard space files in self.mask_dir
+        # T1_2_MNI152_2mm             = os.path.join(self.mask_dir, 'T1_2_MNI152_2mm.cnf') # config file
+        # standard                    = os.path.join(self.mask_dir, 'MNI152_T1_2mm_brain.nii.gz') #path to MNI (brain?)
+        # standard_head               = os.path.join(self.mask_dir, 'MNI152_T1_2mm.nii.gz')
+        # standard_mask               = os.path.join(self.mask_dir, 'MNI152_T1_2mm_brain_mask.nii.gz')
+        # # define paths
+        # example_func2highres        = os.path.join(self.native_target_dir, 'example_func2highres') # define path to output
+        # highres2example_func        = os.path.join(self.native_target_dir, 'highres2example_func') # define path to output
+        # highres2standard            = os.path.join(self.native_target_dir, 'highres2example_func') # define path to output
+        # highres2standard_head       = os.path.join(self.native_target_dir, 'highres2standard_head') # define path to output
+        # highres2standard_warp       = os.path.join(self.native_target_dir, 'highres2standard_warp') # define path to output
+        # highres2highres_jac         = os.path.join(self.native_target_dir, 'highres2highres_jac') # define path to output
+        # standard2highres            = os.path.join(self.native_target_dir, 'standard2highres')
+        # example_func2standard       = os.path.join(self.native_target_dir, 'example_func2standard')
+        # example_func2standard_warp  = os.path.join(self.native_target_dir, 'example_func2standard_warp')
+        # standard2example_func       = os.path.join(self.native_target_dir, 'standard2example_func')
         
-        ###################
-        # FLIRT then FNIRT
-        ###################
-        # /usr/local/fsl/bin/epi_reg --epi=example_func --t1=highres_head --t1brain=highres --out=example_func2highres
-        cmd1 = 'epi_reg --epi={}.nii.gz --t1={} --t1brain={} --out={}.nii.gz'.format(example_func, highres_head, highres, example_func2highres)
         
-        # /usr/local/fsl/bin/convert_xfm -inverse -omat highres2example_func.mat example_func2highres.mat
-        cmd2 = 'convert_xfm -inverse -omat {}.mat {}.mat'.format(highres2example_func, example_func2highres)
+        EPI_target = self.native_target
+        T1         = os.path.join(self.deriv_dir,self.subject,self.session,'anat','{}_{}_T1w_brain.nii.gz'.format(self.subject, self.t1_sess))
+        MNI        = os.path.join(self.mask_dir, 'MNI152_T1_2mm.nii.gz')
+    
+        # define paths and output filenames
+        example_func2highres    = os.path.join(self.native_target_dir, 'example_func2highres') 
+        highres2mni             = os.path.join(self.native_target_dir, 'highres2mni') 
+        mni2highres             = os.path.join(self.native_target_dir, 'mni2highres')
+        example_func2mni        = os.path.join(self.native_target_dir, 'example_func2mni')
+        mni2example_func        = os.path.join(self.native_target_dir, 'mni2example_func')
+        highres2mni_fnirt       = os.path.join(self.native_target_dir, 'highres2mni_fnirt')
+        mni_fnirt2example_func  = os.path.join(self.native_target_dir, 'mni_fnirt2example_func')
+        warpfile                = os.path.join(self.native_target_dir, 'warpfile')
+        logfile                 = os.path.join(self.native_target_dir, 'logfile')
         
-        # /usr/local/fsl/bin/flirt -in highres -ref standard -out highres2standard -omat highres2standard.mat -cost corratio -dof 12 -searchrx -90 90 -searchry -90 90 -searchrz -90 90 -interp trilinear
-        cmd3 = ('flirt -in {} -ref {} -out {}.nii.gz -omat {}.mat -cost corratio -dof 12'
-                '-searchrx -90 90 -searchry -90 90 -searchrz -90 90 -interp trilinear'.format(highres, standard, highres2standard, highres2standard)
-                )
+        # if want to apply to EPI time series...
+        EPI         = self.native_target
+        func2mni    = example_func2mni
+        func2mni_fnirt = os.path.join(self.native_target_dir, 'example_func2mni_fnirt')
+    
+        # EPI target to T1
+        cmd1 = 'flirt -in {}.nii.gz -usesqform -ref {} -omat {}.mat -cost mutualinfo -searchrx -90 90 -searchry -90 90 -searchrz -90 90 -dof 12 -interp trilinear'.format(EPI_target,T1,example_func2highres)
+        print(cmd1)
+        # process = subprocess.Popen(commandline, shell=True, stdout=subprocess.PIPE)
+        # process.wait()
+    
+        # T1 -> MNI
+        cmd2 = 'flirt -in {} -usesqform -ref {} -omat {}.mat -out {}.nii.gz -cost mutualinfo -searchrx -180 180 -searchry -180 180 -searchrz -180 180 -dof 12 -interp trilinear'.format(T1,MNI,highres2mni,highres2mni)
+        print(cmd2)
+        # process = subprocess.Popen(commandline, shell=True, stdout=subprocess.PIPE)
+        # process.wait()
         
-        # /usr/local/fsl/bin/fnirt --iout=highres2standard_head --in=highres_head --aff=highres2standard.mat --cout=highres2standard_warp --iout=highres2standard --jout=highres2highres_jac --config=T1_2_MNI152_2mm --ref=standard_head --refmask=standard_mask --warpres=10,10,10
-        cmd4 = ('fnirt --iout={}.nii.gz --in={} --aff={}.mat'
-                ' --cout={}.nii.gz --iout={}.nii.gz --jout={}.nii.gz'
-                ' --config={} --ref={} --refmask={}'
-                ' --warpres=10,10,10'.format(
-                    highres2standard_head, 
-                    highres_head, 
-                    highres2standard, 
-                    highres2standard_warp, 
-                    highres2standard, 
-                    highres2highres_jac, 
-                    T1_2_MNI152_2mm, 
-                    standard_head, 
-                    standard_mask
-                    )
-                )
+        # Concat EPI target > TI > MNI
+        cmd3 = 'convert_xfm -omat {}.mat -concat {}.mat {}.mat'.format(example_func2mni,highres2mni,example_func2highres)
+        print(cmd3)
+        # process = subprocess.Popen(commandline, shell=True, stdout=subprocess.PIPE)
+        # process.wait()
+    
+        # NON LINEAR
+        # T1 > MNI space -> create FNIRT warpfile
+        cmd4 = 'fnirt --ref={} --in={}.nii.gz --iout={}.nii.gz --logout={} --cout={}'.format(MNI,highres2mni,highres2mni_fnirt,logfile,warpfile)
+        print(cmd4)
+        # process = subprocess.Popen(commandline, shell=True, stdout=subprocess.PIPE)
+        # process.wait()
+
+        # EPI time series to MNI
+        # Apply concatenated matrix EPI time series > MNI: example_func2mni
+        # cmd5 = 'flirt -in {} -usesqform -applyxfm -init {}.mat -out {}.nii.gz -interp trilinear -ref {}.nii.gz -v'.format(EPI,example_func2mni,func2mni,MNI)
+        # print(cmd5)
+        # process = subprocess.Popen(commandline, shell=True, stdout=subprocess.PIPE)
+        # process.wait()
+    
+        # NON LINEAR
+        # EPI time series (MNI space) -> apply FNIRT warpfile
+        cmd6 = 'applywarp --ref={} --in={}.nii.gz --out={}.nii.gz --warp={}'.format(MNI,func2mni,func2mni_fnirt,warpfile)
+        print(cmd6)
+        # process = subprocess.Popen(commandline, shell=True, stdout=subprocess.PIPE)
+        # process.wait()
         
-        # /usr/local/fsl/bin/applywarp -i highres -r standard -o highres2standard -w highres2standard_warp
-        cmd5 = 'applywarp -i {} -r {} -o {}.nii.gz -w {}.nii.gz'.format(highres, standard, highres2standard, highres2standard_warp)
-        
+        # Generate inverse matrices for completeness
         # /usr/local/fsl/bin/convert_xfm -inverse -omat standard2highres.mat highres2standard.mat
-        cmd6 = 'convert_xfm -inverse -omat {}.mat {}.mat'.format(standard2highres, highres2standard)
+        cmd7 = 'convert_xfm -inverse -omat {}.mat {}.mat'.format(mni2highres, highres2mni)
+        print(cmd7)
         
-        # /usr/local/fsl/bin/convert_xfm -omat example_func2standard.mat -concat highres2standard.mat example_func2highres.mat
-        cmd7 = 'convert_xfm -omat {}.mat -concat {}.mat {}.mat'.format(example_func2standard, highres2standard, example_func2highres)
+        cmd8 = 'convert_xfm -inverse -omat {}.mat {}.mat'.format(mni2example_func, example_func2mni)
+        print(cmd8)
         
-        # /usr/local/fsl/bin/convertwarp --ref=standard --premat=example_func2highres.mat --warp1=highres2standard_warp --out=example_func2standard_warp
-        cmd8 = 'convertwarp --ref={} --premat={}.mat --warp1={}.nii.gz --out={}.nii.gz'.format(standard, example_func2highres, highres2standard_warp, example_func2standard_warp)
-        
-        # /usr/local/fsl/bin/applywarp --ref=standard --in=example_func --out=example_func2standard --warp=example_func2standard_warp
-        cmd9 = 'applywarp --ref={} --in={} --out={}.nii.gz --warp={}.nii.gz'.format(standard, example_func, example_func2standard, example_func2standard_warp)
-        
-        # /usr/local/fsl/bin/convert_xfm -inverse -omat standard2example_func.mat example_func2standard.mat
-        cmd10 = 'convert_xfm -inverse -omat {}.mat {}.mat'.format(standard2example_func, example_func2standard)
+        cmd9 = 'convert_xfm -inverse -omat {}.mat {}.mat'.format(mni_fnirt2example_func, highres2mni_fnirt)
+        print(cmd9)
+            
+        # ###################
+#         # FLIRT then FNIRT
+#         ###################
+#         # /usr/local/fsl/bin/epi_reg --epi=example_func --t1=highres_head --t1brain=highres --out=example_func2highres
+#         cmd1 = 'epi_reg --epi={}.nii.gz --t1={} --t1brain={} --out={}.nii.gz'.format(example_func, highres_head, highres, example_func2highres)
+#
+#         # /usr/local/fsl/bin/convert_xfm -inverse -omat highres2example_func.mat example_func2highres.mat
+#         cmd2 = 'convert_xfm -inverse -omat {}.mat {}.mat'.format(highres2example_func, example_func2highres)
+#
+#         # /usr/local/fsl/bin/flirt -in highres -ref standard -out highres2standard -omat highres2standard.mat -cost corratio -dof 12 -searchrx -90 90 -searchry -90 90 -searchrz -90 90 -interp trilinear
+#         cmd3 = ('flirt -in {} -ref {} -out {}.nii.gz -omat {}.mat -cost corratio -dof 12'
+#                 '-searchrx -90 90 -searchry -90 90 -searchrz -90 90 -interp trilinear'.format(highres, standard, highres2standard, highres2standard)
+#                 )
+#
+#         # /usr/local/fsl/bin/fnirt --iout=highres2standard_head --in=highres_head --aff=highres2standard.mat --cout=highres2standard_warp --iout=highres2standard --jout=highres2highres_jac --config=T1_2_MNI152_2mm --ref=standard_head --refmask=standard_mask --warpres=10,10,10
+#         cmd4 = ('fnirt --iout={}.nii.gz --in={} --aff={}.mat'
+#                 ' --cout={}.nii.gz --iout={}.nii.gz --jout={}.nii.gz'
+#                 ' --config={} --ref={} --refmask={}'
+#                 ' --warpres=10,10,10'.format(
+#                     highres2standard_head,
+#                     highres_head,
+#                     highres2standard,
+#                     highres2standard_warp,
+#                     highres2standard,
+#                     highres2highres_jac,
+#                     T1_2_MNI152_2mm,
+#                     standard_head,
+#                     standard_mask
+#                     )
+#                 )
+#
+#         # /usr/local/fsl/bin/applywarp -i highres -r standard -o highres2standard -w highres2standard_warp
+#         cmd5 = 'applywarp -i {} -r {} -o {}.nii.gz -w {}.nii.gz'.format(highres, standard, highres2standard, highres2standard_warp)
+#
+#         # /usr/local/fsl/bin/convert_xfm -inverse -omat standard2highres.mat highres2standard.mat
+#         cmd6 = 'convert_xfm -inverse -omat {}.mat {}.mat'.format(standard2highres, highres2standard)
+#
+#         # /usr/local/fsl/bin/convert_xfm -omat example_func2standard.mat -concat highres2standard.mat example_func2highres.mat
+#         cmd7 = 'convert_xfm -omat {}.mat -concat {}.mat {}.mat'.format(example_func2standard, highres2standard, example_func2highres)
+#
+#         # /usr/local/fsl/bin/convertwarp --ref=standard --premat=example_func2highres.mat --warp1=highres2standard_warp --out=example_func2standard_warp
+#         cmd8 = 'convertwarp --ref={} --premat={}.mat --warp1={}.nii.gz --out={}.nii.gz'.format(standard, example_func2highres, highres2standard_warp, example_func2standard_warp)
+#
+#         # /usr/local/fsl/bin/applywarp --ref=standard --in=example_func --out=example_func2standard --warp=example_func2standard_warp
+#         cmd9 = 'applywarp --ref={} --in={} --out={}.nii.gz --warp={}.nii.gz'.format(standard, example_func, example_func2standard, example_func2standard_warp)
+#
+#         # /usr/local/fsl/bin/convert_xfm -inverse -omat standard2example_func.mat example_func2standard.mat
+#         cmd10 = 'convert_xfm -inverse -omat {}.mat {}.mat'.format(standard2example_func, example_func2standard)
         
         # open preprocessing job and write commands as new line
         self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
@@ -533,8 +601,8 @@ class preprocess_class(object):
         self.preprocessing_job.write("\n\n")  # new line
         self.preprocessing_job.write(cmd4)   # command
         self.preprocessing_job.write("\n\n")  # new line
-        self.preprocessing_job.write(cmd5)   # command
-        self.preprocessing_job.write("\n\n")  # new line
+        # self.preprocessing_job.write(cmd5)   # command
+        # self.preprocessing_job.write("\n\n")  # new line
         self.preprocessing_job.write(cmd6)   # command
         self.preprocessing_job.write("\n\n")  # new line
         self.preprocessing_job.write(cmd7)   # command
@@ -542,8 +610,6 @@ class preprocess_class(object):
         self.preprocessing_job.write(cmd8)   # command
         self.preprocessing_job.write("\n\n")  # new line
         self.preprocessing_job.write(cmd9)   # command
-        self.preprocessing_job.write("\n\n")  # new line
-        self.preprocessing_job.write(cmd10)   # command
         self.preprocessing_job.write("\n\n")  # new line
         self.preprocessing_job.close()
         print('success: native_target_2_mni')

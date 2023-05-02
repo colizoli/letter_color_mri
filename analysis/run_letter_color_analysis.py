@@ -106,16 +106,16 @@ if run_preprocessing:
                 t1_sess         = t1_sess
                 )            
             # preprocess.dicom2bids()               # convert DICOMS from scanner to nifti in bids format
-            preprocess.housekeeping()             # copies events and physio files (rename event file names to be bids compliant and same b/t mri & behavior)
+            # preprocess.housekeeping()             # copies events and physio files (rename event file names to be bids compliant and same b/t mri & behavior)
             # preprocess.raw_copy()                 # copy from bids_raw directory into derivaties to prevent overwriting
             # preprocess.bet_brains_T1()            # brain extraction T1 always check visually!
             #### Everything below here writes commands to a batch job ####
-            # preprocess.create_native_target()     # create the subject-specific native space target for all tasks
-            # preprocess.native_target_2_mni()      # register the subject-specific native space target to MNI space via the T1 (save transforms)
-            
+            preprocess.create_native_target()     # create the subject-specific native space target for all tasks
+            preprocess.native_target_2_mni()      # register the subject-specific native space target to MNI space via the T1 (save transforms)
             # preprocess.motion_correction()        # motion correct each run to the subject-specific native space target
-
-            # preprocess.preprocess_fsf()           # generate FSF file for preprocessing in FEAT (run from command line - batch)
+            shell()
+            
+            # preprocess.preprocess_fsf()           # after motion_correction, generate FSF file for preprocessing in FEAT (run from command line - batch)
             
             # preprocess.transform_2_mni('letters')           # transforms the preprocessed time series to MNI space
             # preprocess.transform_2_mni('colors')            # transforms the preprocessed time series to MNI space
