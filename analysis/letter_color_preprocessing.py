@@ -449,52 +449,68 @@ class preprocess_class(object):
         Notes:
             FLIRT to T1 then FNIRT to MNI. Apply warp to native_target.
             Save transformation matrices to applywarp later.
+            See: https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FNIRT/UserGuide#Example_uses
         """
         EPI_target = self.native_target
-        T1         = os.path.join(self.deriv_dir,self.subject,self.session,'anat','{}_{}_T1w_brain.nii.gz'.format(self.subject, self.t1_sess))
-        MNI        = os.path.join(self.mask_dir, 'MNI152_T1_2mm_brain.nii.gz') # brain??
+        t1_brain   = os.path.join(self.deriv_dir,self.subject,self.session,'anat','{}_{}_T1w_brain.nii.gz'.format(self.subject, self.t1_sess))
+        mni_brain  = os.path.join(self.mask_dir, 'MNI152_T1_2mm_brain.nii.gz') # brain??
     
         # define paths and output filenames
         example_func2highres    = os.path.join(self.native_target_dir, 'example_func2highres') 
+        highres2mni_affine      = os.path.join(self.native_target_dir, 'highres2mni_affine') 
+        
         highres2mni             = os.path.join(self.native_target_dir, 'highres2mni') 
         mni2highres             = os.path.join(self.native_target_dir, 'mni2highres')
         example_func2mni        = os.path.join(self.native_target_dir, 'example_func2mni')
         mni2example_func        = os.path.join(self.native_target_dir, 'mni2example_func')
         warpfile                = os.path.join(self.native_target_dir, 'warpfile')
         logfile                 = os.path.join(self.native_target_dir, 'logfile')
-    
+        
+        
+        flirt -ref my_betted_structural -in my_functional -dof 6 -omat func2struct.mat
+        flirt -ref ${FSLDIR}/data/standard/MNI152_T1_2mm_brain -in my_betted_structural -omat my_affine_transf.mat
+        fnirt --in=my_structural --aff=my_affine_transf.mat --cout=my_nonlinear_transf --config=T1_2_MNI152_2mm
+        applywarp --ref=${FSLDIR}/data/standard/MNI152_T1_2mm --in=my_functional --warp=my_nonlinear_transf --premat=func2struct.mat --out=my_warped_functional
+
+        
         # EPI target to T1
-        cmd1 = 'flirt -in {}.nii.gz -usesqform -ref {} -omat {}.mat -cost mutualinfo -searchrx -90 90 -searchry -90 90 -searchrz -90 90 -dof 12 -interp trilinear'.format(EPI_target,T1,example_func2highres)
+        # flirt -ref my_betted_structural -in my_functional -dof 6 -omat func2struct.mat
+        cmd1 = 'flirt -ref {} -in {}.nii.gz -dof 6 -omat {}.mat -out {}.nii.gz'.format(t1_brain, example_func, example_func2highres, example_func2highres)
+        # cmd1 = 'flirt -in {}.nii.gz -usesqform -ref {} -out {}.nii.gz -omat {}.mat -cost mutualinfo -searchrx -90 90 -searchry -90 90 -searchrz -90 90 -dof 12 -interp trilinear'.format(EPI_target,T1,example_func2highres,example_func2highres)
         print(cmd1)
         # process = subprocess.Popen(commandline, shell=True, stdout=subprocess.PIPE)
         # process.wait()
     
         # T1 -> MNI
-        cmd2 = 'flirt -in {} -usesqform -ref {} -omat {}.mat -out {}.nii.gz -cost mutualinfo -searchrx -180 180 -searchry -180 180 -searchrz -180 180 -dof 12 -interp trilinear'.format(T1,MNI,highres2mni,highres2mni)
+        # flirt -ref ${FSLDIR}/data/standard/MNI152_T1_2mm_brain -in my_betted_structural -omat my_affine_transf.mat
+        cmd2 = 'flirt -ref {} -in {} -omat {}.mat -out {}.nii.gz'.format(mni_brain, t1_brain, highres2mni_affine, highres2mni_affine)
+        # cmd2 = 'flirt -in {} -usesqform -ref {} -omat {}.mat -out {}.nii.gz -cost mutualinfo -searchrx -180 180 -searchry -180 180 -searchrz -180 180 -dof 12 -interp trilinear'.format(T1,MNI,highres2mni,highres2mni)
         print(cmd2)
         # process = subprocess.Popen(commandline, shell=True, stdout=subprocess.PIPE)
         # process.wait()
         
         # Concat EPI target > TI > MNI
-        cmd3 = 'convert_xfm -omat {}.mat -concat {}.mat {}.mat'.format(example_func2mni,highres2mni,example_func2highres)
-        print(cmd3)
+        # cmd3 = 'convert_xfm -omat {}.mat -concat {}.mat {}.mat'.format(example_func2mni,highres2mni,example_func2highres)
+        # print(cmd3)
         # process = subprocess.Popen(commandline, shell=True, stdout=subprocess.PIPE)
         # process.wait()
     
         # NON LINEAR
         # T1 > MNI space -> create FNIRT warpfile
-        cmd4 = 'fnirt --ref={} --in={}.nii.gz --iout={}.nii.gz --logout={} --cout={}'.format(MNI,highres2mni,highres2mni,logfile,warpfile)
+        # fnirt --in=my_structural --aff=my_affine_transf.mat --cout=my_nonlinear_transf --config=T1_2_MNI152_2mm
+        cmd4 = 'fnirt --in=my_structural --aff=my_affine_transf.mat --cout=my_nonlinear_transf --config=T1_2_MNI152_2mm'.format()
+        # cmd4 = 'fnirt --ref={} --in={}.nii.gz --iout={}.nii.gz --logout={} --cout={}'.format(MNI,highres2mni,highres2mni,logfile,warpfile)
         print(cmd4)
         # process = subprocess.Popen(commandline, shell=True, stdout=subprocess.PIPE)
         # process.wait()
     
         # NON LINEAR
         # EPI time series (MNI space) -> apply FNIRT warpfile
-        cmd5 = 'applywarp --ref={} --in={}.nii.gz --out={}.nii.gz --warp={}'.format(MNI,example_func2mni,example_func2mni,warpfile)
+        cmd5 = 'applywarp --ref={} --in={}.nii.gz --out={}.nii.gz --warp={}.nii.gz'.format(MNI,example_func2mni,example_func2mni,warpfile)
         print(cmd5)
-        # process = subprocess.Popen(commandline, shell=True, stdout=subprocess.PIPE)
+        # process = subprocess.Popen(cmd5, shell=True, stdout=subprocess.PIPE)
         # process.wait()
-        
+
         # Generate inverse matrices for completeness
         # /usr/local/fsl/bin/convert_xfm -inverse -omat standard2highres.mat highres2standard.mat
         # cmd7 = 'convert_xfm -inverse -omat {}.mat {}.mat'.format(mni2highres, highres2mni)
@@ -643,7 +659,7 @@ class preprocess_class(object):
             # standard space
             MNI     = os.path.join(self.mask_dir, 'MNI152_T1_2mm_brain.nii.gz') # nifti
             # output of FNIRT
-            warpfile = os.path.join(self.native_target_dir, 'warpfile')
+            warpfile = os.path.join(self.native_target_dir, 'warpfile.nii.gz')
             
             if linear:
                 # Apply FLIRT matrix (linear)
