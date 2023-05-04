@@ -37,6 +37,30 @@
             "criteria": {
                 "SeriesDescription": "cmrr_2iso_mb4_TR1500_RSA"
             }
+        },
+        {
+            "dataType": "func",
+            "modalityLabel": "bold_sbref",
+            "customLabels": "task-letters",
+            "criteria": {
+                "SeriesDescription": "cmrr_2iso_mb4_TR1500_LOC-01_SBRef"
+            }
+        },
+        {
+            "dataType": "func",
+            "modalityLabel": "bold_sbref",
+            "customLabels": "task-colors",
+            "criteria": {
+                "SeriesDescription": "cmrr_2iso_mb4_TR1500_LOC-02_SBRef"
+            }
+        },
+        {
+            "dataType": "func",
+            "modalityLabel": "bold_sbref",
+            "customLabels": "task-rsa",
+            "criteria": {
+                "SeriesDescription": "cmrr_2iso_mb4_TR1500_RSA_SBRef"
+            }
         }
 
     ]
