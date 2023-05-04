@@ -119,10 +119,10 @@ class preprocess_class(object):
     
         self.native_target = os.path.join(self.native_target_dir, '{}_native_target'.format(self.subject))
         
-        # path to motion correction output (command line)
-        self.motion_dir = os.path.join(self.preprocess_dir, 'motion_correction', self.subject, self.session)
-        if not os.path.isdir(self.motion_dir):
-            os.makedirs(self.motion_dir)
+        # # path to motion correction output (command line)
+        # self.motion_dir = os.path.join(self.preprocess_dir, 'motion_correction', self.subject, self.session)
+        # if not os.path.isdir(self.motion_dir):
+        #     os.makedirs(self.motion_dir)
                 
         # write unix commands to job to run in parallel
         self.preprocessing_job_path = os.path.join(self.analysis_dir, 'jobs', 'job_preprocessing_{}.txt'.format(self.subject))
@@ -415,11 +415,17 @@ class preprocess_class(object):
     
     
     def bet_brains_fmap(self, postfix='brain'):
-        # Runs brain extraction on magnitude images of field maps
-        # This needs to be 'tight', meaning it is better to exclude brain voxels than include noisy non-brain voxels
-        # Important! Always check visually in fsleyes
+        """Run brain extraction on magnitude fieldmap (fmap) images.
+        
+        Args:
+            postfix (str): The string to add to the end of the brain-extracted images (default 'brain').
+        
+        Notes:
+            Important! Always check visually in fsleyes.
+            Brain extraction needs to be 'tight', meaning it is better to exclude brain voxels than include noisy non-brain voxels.
+        """
         if int(self.UNWARP):
-            for run in ['01','02','03']: # first 2 are magnitude, 3rd is phase
+            for run in ['01','02','03']: # first 2 images are magnitude, 3rd image is phase
                 inFile = os.path.join(self.deriv_dir,  self.subject,  self.session, 'fmap', '{}_{}_run-{}_fmap.nii.gz'.format(self.subject,self.session,run))
                 outFile = os.path.join(self.deriv_dir,  self.subject,  self.session, 'fmap', '{}_{}_run-{}_fmap_{}.nii.gz'.format(self.subject,self.session,run,postfix))
                 # bet inFile outFile
@@ -436,30 +442,35 @@ class preprocess_class(object):
     
     
     def prepare_fmap(self, ):
-        """ Need to prepare field map before B0 unwarping
-        https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FUGUE/Guide#SIEMENS_data
-        Run after brain extraction on magnitude image
-        Not too important which magnitude image is chosen
-        Echo time difference need to be in ms (echotimes in JSON)
-        fsl_prepare_fieldmap <scanner> <phase_image> <magnitude_image> <out_image> <deltaTE (in ms)> [--nocheck]
-        The output of the Fsl_prepare_fieldmap GUI is a correctly calibrated fieldmap in units of rad/s     
-        **
-        echo_tdiff = 0.00246 # seconds, difference between echo times of field map magnitude images [0.0047,0.00716]
-        **
-        **Values to enter into FEAT**:
-        EPI TE (s) of localizer = 0.0396
-        'dwell_time' refers to effective echo spacing of EPI data (s) = 0.000580009
-        NOTES: effective echo spacing and EPI TE (ms) refer to the fMRI EPI data! not the field map data - look in the JSON file for the bold runs.
-        No in-plane acceleration was used (this is different from multi-band acceleration.) In plane acceleration (GRAPPA) would be indicated in the 
-        PDF of the Siemens sequence from the Donders Intranet under "Resolution - iPAT". 
-        https://intranet.donders.ru.nl/fileadmin/user_upload/DCCN/Laboratories/MRI/MR_protocols/Prisma/cmrr_2p0iso_mb4_TR1500.pdf
+        """Prepare field map before B0 unwarping.
+        
+        Notes:
+            https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FUGUE/Guide#SIEMENS_data
+            Run after brain extraction on magnitude image.
+            Not too important which magnitude image is chosen.
+            Echo time difference need to be in ms (echotimes in JSON).
+            fsl_prepare_fieldmap <scanner> <phase_image> <magnitude_image> <out_image> <deltaTE (in ms)> [--nocheck]
+            The output of the Fsl_prepare_fieldmap GUI is a correctly calibrated fieldmap in units of rad/s     
+            **
+            echo_tdiff = 0.00246 # seconds, difference between echo times of field map magnitude images [0.0047,0.00716]
+            **
+            **
+            Values to enter into FEAT during unwarping step in preprocessing:
+            **
+            EPI TE (s) of localizer = 0.0396
+            'dwell_time' refers to effective echo spacing of EPI data (s) = 0.000580009
+            **
+            Important! effective echo spacing and EPI TE (ms) refer to the fMRI EPI data! not the field map data - look in the JSON file for the bold runs.
+            No in-plane acceleration was used (this is different from multi-band acceleration.). In plane acceleration (GRAPPA) would be indicated in the 
+            PDF of the Siemens sequence from the Donders Intranet under "Resolution - iPAT". 
+            https://intranet.donders.ru.nl/fileadmin/user_upload/DCCN/Laboratories/MRI/MR_protocols/Prisma/cmrr_2p0iso_mb4_TR1500.pdf
         """
         if int(self.UNWARP):
             phase_image = os.path.join(self.deriv_dir, self.subject, self.session, 'fmap', '{}_{}_run-03_fmap.nii.gz'.format(self.subject,self.session))
             mag_image = os.path.join(self.deriv_dir, self.subject, self.session, 'fmap', '{}_{}_run-01_fmap_brain.nii.gz'.format(self.subject,self.session))
             outFile = os.path.join(self.deriv_dir, self.subject, self.session, 'fmap', '{}_{}_acq-fmap.nii.gz'.format(self.subject,self.session))
             # bet inFile outFile
-            cmd = 'fsl_prepare_fieldmap {} {} {} {} {} [--nocheck]'.format('SIEMENS',phase_image,mag_image,outFile,self.TDIFF_ECHO)
+            cmd = 'fsl_prepare_fieldmap {} {} {} {} {} [--nocheck]'.format('SIEMENS', phase_image, mag_image, outFile,s elf.TDIFF_ECHO)
             print(cmd)
             results = subprocess.call(cmd, shell=True, bufsize=0)
         else:
@@ -467,13 +478,18 @@ class preprocess_class(object):
         print('success: prepare_fmap')
 
 
-    def preprocess_fsf(self, ):
+    def preprocess_fsf(self, native_target_session='ses-01', native_target_task_run='rsa_run-01'):
         """Create the FSF files for each subject's preprocessing in FEAT: 
         B0 unwarping, nonlinear reg to MNI, motion correction, high pass filtering, brain extraction, smoothing (localizers).
         
+        Args:
+            native_target_session (str): the session used for creating the native target image.
+            native_target_task_run (str): the task and run used for creating the native target image.
+        
         Notes:
             Smoothing is on only for the localizers.
-            Uses the preprocessing_template.fsf to search/replace the markers.
+            Registration to standard space is only on for the native_target.
+            Uses the preprocessing_template.fsf in analysis/templates to search and replace the markers.
         """    
         
         template_filename = os.path.join(self.template_dir,'preprocessing_template.fsf')
@@ -489,9 +505,10 @@ class preprocess_class(object):
             '[$INPUT_FILENAME]', # BOLD data
             '[$FMAP]',
             '[$FMAP_MAG_BRAIN]',
-            '[$SBREF_BRAIN]'
+            '[$SBREF_BRAIN]',
             '[$T1_BRAIN]',
-            '[$MNI_BRAIN]'
+            '[$MNI_BRAIN]',
+            '[$REG_MNI_BRAIN]'  # on only for native target
         ]
         
         # all nii.gz files in func folder need to be preprocessed in FEAT
@@ -519,11 +536,18 @@ class preprocess_class(object):
                 fmap_mag_brain  = os.path.join(self.deriv_dir,self.subject,self.session,'fmap','{}_{}_run-01_fmap_brain.nii.gz'.format(self.subject,self.session))
                 t1_brain        = os.path.join(self.deriv_dir,self.subject,self.session,'anat','{}_{}_T1w_brain.nii.gz'.format(self.subject, self.t1_sess))
                 mni_brain       = os.path.join(self.mask_dir, 'MNI152_T1_2mm_brain.nii.gz')
-
+                
+                # conditional preprocessing
                 if task == 'rsa':
                     FWHM = '0' # turn smoothing off for mulitvariate analyses
                 else:
                     FWHM = self.FWHM
+                
+                # registration to standard space only for native target
+                if (native_target_task_run in task_run) and (native_target_session in self.session):
+                    REG_MNI_BRAIN = '1' 
+                else:
+                    REG_MNI_BRAIN = '0'
                     
                 replacements = [ # needs to match order of 'markers'
                     output_path,
@@ -538,7 +562,8 @@ class preprocess_class(object):
                     fmap_mag_brain,
                     sbref_brain,
                     t1_brain,
-                    mni_brain]
+                    mni_brain,
+                    REG_MNI_BRAIN]
 
                 # open the template file, load the text data
                 f = open(template_filename,'r')
@@ -565,7 +590,7 @@ class preprocess_class(object):
                 print('cannot make FSF: missing {}'.format(BOLD))
     
     
-    def create_native_target(self, task='rsa', session='ses-01', bold_run='run-03'):
+    def create_native_target(self, task='rsa', session='ses-01', bold_run='run-01'):
         """Create the registration target in native space for ALL tasks. 
         
         Args:
@@ -575,7 +600,7 @@ class preprocess_class(object):
         
         Notes:
         ------
-            The target should be the first session, 3rd run (RSA3), motion corrected and then mean image.
+            The target should be the first session, 1st run (RSA1), preprocessed, middle volume.
             Path is defined at class level: self.native_target
         """        
         # path to raw bold file as input to create registration target
