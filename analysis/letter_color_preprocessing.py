@@ -72,7 +72,7 @@ class preprocess_class(object):
         transform_2_mni(task, bold_run='', linear=0)
     """
     
-    def __init__(self, subject, mri_subject, session, analysis_dir, source_dir, raw_dir, deriv_dir, mask_dir, template_dir, FWHM, t1_sess):        
+    def __init__(self, subject, mri_subject, session, analysis_dir, source_dir, raw_dir, deriv_dir, mask_dir, template_dir, EPI_TE, EPI_EECHO, TDIFF_ECHO, UNWARP, FWHM, t1_sess):        
         self.subject        = 'sub-'+str(subject)
         self.mri_subject    = 'sub-'+str(mri_subject)
         self.session        = str(session)
@@ -82,6 +82,10 @@ class preprocess_class(object):
         self.deriv_dir      = str(deriv_dir)
         self.mask_dir       = str(mask_dir)
         self.template_dir   = str(template_dir)
+        self.EPI_TE         = str(EPI_TE)
+        self.EPI_EECHO      = str(EPI_EECHO)
+        self.TDIFF_ECHO     = str(TDIFF_ECHO)
+        self.UNWARP         = str(UNWARP)
         self.FWHM           = str(FWHM)
         self.t1_sess        = str(t1_sess) # with _brain extension
             
@@ -367,6 +371,23 @@ class preprocess_class(object):
         print('success: raw_copy')
 
 
+    def sbref_raw_copy(self,):
+        """Copy the sbref images from the bids_raw directory into derivatives folder for further processing/analysis.
+        
+        Notes:
+            The bids_raw directory should be backed up on the DAC. 
+            All further analysis should be run within the derivatives folder.
+        """
+        
+        subj_fns = glob.glob(os.path.join(self.raw_dir, 'nifti', self.subject, self.session, 'func', '{}_{}_*'.format(self.subject,self.session)))
+        
+        for sbref in subj_fns:
+            src = os.path.join(self.phys_dir, sbref) # from physiology_processed
+            dst = os.path.join(self.deriv_dir, self.subject, self.session, 'func', sbref.split("/")[-1]) # bids_raw 
+            sh.copyfile(src, dst)
+        print('success: sbref_raw_copy')
+        
+        
     def bet_brains_T1(self, postfix='brain'):
         """Run brain extraction on all T1s.
         
@@ -391,6 +412,157 @@ class preprocess_class(object):
         else:
             print('No T1 for {} {}'.format(self.subject, self.session))
         print('success: bet_brains_T1')
+    
+    
+    def bet_brains_fmap(self, postfix='brain'):
+        # Runs brain extraction on magnitude images of field maps
+        # This needs to be 'tight', meaning it is better to exclude brain voxels than include noisy non-brain voxels
+        # Important! Always check visually in fsleyes
+        if int(self.UNWARP):
+            for run in ['01','02','03']: # first 2 are magnitude, 3rd is phase
+                inFile = os.path.join(self.deriv_dir,  self.subject,  self.session, 'fmap', '{}_{}_run-{}_fmap.nii.gz'.format(self.subject,self.session,run))
+                outFile = os.path.join(self.deriv_dir,  self.subject,  self.session, 'fmap', '{}_{}_run-{}_fmap_{}.nii.gz'.format(self.subject,self.session,run,postfix))
+                # bet inFile outFile
+                cmd = 'bet {} {} -f 0.6'.format(inFile, outFile) 
+                print(cmd)
+                results = subprocess.call(cmd, shell=True, bufsize=0)
+    
+                # reorient to mni space if necessary (sometimes turned around)
+                # cmd = 'fslreorient2std {} {}'.format(outFile,outFile)
+                # proc = subprocess.call( cmd, shell=True, bufsize=0,) # COMMAND LINE
+        else:
+            print('No fieldmap for {} {}'.format(self.subject, self.session))
+        print('success: bet_brains_fmap')
+    
+    
+    def prepare_fmap(self, ):
+        """ Need to prepare field map before B0 unwarping
+        https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FUGUE/Guide#SIEMENS_data
+        Run after brain extraction on magnitude image
+        Not too important which magnitude image is chosen
+        Echo time difference need to be in ms (echotimes in JSON)
+        fsl_prepare_fieldmap <scanner> <phase_image> <magnitude_image> <out_image> <deltaTE (in ms)> [--nocheck]
+        The output of the Fsl_prepare_fieldmap GUI is a correctly calibrated fieldmap in units of rad/s     
+        **
+        echo_tdiff = 0.00246 # seconds, difference between echo times of field map magnitude images [0.0047,0.00716]
+        **
+        **Values to enter into FEAT**:
+        EPI TE (s) of localizer = 0.0396
+        'dwell_time' refers to effective echo spacing of EPI data (s) = 0.000580009
+        NOTES: effective echo spacing and EPI TE (ms) refer to the fMRI EPI data! not the field map data - look in the JSON file for the bold runs.
+        No in-plane acceleration was used (this is different from multi-band acceleration.) In plane acceleration (GRAPPA) would be indicated in the 
+        PDF of the Siemens sequence from the Donders Intranet under "Resolution - iPAT". 
+        https://intranet.donders.ru.nl/fileadmin/user_upload/DCCN/Laboratories/MRI/MR_protocols/Prisma/cmrr_2p0iso_mb4_TR1500.pdf
+        """
+        if int(self.UNWARP):
+            phase_image = os.path.join(self.deriv_dir, self.subject, self.session, 'fmap', '{}_{}_run-03_fmap.nii.gz'.format(self.subject,self.session))
+            mag_image = os.path.join(self.deriv_dir, self.subject, self.session, 'fmap', '{}_{}_run-01_fmap_brain.nii.gz'.format(self.subject,self.session))
+            outFile = os.path.join(self.deriv_dir, self.subject, self.session, 'fmap', '{}_{}_acq-fmap.nii.gz'.format(self.subject,self.session))
+            # bet inFile outFile
+            cmd = 'fsl_prepare_fieldmap {} {} {} {} {} [--nocheck]'.format('SIEMENS',phase_image,mag_image,outFile,self.TDIFF_ECHO)
+            print(cmd)
+            results = subprocess.call(cmd, shell=True, bufsize=0)
+        else:
+            print('No fieldmap for {} {}'.format(self.subject, self.session))
+        print('success: prepare_fmap')
+
+
+    def preprocess_fsf(self, ):
+        """Create the FSF files for each subject's preprocessing in FEAT: 
+        B0 unwarping, nonlinear reg to MNI, motion correction, high pass filtering, brain extraction, smoothing (localizers).
+        
+        Notes:
+            Smoothing is on only for the localizers.
+            Uses the preprocessing_template.fsf to search/replace the markers.
+        """    
+        
+        template_filename = os.path.join(self.template_dir,'preprocessing_template.fsf')
+        
+        markers = [
+            '[$OUTPUT_PATH]', 
+            '[$NR_TRS]',        # number of volumes
+            '[$NR_VOXELS]',     # total number of voxels
+            '[$FWHM]',
+            '[$UNWARP_ON]',     # turn on unwarping
+            '[$EPI_EECHO]',     # EPI DWELL TIME, EFFECTIVE ECHO SPACING
+            '[$EPI_TE]',        # EPI echo time
+            '[$INPUT_FILENAME]', # BOLD data
+            '[$FMAP]',
+            '[$FMAP_MAG_BRAIN]',
+            '[$SBREF_BRAIN]'
+            '[$T1_BRAIN]',
+            '[$MNI_BRAIN]'
+        ]
+        
+        # all nii.gz files in func folder need to be preprocessed in FEAT
+        for task_run in ['letters','colors','rsa_run-01','rsa_run-02','rsa_run-03','rsa_run-04']:
+            
+            if 'rsa' in task_run:
+                task = task_run.split("_")[0]
+            else:
+                task = task_run
+                
+            bold_in = os.path.join(self.deriv_dir, self.subject, self.session, 'func', '{}_{}_task-{}_bold.nii.gz'.format(self.subject,self.session,task_run))
+
+            if os.path.exists(bold_in):  ##### SKIP IF BOLD FILE DOES NOT EXIST #####
+
+                FSF_filename    = os.path.join(self.preprocess_dir,'task-{}'.format(task), '{}_{}_task-{}_preprocessing.fsf'.format(self.subject, self.session, task_run) ) # save fsf
+                output_path     = os.path.join(self.preprocess_dir,'task-{}'.format(task), '{}_{}_task-{}_preprocessing'.format(self.subject, self.session, task_run) ) 
+                
+                nii = nib.load(bold_in).get_data() # only do once 
+                nr_trs = str(nii.shape[-1])
+                nr_voxels = str(nii.size)
+
+                # replacements
+                sbref_brain     = os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_task-{}_bold_sbref.nii.gz'.format(self.subject, self.session, task_run))
+                fmap            = os.path.join(self.deriv_dir,self.subject,self.session,'fmap','{}_{}_acq-fmap.nii.gz'.format(self.subject,self.session))
+                fmap_mag_brain  = os.path.join(self.deriv_dir,self.subject,self.session,'fmap','{}_{}_run-01_fmap_brain.nii.gz'.format(self.subject,self.session))
+                t1_brain        = os.path.join(self.deriv_dir,self.subject,self.session,'anat','{}_{}_T1w_brain.nii.gz'.format(self.subject, self.t1_sess))
+                mni_brain       = os.path.join(self.mask_dir, 'MNI152_T1_2mm_brain.nii.gz')
+
+                if task == 'rsa':
+                    FWHM = '0' # turn smoothing off for mulitvariate analyses
+                else:
+                    FWHM = self.FWHM
+                    
+                replacements = [ # needs to match order of 'markers'
+                    output_path,
+                    nr_trs,
+                    nr_voxels,
+                    FWHM,
+                    self.UNWARP,# true=ON
+                    self.EPI_EECHO, # dwell time is effective echo spacing (EPI data not field map!!)
+                    self.EPI_TE,
+                    bold_in,
+                    fmap,
+                    fmap_mag_brain,
+                    sbref_brain,
+                    t1_brain,
+                    mni_brain]
+
+                # open the template file, load the text data
+                f = open(template_filename,'r')
+                filedata = f.read()
+                f.close()
+
+                # search and replace
+                for st,this_string in enumerate(markers):
+                    filedata = filedata.replace(this_string,replacements[st])
+
+                # write output file
+                f = open(FSF_filename,'w')
+                f.write(filedata)
+                f.close()
+    
+                # open preprocessing job and write command as new line
+                cmd = 'feat {}'.format(FSF_filename)
+                self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
+                self.preprocessing_job.write(cmd)   # feat command
+                self.preprocessing_job.write("\n\n")  # new line
+                self.preprocessing_job.close()
+                print('success: {}'.format(FSF_filename))
+            else:
+                print('cannot make FSF: missing {}'.format(BOLD))
     
     
     def create_native_target(self, task='rsa', session='ses-01', bold_run='run-03'):
@@ -456,38 +628,59 @@ class preprocess_class(object):
             >> applywarp --ref=${FSLDIR}/data/standard/MNI152_T1_2mm --in=my_functional --warp=my_nonlinear_transf --premat=func2struct.mat --out=my_warped_functional
         """
         example_func = self.native_target + '_brain'
+        sbref = os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_task-{}_{}_bold_sbref.nii.gz'.format(self.subject, self.session, 'rsa', 'run-03'))
         t1         = os.path.join(self.deriv_dir,self.subject,self.session,'anat','{}_{}_T1w.nii.gz'.format(self.subject, self.t1_sess))
         t1_brain   = os.path.join(self.deriv_dir,self.subject,self.session,'anat','{}_{}_T1w_brain.nii.gz'.format(self.subject, self.t1_sess))
         mni        = os.path.join(self.mask_dir, 'MNI152_T1_2mm.nii.gz') 
         mni_brain  = os.path.join(self.mask_dir, 'MNI152_T1_2mm_brain.nii.gz') 
     
         # define paths and output filenames
+        example_func2sbref    = os.path.join(self.native_target_dir, 'example_func2sbref') 
+        sbref2highres         = os.path.join(self.native_target_dir, 'sbref2highres') 
+        
         example_func2highres    = os.path.join(self.native_target_dir, 'example_func2highres') 
         highres2mni_affine      = os.path.join(self.native_target_dir, 'highres2mni_affine') 
         highres2mni_fnirt       = os.path.join(self.native_target_dir, 'highres2mni_fnirt') 
         warpvol                 = os.path.join(self.native_target_dir, 'warpvol')
         example_func2mni        = os.path.join(self.native_target_dir, 'example_func2mni')
         
-        # EPI target to T1
-        cmd1 = 'flirt -ref {} -in {}.nii.gz -omat {}.mat -out {}.nii.gz -usesqform -cost mutualinfo -searchrx -90 90 -searchry -90 90 -searchrz -90 90 -dof 12 -interp trilinear'.format(t1_brain, example_func, example_func2highres, example_func2highres)
+        # EPI target to SBREF
+        cmd1 = 'flirt -ref {} -in {}.nii.gz -omat {}.mat -out {}.nii.gz -cost mutualinfo -searchrx -90 90 -searchry -90 90 -searchrz -90 90 -dof 12 -interp trilinear'.format(sbref, example_func, example_func2sbref, example_func2sbref)
         print(cmd1)
+        
+        # SBREF to T1
+        cmd2 = 'flirt -ref {} -in {} -omat {}.mat -out {}.nii.gz -cost mutualinfo -searchrx -90 90 -searchry -90 90 -searchrz -90 90 -dof 12 -interp trilinear'.format(t1_brain, sbref, sbref2highres, sbref2highres)
+        print(cmd2)
+        
+        # Concatenatve EPI target -> SBREF -> T1: to make EPI target to T1
+        cmd3 = 'convert_xfm -omat {}.mat -concat {}.mat {}.mat'.format(example_func2highres, sbref2highres, example_func2sbref)
+        print(cmd3)
+        
+        # Apply transform EPI target to T1
+        cmd4 = 'flirt -in {}.nii.gz -applyxfm -init {}.mat -out {}.nii.gz -paddingsize 0.0 -interp trilinear -ref {}'.format(example_func, example_func2highres, example_func2highres, t1)
+        print(cmd4)
+        
+        
+        # EPI target to T1
+        # cmd4 = 'flirt -ref {} -in {}.nii.gz -omat {}.mat -out {}.nii.gz -cost mutualinfo -searchrx -90 90 -searchry -90 90 -searchrz -90 90 -dof 12 -interp trilinear'.format(t1_brain, example_func, example_func2highres, example_func2highres)
+        # print(cmd1)
         # results = subprocess.call(cmd1, shell=True, bufsize=0)
     
         # T1 -> MNI
-        cmd2 = 'flirt -ref {} -in {} -omat {}.mat -out {}.nii.gz'.format(mni_brain, t1_brain, highres2mni_affine, highres2mni_affine)
-        print(cmd2)
+        cmd5 = 'flirt -ref {} -in {} -omat {}.mat -out {}.nii.gz'.format(mni_brain, t1_brain, highres2mni_affine, highres2mni_affine)
+        print(cmd5)
         # results = subprocess.call(cmd2, shell=True, bufsize=0)
     
         # NON LINEAR
         # T1 > MNI space -> create FNIRT warpfile
-        cmd3 = 'fnirt --ref{} --in={} --aff={}.mat --cout={}.nii.gz --iout={}.nii.gz'.format(mni, t1, highres2mni_affine, warpvol, highres2mni_fnirt)
-        print(cmd3)
+        cmd6 = 'fnirt --ref{} --in={} --aff={}.mat --cout={}.nii.gz --iout={}.nii.gz'.format(mni, t1, highres2mni_affine, warpvol, highres2mni_fnirt)
+        print(cmd6)
         # results = subprocess.call(cmd3, shell=True, bufsize=0)
     
         # NON LINEAR
         # EPI time series (MNI space) -> apply FNIRT warpfile
-        cmd4 = 'applywarp --ref={} --in={}.nii.gz --warp={}.nii.gz --premat={}.mat --out={}.nii.gz'.format(mni, example_func, warpvol, example_func2highres, example_func2mni)
-        print(cmd4)
+        cmd7 = 'applywarp --ref={} --in={}.nii.gz --warp={}.nii.gz --premat={}.mat --out={}.nii.gz'.format(mni, example_func, warpvol, example_func2highres, example_func2mni)
+        print(cmd7)
         # results = subprocess.call(cmd4, shell=True, bufsize=0)
                     
         # open preprocessing job and write commands as new line
@@ -500,115 +693,14 @@ class preprocess_class(object):
         self.preprocessing_job.write("\n\n")  # new line
         self.preprocessing_job.write(cmd4)   # command
         self.preprocessing_job.write("\n\n")  # new line
+        self.preprocessing_job.write(cmd5)   # command
+        self.preprocessing_job.write("\n\n")  # new line
+        self.preprocessing_job.write(cmd6)   # command
+        self.preprocessing_job.write("\n\n")  # new line
+        self.preprocessing_job.write(cmd7)   # command
+        self.preprocessing_job.write("\n\n")  # new line
         self.preprocessing_job.close()
         print('success: native_target_2_mni')
-    
-    
-    def motion_correction(self, ):
-        """Run motion correction with subject-specific native target as reference volume.
-        
-        Notes:
-            Call MCFLIRT from command line (FEAT has no option for overriding default reference volume.)
-            Save motion matrices to add to first level GLM.
-        """
-        # go into subject's session's func folder and motion correct all nii.gz files
-        for bold in os.listdir(os.path.join(self.deriv_dir,self.subject,self.session,'func')):
-            if '.nii.gz' in bold:          
-                # save in preprocessing folder of task, have to split 'nii.gz' twice to get base
-                fname, extension = os.path.splitext(bold)
-                fname, extension = os.path.splitext(fname)
-                bold_out = os.path.join(self.motion_dir, fname+'_mcf')
-                bold_in = os.path.join(self.deriv_dir,self.subject,self.session,'func', bold)
-                ###################
-                # motion correction (reference = native target)
-                ###################
-                cmd = 'mcflirt -in {} -r {}.nii.gz -stages 4 -sinc_final -o {} -stats -mats -plots'.format(bold_in, self.native_target, bold_out)
-                print(cmd)
-                # results = subprocess.call(cmd, shell=True, bufsize=0)
-
-                # open preprocessing job and write command as new line
-                self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
-                self.preprocessing_job.write(cmd)   # command
-                self.preprocessing_job.write("\n\n")  # new line
-                self.preprocessing_job.close()                
-        print('success: motion_correction')
-        
-        
-    def preprocess_fsf(self, ):
-        """Create the FSF files for each subject's preprocessing in FEAT: high pass filtering, brain extraction, smoothing (localizers).
-        
-        Notes:
-            Smoothing is on only for the localizers.
-            Uses the preprocessing_template.fsf to search/replace the markers.
-            Hack: Uses the bold file in derivatives to check if exists, then calculates no. voxels and trs to avoid having to wait for motion correction to finish.
-        """    
-        
-        template_filename = os.path.join(self.template_dir,'preprocessing_template.fsf')
-        
-        markers = [
-            '[$OUTPUT_PATH]', 
-            '[$NR_TRS]',        # number of volumes
-            '[$NR_VOXELS]',     # total number of voxels
-            '[$FWHM]',
-            '[$INPUT_FILENAME]', # BOLD data
-        ]
-        
-        # all nii.gz files in func folder need to be preprocessed in FEAT
-        for task in ['letters','colors','rsa_run-01','rsa_run-02','rsa_run-03','rsa_run-04']:
-            
-            check_bold = os.path.join(self.deriv_dir, self.subject, self.session, 'func', '{}_{}_task-{}{}_bold.nii.gz'.format(self.subject,self.session,task,bold_run))
-
-            if os.path.exists(check_bold):  ##### SKIP IF BOLD FILE DOES NOT EXIST #####
-                
-                # This will be the mcflirted time series in the preprocessing folder
-                mri_in = os.path.join(self.motion_dir,'task-{}'.format(task),'{}_{}_task-{}{}_bold_mcf.nii.gz'.format(self.subject,self.session,task,bold_run))
-                
-                # calculate size of input data
-                nii = nib.load(check_bold).get_data() # only do once 
-                NR_TRS = str(nii.shape[-1])
-                NR_VOXELS = str(nii.size)
-        
-                FSF_filename = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_preprocessing_{}_{}{}.fsf'.format(task,self.subject,self.session,bold_run) ) # save fsf
-                
-                # replacements
-                output_path = os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}{}'.format(task,self.subject,self.session,bold_run)) 
-        
-                if task == 'rsa':
-                    FWHM = '0' # turn smoothing off for mulitvariate analyses
-                else:
-                    FWHM = self.FWHM
-            
-                replacements = [ # needs to match order of 'markers'
-                    output_path,
-                    NR_TRS,
-                    NR_VOXELS,
-                    FWHM,
-                    mri_in,
-                ]
-        
-                # open the template file, load the text data
-                f = open(template_filename,'r')
-                filedata = f.read()
-                f.close()
-
-                # search and replace
-                for st,this_string in enumerate(markers):
-                    filedata = filedata.replace(this_string,replacements[st])
-
-                # write output file
-                f = open(FSF_filename,'w')
-                f.write(filedata)
-                f.close()
-        
-                # open preprocessing job and write command as new line
-                cmd = 'feat {}'.format(FSF_filename)
-                self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
-                self.preprocessing_job.write(cmd)   # feat command
-                self.preprocessing_job.write("\n\n")  # new line
-                self.preprocessing_job.close()
-                print('success: {}'.format(FSF_filename))
-            else:
-                print('cannot make FSF: missing {}'.format(BOLD))
         
         
     def transform_2_mni(self, ):
@@ -645,3 +737,36 @@ class preprocess_class(object):
                 self.preprocessing_job.write("\n\n")  # new line
                 self.preprocessing_job.close()
         print('success: transform_2_mni')
+
+
+
+#### NOT USING
+
+    def motion_correction(self, ):
+        """Run motion correction with subject-specific native target as reference volume.
+        
+        Notes:
+            Call MCFLIRT from command line (FEAT has no option for overriding default reference volume.)
+            Save motion matrices to add to first level GLM.
+        """
+        # go into subject's session's func folder and motion correct all nii.gz files
+        for bold in os.listdir(os.path.join(self.deriv_dir,self.subject,self.session,'func')):
+            if '.nii.gz' in bold:          
+                # save in preprocessing folder of task, have to split 'nii.gz' twice to get base
+                fname, extension = os.path.splitext(bold)
+                fname, extension = os.path.splitext(fname)
+                bold_out = os.path.join(self.motion_dir, fname+'_mcf')
+                bold_in = os.path.join(self.deriv_dir,self.subject,self.session,'func', bold)
+                ###################
+                # motion correction (reference = native target)
+                ###################
+                cmd = 'mcflirt -in {} -r {}.nii.gz -stages 4 -sinc_final -o {} -stats -mats -plots'.format(bold_in, self.native_target, bold_out)
+                print(cmd)
+                # results = subprocess.call(cmd, shell=True, bufsize=0)
+
+                # open preprocessing job and write command as new line
+                self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
+                self.preprocessing_job.write(cmd)   # command
+                self.preprocessing_job.write("\n\n")  # new line
+                self.preprocessing_job.close()                
+        print('success: motion_correction')

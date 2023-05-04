@@ -67,6 +67,7 @@ subjects_group  = participants['subjects']
 sessions        = ['ses-01','ses-02']
 # the following is for indexing any missing files
 t1              = ['t1_1','t1_2']
+fieldmap        = ['fieldmap1','fieldmap2']
 loc_letters     = ['loc-letters1','loc-letters2']
 loc_colors      = ['loc-colors1','loc-colors2']
 rsa             = [ ['rsa1_1','rsa2_1','rsa3_1','rsa4_1'],
@@ -76,11 +77,20 @@ rsa             = [ ['rsa1_1','rsa2_1','rsa3_1','rsa4_1'],
 # Run preprocessing class
 # -----------------------
 # Values for unwarping in FEAT, based on BOLD data
+EPI_TE      = 0.0396*1000       # echo time EPI in ms
+EPI_EECHO   = 0.000580009*1000  # effective echo spacing EPI in ms
+TDIFF_ECHO  = 0.00246*1000      # difference between echo times of field map magnitude images [0.0047,0.00716] in ms
 TR          = 1.5       # repetition time in seconds
 FWHM        = 3         # smoothing kernel in mm (localizers only)
 
 if run_preprocessing:
     for s,subject in enumerate(mri_subjects): # go in order of mri
+        ######################################################################
+        # check if field map exists in both sessions (identical preprocessing for each session)
+        if int(participants[fieldmap[0]][s]) and int(participants[fieldmap[1]][s]):
+            UNWARP = 1
+        else: # otherwise, turn off unwarping for both sessions current subject
+            UNWARP = 0
         ######################################################################
         for ss,session in enumerate(sessions): # loop sessions
             ###################################################################
@@ -102,23 +112,27 @@ if run_preprocessing:
                 deriv_dir       = deriv_dir,
                 mask_dir        = mask_dir,
                 template_dir    = template_dir,
+                EPI_TE          = EPI_TE,
+                EPI_EECHO       = EPI_EECHO,
+                TDIFF_ECHO      = TDIFF_ECHO,
+                UNWARP          = UNWARP,
                 FWHM            = FWHM,
                 t1_sess         = t1_sess
                 )            
             # preprocess.dicom2bids()               # convert DICOMS from scanner to nifti in bids format
             # preprocess.housekeeping()             # copies events and physio files (rename event file names to be bids compliant and same b/t mri & behavior)
             # preprocess.raw_copy()                 # copy from bids_raw directory into derivaties to prevent overwriting
+            # preprocess.sbref_raw_copy()             # hack, can DELETE later once finished
             # preprocess.bet_brains_T1()            # brain extraction T1 always check visually!
+            # preprocess.bet_brains_fmap()          # B0 unwarping needs 'tight' brain extracted magnitude images of field map, better too small than too big!
+            # preprocess.prepare_fmap()             # prepares the field map image in radians/sec
+            
             #### Everything below here writes commands to a batch job ####
-            preprocess.create_native_target()     # create the subject-specific native space target for all tasks
-            preprocess.native_target_2_mni()      # register the subject-specific native space target to MNI space via the T1 (save transforms)
-            preprocess.motion_correction()        # motion correct each run to the subject-specific native space target
-            shell()
-            
-            # preprocess.preprocess_fsf()           # after motion_correction, generate FSF file for preprocessing in FEAT (run from command line - batch)
-            
-            # preprocess.transform_2_mni('letters')           # transforms the preprocessed time series to MNI space
-            # preprocess.transform_2_mni('colors')            # transforms the preprocessed time series to MNI space
+            preprocess.preprocess_fsf()           # after motion_correction, generate FSF file for preprocessing in FEAT (run from command line - batch)
+            shell()            
+            # preprocess.create_native_target()     # create the subject-specific native space target for all tasks
+            # preprocess.native_target_2_mni()      # register the subject-specific native space target to MNI space via the T1 (save transforms)
+            # preprocess.transform_2_mni()          # transforms the preprocessed time series to MNI space
             
             
 # -----------------------
