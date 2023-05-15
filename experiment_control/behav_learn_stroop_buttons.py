@@ -24,7 +24,7 @@ stroop_letter_conditions = [
 ]
 
 ## Keyboard Buttons 
-buttons = ["z","x","n","m"] # colors 1,2,3,4 in order
+buttons = ["z","x","c","v"] # colors 1,2,3,4 in order
 
 ### PARAMETERS ###
 # Timing in seconds
