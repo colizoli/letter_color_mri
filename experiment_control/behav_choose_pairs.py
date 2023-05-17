@@ -3,10 +3,10 @@
 """
 CHOOSING LETTER-COLOR ASSOCIATIONS TASK
 O.Colizoli & M.Blasco Oliver, 2019
-Outputs a TSV file for sub-101 and sub-201 (Group2 gets Group1's preferences)
+Outputs a TSV file for sub-301 and sub-401 (Group4 gets Group3's preferences)
 """
-# data saved in ~/colors/sub-XXX/ses-X for group 1 (and a copy of this file for their yoked partner in group 2)
-# data saved in ~/source/sub-XXX/ses-X for group 2 (their actual preferences, but not what they read in the books!)
+# data saved in ~/colors/sub-XXX/ses-X for group 3 (and a copy of this file for their yoked partner in group 4)
+# data saved in ~/source/sub-XXX/ses-X for group 4 (their actual preferences, but not what they read in the books!)
 
 ### Import Libraries ###
 import os, time # for paths and data
