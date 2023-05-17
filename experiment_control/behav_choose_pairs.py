@@ -165,7 +165,7 @@ if subject_ID:
     timestr = time.strftime("%Y%m%d-%H%M%S") 
     
     # G1
-    if subject_ID < 200: # make G1 & G2's folders
+    if subject_ID < 400: # make G1 & G2's folders
         subject_yoked = subject_ID+100
         logfile_dir = os.path.join(cwd,'colors','sub-{}'.format(subject_ID))  # system independent
         logfile_dir_g2 = os.path.join(cwd,'colors','sub-{}'.format(subject_ID+100))  # system independent
