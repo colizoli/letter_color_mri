@@ -85,6 +85,7 @@ if subject_ID:
     \n\nYou will see letters appear one at a time on the screen.\
     \nInstructions: Indicate the COLOR of the letter as fast AND as accurately as possible.\
     \nThe response options are shown in the colored squares below.\
+    \nPlease use only one hand to respond - your dominant hand.\
     \n\n\n<Press any button to continue>'
     
     pauze = 'Take a short break now.\
