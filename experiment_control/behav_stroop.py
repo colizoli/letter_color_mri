@@ -43,7 +43,7 @@ g.addField('Session:')
 g.show()
 subject_ID = int(g.data[0])
 session = int(g.data[1])
-group = [1 if subject_ID < 200 else 2]
+group = [3 if subject_ID < 400 else 4]
 
 if subject_ID:
     ### Define stimuli for this subject & save file
