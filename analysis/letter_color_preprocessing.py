@@ -51,9 +51,6 @@ class preprocess_class(object):
         FWHM (str): Smoothing kernel for localizer analysis (full-width half maximum)
         t1_sess (str): Session to use for T1 in FEAT.
         preprocess_dir (str): Path to the preprocessing directory.
-        native_target (str): Path to the target image for current subject (no nifti extension in file name).
-        native_target_dir (str): Path to the subjects native target directory.
-        motion_dir (str): Path to motion correction output (mcflirt)
         preprocessing_job_path (str): Path to the text file for batch scripting (Unix).
     
     Methods:
@@ -65,11 +62,8 @@ class preprocess_class(object):
         housekeeping()
         raw_copy()
         bet_brains_T1( postfix='brain')
-        create_native_target(task='rsa', session='ses-01', bold_run='run-03')
-        native_target_2_mni()
-        motion_correction()
         preprocess_fsf()
-        transform_2_mni(task, bold_run='', linear=0)
+        transform_native2native_target(task='rsa', session='ses-01', bold_run='run-01')
     """
     
     def __init__(self, subject, mri_subject, session, analysis_dir, source_dir, raw_dir, deriv_dir, mask_dir, template_dir, EPI_TE, EPI_EECHO, TDIFF_ECHO, UNWARP, FWHM, t1_sess):        
@@ -111,18 +105,6 @@ class preprocess_class(object):
             
         # path to processed physiology files
         self.phys_dir = os.path.join(self.raw_dir, 'physiology_processed')
-        
-        # path to registration target for both sessions (output)
-        self.native_target_dir = os.path.join(self.preprocess_dir, 'native_targets', self.subject)
-        if not os.path.isdir(self.native_target_dir):
-            os.makedirs(self.native_target_dir)
-    
-        self.native_target = os.path.join(self.native_target_dir, '{}_native_target'.format(self.subject))
-        
-        # # path to motion correction output (command line)
-        # self.motion_dir = os.path.join(self.preprocess_dir, 'motion_correction', self.subject, self.session)
-        # if not os.path.isdir(self.motion_dir):
-        #     os.makedirs(self.motion_dir)
                 
         # write unix commands to job to run in parallel
         self.preprocessing_job_path = os.path.join(self.analysis_dir, 'jobs', 'job_preprocessing_{}.txt'.format(self.subject))
@@ -588,10 +570,10 @@ class preprocess_class(object):
                 print('success: {}'.format(FSF_filename))
             else:
                 print('cannot make FSF: missing {}'.format(BOLD))
+        
     
-    
-    def create_native_target(self, task='rsa', session='ses-01', bold_run='run-01'):
-        """Create the registration target in native space for ALL tasks. 
+    def transform_native2native_target(self, task='rsa', session='ses-01', bold_run='_run-01'):
+        """Calcuate the linear transformations for individual runs into native target space. 
         
         Args:
             task (str): The task to use for the registration target ('rsa' or 'loc').
@@ -600,45 +582,46 @@ class preprocess_class(object):
         
         Notes:
         ------
-            The target should be the first session, 1st run (RSA1), preprocessed, middle volume.
+            Only compute, not apply the transforms!
+            The target should be the first session, 1st run (RSA1), target of motion correction, middle volume ("example_func").
             Path is defined at class level: self.native_target
         """        
+        
+        # all nii.gz files in func folder need to be preprocessed in FEAT
+        for task_run in ['letters','colors','rsa_run-01','rsa_run-02','rsa_run-03','rsa_run-04']:
+            
+            if 'rsa' in task_run:
+                task = task_run.split("_")[0]
+            else:
+                task = task_run
+                
+            #### CONTINUE HERE
+            
         # path to raw bold file as input to create registration target
         mri_in = os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_task-{}_{}_bold.nii.gz'.format(self.subject, self.session, task, bold_run))
-        mri_mcf = os.path.join(self.native_target_dir, '{}_{}_task-{}_{}_bold_mcf'.format(self.subject, self.session, task, bold_run))
         
+        native_target = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}{}_preprocessing.feat'.format(self.subject, session, task, bold_run), 'example_func.nii.gz')
+        
+                
         ###################
-        # motion correction (default target middle volume)
+        # FLIRT COMMAND
         ###################
+        flirt -in {} -ref /Users/olympia.colizoli/Aeneas/mountpoint5/derivatives/preprocessing/task-rsa/sub-201_ses-01_task-rsa_run-01_preprocessing.feat/example_func.nii.gz -out /Users/olympia.colizoli/Aeneas/mountpoint5/derivatives/preprocessing/test_example_func -omat /Users/olympia.colizoli/Aeneas/mountpoint5/derivatives/preprocessing/test_example_func.mat -bins 256 -cost mutualinfo -searchrx -90 90 -searchry -90 90 -searchrz -90 90 -dof 12  -interp sinc -sincwidth 7 -sincwindow hanning
+        
         cmd1 = 'mcflirt -in {} -stages 4 -sinc_final -o {}'.format(mri_in, mri_mcf)
         print(cmd1)
         # results = subprocess.call(cmd, shell=True, bufsize=0)
-        
-        ###################
-        # mean image
-        ###################
-        cmd2 = 'fslmaths {}.nii.gz -Tmean {}.nii.gz'.format(mri_mcf, self.native_target)
-        print(cmd2)
-        # results = subprocess.call(cmd, shell=True, bufsize=0)
-        
-        ###################
-        # brain extraction
-        ###################
-        cmd3 = 'bet {}.nii.gz {}.nii.gz'.format(self.native_target, self.native_target + '_brain')
-        print(cmd3)
-        # results = subprocess.call(cmd, shell=True, bufsize=0)
+      
         
         # open preprocessing job and write commands as new line
         self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
         self.preprocessing_job.write(cmd1)   # command
-        self.preprocessing_job.write("\n\n")  # new line
-        self.preprocessing_job.write(cmd2)   # command
-        self.preprocessing_job.write("\n\n")  # new line
-        self.preprocessing_job.write(cmd3)   # command
-        self.preprocessing_job.write("\n\n")  # new line
         self.preprocessing_job.close()
-        print('success: create_native_target')
-    
+        print('success: transform_native2native_target')
+
+
+    #### NOT USING
+
     
     def native_target_2_mni(self, ):
         """Compute the registration from the subject-specific native target to MNI space via the T1.
@@ -765,7 +748,6 @@ class preprocess_class(object):
 
 
 
-#### NOT USING
 
     def motion_correction(self, ):
         """Run motion correction with subject-specific native target as reference volume.
