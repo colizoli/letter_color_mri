@@ -311,6 +311,16 @@ class preprocess_class(object):
         print('success: copy_physio')
     
     
+    def remove_filename(self, ):
+        
+        subj_dir = os.path.join(self.deriv_dir, self.subject, self.session, 'func')
+        
+        cmd = 'rm {}*physio.tsv'.format(subj_dir)
+        print(cmd)
+        #results = subprocess.call(cmd, shell=True, bufsize=0)
+        print('success: remove_filename')
+        
+    
     def housekeeping(self, ):
         """Rename then copies events, log, and physio files into the bids_raw directory with the NIFTI files.
         
@@ -759,10 +769,132 @@ class preprocess_class(object):
                         self.preprocessing_job.close()
         print('success: register_ventricle2native')
        
+
+    def physiological_noise_removal(self, ):
+        """Remove physiological noise and 4th ventricle signal.
+        
+        Args:
+            bold_run (str): The bold run to use for registration target.
+        
+        Notes:
+        ------
+            https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/PNM
+            'Pnm_gui' will open the PNM GUI in FSL.
+            Settings pnm_stage1 ->
+            Columns: cardiac=3, respiratory=4, triggers=5
+            Sampling rate = 5000 Hz, TR = 1.5, Slice order = Interleaved Up (Siemens), Scanner Slice Direction = z, 
+            Orders: Cardiac=4, Resp=4, Cardiac_Int=2, Resp_Int=2
+            Options: RVT, HeartRate, Smoothing defaults 
+        """
+        
+        # pnm_stage1 -s':str(sample_rate), '--tr='+str(TR):' ', '--smoothcard='+str(0.1):' ', '--smoothresp='+str(0.1):' ', '--resp='+str(2):' ', '--cardiac='+str(1):' ', '--trigger='+str(4):'', '--rvt':' ','--heartrate':' '}
+        print('success: physiological_noise_removal')
+        
+        # popp '-s':str(sample_rate), '--tr='+str(TR):' ', '--smoothcard='+str(0.1):' ', '--smoothresp='+str(0.1):' ', '--resp='+str(2):' ', '--cardiac='+str(1):' ', '--trigger='+str(4):'', '--rvt':' ','--heartrate':' '})
+        
+        # pnm_evs '--tr='+str(TR):' ', '-c':card, '-r':resp, '--oc='+str(card_order):' ', '--or='+str(resp_order):' ', '--multc='+str(card_resp_order):' ', '--multr='+str(resp_card_order):' ', '--slicedir='+slicedir:' ', '--sliceorder='+sliceorder:' ', '-v':' ', '--rvt='+rvt:' ', '--heartrate='+hr:' '})
+        
+        
+		# grab regressors:
+		regressors = [reg for reg in np.sort(glob.glob(base + 'ev*.nii*'))]
+		text_file = open(base+'_evs_list.txt', 'w')
+		for reg in regressors:
+			text_file.write('{}\n'.format(reg))
+		text_file.close()
+        print('success: physiological_noise_removal')
         
         
         
-        
+    def ventricle_fluctations(self,dtype,session):
+        # extracts the 4th ventricle fluctuations for the nuisance regression    
+        # files have been copied to the combined folder
+        BOLD_data = np.array(nib.load(os.path.join(self.project.base_dir, self.subject.initials, 'FSL_files', 'detection_data_{}_{}_{}.nii.gz'.format(dtype,self.subject.initials,session))).get_data(), dtype=float)
+        mask = np.array(nib.load(os.path.join(self.project.base_dir, self.subject.initials, 'FSL_files', 'masks', '{}_{}.nii.gz'.format('4th_ventricle_MNI',session))).get_data(), dtype=bool)
+        roi_data = bn.nanmean(BOLD_data[mask,:], axis=0)
+        # roi_data = (roi_data - np.mean(roi_data)) / np.std(roi_data) # center variable around 0 mean
+        return roi_data
+
+
+    def GLM_nuisance(self,tsnr):
+        # Nuisance GLM for the tSNR analysis:
+        # for tSNR:
+        # removing  i) the physiological fluctuations, ii) the task-evoked fluctuations, and iii) the 4th ventricle fluctuations
+        # for task-evoked 
+        # removing  i) the physiological fluctuations, ii) the 4th ventricle fluctuations
+        # Include all of the above regressors in one nuisance GLM (i.e. in one step along with the RETROICOR). 
+        # run from combined folder (except brain masks)
+
+        session = [self.runList[i] for i in self.conditionDict['task']][0].session
+        dtype = 'hp'
+        if tsnr:
+            task_regressors = self.make_task_evoked_regressors(session) # make 3 column format from stimulus and feedback onsets
+            dtype_out = 'hp'
+           # dtype = 'hp'
+        else:
+            dtype_out = 'hp_evoked'
+           # dtype = 'psc'
+        ventricle_regressor = self.ventricle_fluctations(dtype=dtype,session=session)  # one column of average activity in ventricle per TR
+
+        nr_runs = len([self.runList[i] for i in self.conditionDict['task']])
+        nii_file = nib.load(os.path.join(self.project.base_dir, self.subject.initials, 'FSL_files', 'detection_data_{}_{}_{}.nii.gz'.format(dtype,self.subject.initials, session)))
+        nii_file_data = nii_file.get_data()
+
+        if tsnr:
+            # make box car for task regressors, convolve with HRF
+            task_regressors = self.convolve_hrf(task_regressors, nii_file_data.shape[-1], self.tr)
+            # fig = plt.figure(figsize=(5,5))
+            # ax = fig.add_subplot(211)
+            # ax.plot(task_regressors[0][:400])
+            # ax = fig.add_subplot(212)
+            # ax.plot(task_regressors[1][:400])
+            # fig.savefig(os.path.join(self.project.base_dir, self.subject.initials, 'FSL_files','task_regressors_{}.pdf'.format(session)))
+        with open(os.path.join(self.project.base_dir, self.subject.initials, 'FSL_files', 'retroicor_data_{}_{}_evs_list.txt'.format(self.subject.initials, session)), 'r') as f:
+            retroicor_files = [x.strip('\n') for x in f.readlines()]
+        retroicor_evs = []
+        for r in retroicor_files:
+            retroicor_evs.append(nib.load(r))
+
+        brain_mask = np.array(nib.load(self.runFile(stage = 'processed/mri/masks/anat', base='brain_mask')).get_data(), dtype=bool)
+        brain_mask[:,:,:] = True
+
+        residuals = np.zeros(nii_file_data.shape)
+        nr_slices = nii_file.shape[2]
+
+        for s in range(nr_slices):
+   
+            slice_indices = (np.arange(nr_slices) == s)
+            mask = brain_mask[:,:,slice_indices][:,:,0] # voxels x,y inplane
+   
+            retroicor_slice_wise_evs = []
+           for r in retroicor_evs:
+               retroicor_slice_wise_evs.append(r.get_data()[0,0,s,:])
+           retroicor_slice_wise_evs = np.vstack(retroicor_slice_wise_evs) # design matrix for retriocor
+       
+           # combine all regressors
+           joined_design_matrix = np.mat(retroicor_slice_wise_evs).T  # timepoints x regressors
+           if tsnr: # include task-evoked fluctuations as nuisance
+               joined_design_matrix = np.mat(np.vstack([task_regressors, retroicor_slice_wise_evs, ventricle_regressor]).T)
+           else:
+               joined_design_matrix = np.mat(np.vstack([retroicor_slice_wise_evs, ventricle_regressor]).T) # X = time x regressors
+           data = nii_file_data[mask,s,:].T  # time x voxels (flattened inplane x*y)
+   
+           # T is transpose, I inverse, # betas = # regressors
+           betas = ((joined_design_matrix.T * joined_design_matrix).I * joined_design_matrix.T) * np.mat(data.T).T # betas = regressors x voxels
+           explained_signal = np.array((np.mat(joined_design_matrix) * np.mat(betas))) # explained = time x voxels
+           res = data - explained_signal # res = time x voxels
+
+           # add mean over time back into residuals
+           for tr in range(res.shape[0]): # time
+               res[tr,:] = res[tr,:] + np.mean(data,axis=0)
+           residuals[mask,s,:] = res.T # voxels x time
+           # residuals shape is x-voxels x y-voxels x slices x time
+   
+        res_nii_file = nib.Nifti1Image(residuals, affine=nii_file.get_affine(), header=nii_file.get_header())
+        res_nii_file.set_data_dtype(np.float32)
+        nib.save(res_nii_file, os.path.join(self.project.base_dir, self.subject.initials, 'FSL_files', 'detection_data_{}_clean_{}_{}.nii.gz'.format(dtype_out,self.subject.initials, session)))     
+
+
+
 
     #### NOT USING
 

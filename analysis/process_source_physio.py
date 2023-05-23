@@ -14,6 +14,8 @@ during scanning using BrainVision Recorder.
 This code splits the time series into the runs based on the MRI triggers. 
 Once the runs are split, they will have to be matched to the scan 
 acquisition to remove unfinished/uncompleted/unneeded runs.
+In the final text files, the triggers have to have a separate column!
+Save final text finals with extension .txt
 
 Notes:
 ------
@@ -129,7 +131,7 @@ def find_triggers(filename):
 
 
 def split_dataframe(filename, df, df_triggers):
-    """Iterate through the run_gap and split the dataframe into multiple .csv files
+    """Iterate through the run_gap and split the dataframe into multiple .csv files.
     
     Args:
         filename (str): the path to the .vhdr file
@@ -143,6 +145,7 @@ def split_dataframe(filename, df, df_triggers):
     """
     
     df.drop(['time'],axis=1,inplace=True) # time irrelevant, only row position important
+    df_triggers['idx'] = pd.to_numeric(df_triggers['idx'])
     
     # The run starts are where there are large run_gaps (more than 3 TRs) and first trigger
     df_triggers['starts'] = np.array((df_triggers['run_gap'] >= int(SAMPLE_RATE * TR * 3)) | (df_triggers['run_gap'] == 0) , dtype=int)
@@ -157,11 +160,27 @@ def split_dataframe(filename, df, df_triggers):
     start_idx = list(df_starts['idx']) # list of starting indexes
     stop_idx = list(df_stops['idx']) # list of stopping indexes
     
-    # loop through starting indexes, get data out of df
+    # loop through starting indexes, get data out of df and triggers out of df_triggers
     for run_counter,idx in enumerate(start_idx):
-        # get data until stop + TR 
-        this_run = df.iloc[int(idx):int(stop_idx[run_counter])+int(SAMPLE_RATE * TR),:]        
         
+        idx_start = int(idx)
+        idx_stop  = int(stop_idx[run_counter])+int(SAMPLE_RATE * TR)
+        
+        # get data until stop + TR 
+        this_run = df.iloc[idx_start:idx_stop,:]        
+        
+        # select triggers only within the min-max indices of subj_funs...
+        this_triggers = df_triggers[df_triggers['idx'].between(idx_start, idx_stop)]
+        this_triggers = pd.DataFrame(this_triggers['idx'])
+        this_triggers['trigger'] = np.repeat(1,this_triggers.shape[0])
+                
+        this_run.reset_index(inplace=True)
+        this_run.columns = ['idx', 'HR', 'Resp']        
+        
+        subj_merged = this_run.merge(this_triggers, on='idx', how='outer', indicator=False) # outer merge
+                
+        subj_merged = subj_merged.fillna(0)
+    
         # save run in format to sub-000_ses-00_run-00_physio.tsv
         path_subj = os.path.splitext(filename)[0] 
         # housekeeping
@@ -171,13 +190,13 @@ def split_dataframe(filename, df, df_triggers):
         except:
             pass
         fn_out = os.path.join(output_dir, path_subj + '_run-{:02}_physio.tsv'.format(run_counter+1))
-        this_run.to_csv(fn_out, sep='\t') 
+        subj_merged.to_csv(fn_out, sep=' ') 
         print('splitting... {}'.format(fn_out))
     # save triggers too
     df_triggers.to_csv(os.path.join(output_dir, path_subj + '_triggers.csv'))
     print('success: split_datarame')
-        
-        
+    
+            
 def loop_raw_physio():
     """Loop through all files in "physiology" and run workflow.
     """
@@ -256,7 +275,7 @@ def rename_physio():
                         orig_fname = phys.split("/")[-1].split("_")
 
                         old_name = phys
-                        new_name = os.path.join(output_dir, '{}_{}_{}_physio.tsv'.format(orig_fname[0], orig_fname[1], runs[rcounter]))
+                        new_name = os.path.join(output_dir, '{}_{}_{}_physio.txt'.format(orig_fname[0], orig_fname[1], runs[rcounter]))
                         print(old_name)
                         print(new_name)
                         print()
@@ -269,12 +288,14 @@ def rename_physio():
     print('WARNING: check the following by hand and correct')
     print(flag_subjects)
     print('success: rename_physio')
-    
+
     
 # -----------------------
 # Run
 # -----------------------   
 if __name__ == "__main__":
-    # loop_raw_physio()
-    # descriptives_physio()
+    loop_raw_physio()
+    descriptives_physio()
     rename_physio()
+
+    

@@ -127,11 +127,12 @@ if run_preprocessing:
             # preprocess.bet_brains_fmap()          # B0 unwarping needs 'tight' brain extracted magnitude images of field map, better too small than too big!
             # preprocess.prepare_fmap()             # prepares the field map image in radians/sec
             
+            preprocess.remove_filename()
             #### Everything below here writes commands to a batch job ####
             # preprocess.preprocess_fsf()           # after motion_correction, generate FSF file for preprocessing in FEAT (run from command line - batch)
-            preprocess.register_native2native_target() # transform all runs to native_target, compute matrices but don't apply yet to bold time series
-            preprocess.invert_registrations()       # inverse and concatenate all necessary registration transformations
-            preprocess.register_ventricle2native()  # register the 4th ventricle (MNI space) to native space
+            # preprocess.register_native2native_target() # transform all runs to native_target, compute matrices but don't apply yet to bold time series
+            # preprocess.invert_registrations()       # inverse and concatenate all necessary registration transformations
+            # preprocess.register_ventricle2native()  # register the 4th ventricle (MNI space) to native space
             shell()            
             
             
