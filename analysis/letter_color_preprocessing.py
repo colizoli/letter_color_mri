@@ -63,7 +63,7 @@ class preprocess_class(object):
         raw_copy()
         bet_brains_T1( postfix='brain')
         preprocess_fsf()
-        transform_native2native_target(task='rsa', session='ses-01', bold_run='run-01')
+        register_native2native_target(task='rsa', session='ses-01', bold_run='run-01')
     """
     
     def __init__(self, subject, mri_subject, session, analysis_dir, source_dir, raw_dir, deriv_dir, mask_dir, template_dir, EPI_TE, EPI_EECHO, TDIFF_ECHO, UNWARP, FWHM, t1_sess):        
@@ -452,7 +452,7 @@ class preprocess_class(object):
             mag_image = os.path.join(self.deriv_dir, self.subject, self.session, 'fmap', '{}_{}_run-01_fmap_brain.nii.gz'.format(self.subject,self.session))
             outFile = os.path.join(self.deriv_dir, self.subject, self.session, 'fmap', '{}_{}_acq-fmap.nii.gz'.format(self.subject,self.session))
             # bet inFile outFile
-            cmd = 'fsl_prepare_fieldmap {} {} {} {} {} [--nocheck]'.format('SIEMENS', phase_image, mag_image, outFile,s elf.TDIFF_ECHO)
+            cmd = 'fsl_prepare_fieldmap {} {} {} {} {} [--nocheck]'.format('SIEMENS', phase_image, mag_image, outFile, self.TDIFF_ECHO)
             print(cmd)
             results = subprocess.call(cmd, shell=True, bufsize=0)
         else:
@@ -572,7 +572,7 @@ class preprocess_class(object):
                 print('cannot make FSF: missing {}'.format(BOLD))
         
     
-    def transform_native2native_target(self, task='rsa', session='ses-01', bold_run='_run-01'):
+    def register_native2native_target(self, task='rsa', session='ses-01', bold_run='run-01'):
         """Calcuate the linear transformations for individual runs into native target space. 
         
         Args:
@@ -584,41 +584,185 @@ class preprocess_class(object):
         ------
             Only compute, not apply the transforms!
             The target should be the first session, 1st run (RSA1), target of motion correction, middle volume ("example_func").
-            Path is defined at class level: self.native_target
         """        
         
-        # all nii.gz files in func folder need to be preprocessed in FEAT
-        for task_run in ['letters','colors','rsa_run-01','rsa_run-02','rsa_run-03','rsa_run-04']:
+        for preprocess_task in ['letters','colors','rsa']:
             
-            if 'rsa' in task_run:
-                task = task_run.split("_")[0]
-            else:
-                task = task_run
-                
-            #### CONTINUE HERE
+            dir_path = os.path.join(self.preprocess_dir, 'task-{}'.format(preprocess_task) ) # preprocessing directory path
             
-        # path to raw bold file as input to create registration target
-        mri_in = os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_task-{}_{}_bold.nii.gz'.format(self.subject, self.session, task, bold_run))
-        
-        native_target = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}{}_preprocessing.feat'.format(self.subject, session, task, bold_run), 'example_func.nii.gz')
+            for f in os.listdir(dir_path):
+                if (self.session in f) and ('.feat' in f): # check if feat directory and avoid double sessions
+                    
+                    # skip if already native_target run
+                    if not ((task in preprocess_task) and (session in f) and (bold_run in f)):
+                        
+                        mri_in        = os.path.join(dir_path, f, 'example_func.nii.gz')
+                        mri_out       = os.path.join(dir_path, f, 'reg', 'example_func2native_target')
+                        mri_inverse   = os.path.join(dir_path, f, 'reg', 'native_target2example_func')
+                        native_target = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, session, task, bold_run), 'example_func.nii.gz')
         
                 
-        ###################
-        # FLIRT COMMAND
-        ###################
-        flirt -in {} -ref /Users/olympia.colizoli/Aeneas/mountpoint5/derivatives/preprocessing/task-rsa/sub-201_ses-01_task-rsa_run-01_preprocessing.feat/example_func.nii.gz -out /Users/olympia.colizoli/Aeneas/mountpoint5/derivatives/preprocessing/test_example_func -omat /Users/olympia.colizoli/Aeneas/mountpoint5/derivatives/preprocessing/test_example_func.mat -bins 256 -cost mutualinfo -searchrx -90 90 -searchry -90 90 -searchrz -90 90 -dof 12  -interp sinc -sincwidth 7 -sincwindow hanning
+                        ###################
+                        # FLIRT COMMAND
+                        ###################
+                        # flirt -in {} -ref {} -out {}.nii.gz -omat {}.mat -bins 256 -cost mutualinfo -searchrx -90 90 -searchry -90 90 -searchrz -90 90 -dof 12 -interp sinc -sincwidth 7 -sincwindow hanning
+                        cmd1 = 'flirt -in {} -ref {} -out {}.nii.gz -omat {}.mat -bins 256 -cost mutualinfo -searchrx -90 90 -searchry -90 90 -searchrz -90 90 -dof 12 -interp sinc -sincwidth 7 -sincwindow hanning'.format(mri_in, native_target, mri_out, mri_out)
+                        print(cmd1)
+                        # results = subprocess.call(cmd, shell=True, bufsize=0)
+                        
+                        ###################
+                        # INVERT TRANSFORM
+                        ###################
+                        # convert_xfm -omat {}.mat -inverse {}.mat
+                        cmd2 = 'convert_xfm -omat {}.mat -inverse {}.mat'.format(mri_inverse, mri_out)
+                        print(cmd2)
+                        
+                        # open preprocessing job and write commands as new line
+                        self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
+                        self.preprocessing_job.write(cmd1)   # command
+                        self.preprocessing_job.write("\n\n")  # new line
+                        self.preprocessing_job.write(cmd2)   # command
+                        self.preprocessing_job.write("\n\n")  # new line
+                        self.preprocessing_job.close()                
+        print('success: register_native2native_target')
+    
+    
+    def invert_registrations(self, task='rsa', session='ses-01', bold_run='run-01'):
+        """Invert the native_target to MNI non-linear registration and the native to native target registration.
         
-        cmd1 = 'mcflirt -in {} -stages 4 -sinc_final -o {}'.format(mri_in, mri_mcf)
+        Args:
+            task (str): The task to use for the registration target ('rsa' or 'loc').
+            session (str): The session to use for the registration target ('ses-01' or 'ses-02').
+            bold_run (str): The bold run to use for registration target.
+        
+        Notes:
+        ------
+            Only compute, not apply the transforms!
+            The target should be the first session, 1st run (RSA1), target of motion correction, middle volume ("example_func").
+            https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FNIRT/UserGuide#A--inwarp
+        """
+        
+        native_target               = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, session, task, bold_run), 'example_func.nii.gz')
+        native_target2standard_warp = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, session, task, bold_run), 'reg', 'example_func2standard_warp.nii.gz')
+        standard2native_target_warp = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, session, task, bold_run), 'reg', 'standard2example_func_warp.nii.gz')
+        
+        ###################
+        # INVERT FNIRT TRANSFORM NATIVE TARGET TO MNI
+        ###################
+        
+        # invwarp --ref=my_struct --warp=warps_into_MNI_space --out=warps_into_my_struct_space
+        cmd1 = 'invwarp --ref={} --warp={} --out={}'.format(native_target, native_target2standard_warp, standard2native_target_warp)
         print(cmd1)
-        # results = subprocess.call(cmd, shell=True, bufsize=0)
-      
-        
+                
         # open preprocessing job and write commands as new line
         self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
         self.preprocessing_job.write(cmd1)   # command
+        self.preprocessing_job.write("\n\n")  # new line
         self.preprocessing_job.close()
-        print('success: transform_native2native_target')
+        
+        ###################
+        # INVERT TRANSFORM example_func2native_target
+        ###################
+        for preprocess_task in ['letters','colors','rsa']:
+            
+            dir_path = os.path.join(self.preprocess_dir, 'task-{}'.format(preprocess_task) ) # preprocessing directory path
+            
+            for f in os.listdir(dir_path):
+                if (self.session in f) and ('.feat' in f): # check if feat directory and avoid double sessions
+                    
+                    # skip if already native_target run
+                    if not ((task in preprocess_task) and (session in f) and (bold_run in f)):
+                        
+                        example_func2native_target  = os.path.join(dir_path, f, 'reg', 'example_func2native_target')
+                        native_target2native        = os.path.join(dir_path, f, 'reg', 'native_target2example_func') # native_target2native
+                        
+                        # CONVERT XFM
+                        # convert_xfm -omat {}.mat -inverse {}.mat
+                        cmd2 = 'convert_xfm -omat {}.mat -inverse {}.mat'.format(native_target2native, example_func2native_target)
+                        print(cmd2)
 
+                        # open preprocessing job and write commands as new line
+                        self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
+                        self.preprocessing_job.write(cmd2)   # command
+                        self.preprocessing_job.write("\n\n")  # new line
+                        self.preprocessing_job.close()
+        print('success: invert_registrations')
+        
+    
+    def register_ventricle2native(self, task='rsa', session='ses-01', bold_run='run-01'):
+        """Register the 4th ventricle (MNI space) to native space.
+        
+        Args:
+            task (str): The task to use for the registration target ('rsa' or 'loc').
+            session (str): The session to use for the registration target ('ses-01' or 'ses-02').
+            bold_run (str): The bold run to use for registration target.
+        
+        Notes:
+        ------
+            Apply the transforms (first inverse warp, the inverse FLIRT transforms)
+            The target should be the first session, 1st run (RSA1), target of motion correction, middle volume ("example_func").
+            Threshold and mask ventricle (0.5 to maintain save number of voxels in native target)
+        """
+        
+        native_target               = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, session, task, bold_run), 'example_func.nii.gz')
+        standard2native_target_warp = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, session, task, bold_run), 'reg', 'standard2example_func_warp.nii.gz')
+        ventricle                   = os.path.join(self.mask_dir, '4th_ventricle_MNI.nii.gz')
+        ventricle2native_target     = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, session, task, bold_run), 'reg', 'ventricle2example_func.nii.gz')
+        
+        ###################
+        # APPLY INVERSE WARP 4th ventricle from MNI to native target (apply inverse warp)
+        ###################
+        # applywarp --ref=my_struct --in=ACC_left --warp=warps_into_my_struct_space --out=ACC_left_in_my_struct_space --interp=nn
+        cmd1 = 'applywarp --ref={} --in={} --warp={} --out={} --interp=nn'.format(native_target, ventricle, standard2native_target_warp, ventricle2native_target)
+        print(cmd1)
+                
+        # open preprocessing job and write commands as new line
+        self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
+        self.preprocessing_job.write(cmd1)   # command
+        self.preprocessing_job.write("\n\n")  # new line
+        self.preprocessing_job.close()
+        
+        ###################
+        # APPLY INVERSE FLIRT 
+        ###################
+        for preprocess_task in ['letters','colors','rsa']:
+            
+            dir_path = os.path.join(self.preprocess_dir, 'task-{}'.format(preprocess_task) ) # preprocessing directory path
+            
+            for f in os.listdir(dir_path):
+                if (self.session in f) and ('.feat' in f): # check if feat directory and avoid double sessions
+                    
+                    # skip if already native_target run
+                    if not ((task in preprocess_task) and (session in f) and (bold_run in f)):
+                        
+                        native_target2native    = os.path.join(dir_path, f, 'reg', 'native_target2example_func') # native_target2native
+                        ventricle2example_func  = os.path.join(dir_path, f, 'reg', 'ventricle2example_func.nii.gz')
+                        example_func            = os.path.join(dir_path, f, 'example_func.nii.gz')
+                        
+                        # APPLY FLIRT
+                        #flirt -in {} -applyxfm -init {} -out {} -paddingsize 0.0 -interp sinc -sincwidth 7 -sincwindow hanning -ref {}
+                        
+                        cmd2 = 'flirt -in {} -applyxfm -init {}.mat -out {} -paddingsize 0.0 -interp sinc -sincwidth 7 -sincwindow hanning -ref {}'.format(ventricle2native_target, native_target2native, ventricle2example_func, example_func)
+                        print(cmd2)
+                        
+                        # THRESHOLD AND MASK VENTRICLE 
+                        # fslmaths ventricle2example_func.nii.gz -thr 0.5 -bin ventricle2example_func.nii.gz 
+                        cmd3 = 'fslmaths {} -thr 0.5 -bin {} '.format(ventricle2example_func, ventricle2example_func)
+                        print(cmd3)
+                        
+                        # open preprocessing job and write commands as new line
+                        self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
+                        self.preprocessing_job.write(cmd2)   # command
+                        self.preprocessing_job.write("\n\n")  # new line
+                        self.preprocessing_job.write(cmd3)   # command
+                        self.preprocessing_job.write("\n\n")  # new line
+                        self.preprocessing_job.close()
+        print('success: register_ventricle2native')
+       
+        
+        
+        
+        
 
     #### NOT USING
 

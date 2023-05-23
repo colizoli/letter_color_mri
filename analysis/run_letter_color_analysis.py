@@ -122,13 +122,16 @@ if run_preprocessing:
             # preprocess.dicom2bids()               # convert DICOMS from scanner to nifti in bids format
             # preprocess.housekeeping()             # copies events and physio files (rename event file names to be bids compliant and same b/t mri & behavior)
             # preprocess.raw_copy()                 # copy from bids_raw directory into derivaties to prevent overwriting
-            # preprocess.sbref_raw_copy()             # hack, can DELETE later once finished
+            # preprocess.sbref_raw_copy()           # hack, can DELETE later once finished
             # preprocess.bet_brains_T1()            # brain extraction T1 always check visually!
             # preprocess.bet_brains_fmap()          # B0 unwarping needs 'tight' brain extracted magnitude images of field map, better too small than too big!
             # preprocess.prepare_fmap()             # prepares the field map image in radians/sec
             
             #### Everything below here writes commands to a batch job ####
-            preprocess.preprocess_fsf()           # after motion_correction, generate FSF file for preprocessing in FEAT (run from command line - batch)
+            # preprocess.preprocess_fsf()           # after motion_correction, generate FSF file for preprocessing in FEAT (run from command line - batch)
+            preprocess.register_native2native_target() # transform all runs to native_target, compute matrices but don't apply yet to bold time series
+            preprocess.invert_registrations()       # inverse and concatenate all necessary registration transformations
+            preprocess.register_ventricle2native()  # register the 4th ventricle (MNI space) to native space
             shell()            
             
             
