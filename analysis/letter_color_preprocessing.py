@@ -781,7 +781,7 @@ class preprocess_class(object):
             https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/PNM
             'Pnm_gui' will open the PNM GUI in FSL.
             Settings pnm_stage1 ->
-            Columns: cardiac=3, respiratory=4, triggers=5
+            Columns: 'idx', 'HR', 'Resp', 'trigger' but NO column headers!
             Sampling rate = 5000 Hz, TR = 1.5, Slice order = Interleaved Up (Siemens), Scanner Slice Direction = z, 
             Orders: Cardiac=4, Resp=4, Cardiac_Int=2, Resp_Int=2
             Options: RVT, HeartRate, Smoothing defaults 

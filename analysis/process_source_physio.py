@@ -14,11 +14,14 @@ during scanning using BrainVision Recorder.
 This code splits the time series into the runs based on the MRI triggers. 
 Once the runs are split, they will have to be matched to the scan 
 acquisition to remove unfinished/uncompleted/unneeded runs.
-In the final text files, the triggers have to have a separate column!
-Save final text finals with extension .txt
+
 
 Notes:
 ------
+In the final text files, the triggers have to have a separate column!
+Save final text finals with extension .txt
+Columns of output: 'idx', 'HR', 'Resp', 'trigger' but no column headers 
+
 The "position in data points" (idx) column in the .vmrk file with the trigger markers
 corresponds to the index (row) of the data file (.eeg). The "time" column in df is 
 irrelevant.
@@ -179,8 +182,9 @@ def split_dataframe(filename, df, df_triggers):
         
         subj_merged = this_run.merge(this_triggers, on='idx', how='outer', indicator=False) # outer merge
                 
-        subj_merged = subj_merged.fillna(0)
-    
+        subj_merged['trigger'] = subj_merged['trigger'].fillna(0) # nan to 0
+        subj_merged['trigger'] = subj_merged['trigger'].astype('int')        
+
         # save run in format to sub-000_ses-00_run-00_physio.tsv
         path_subj = os.path.splitext(filename)[0] 
         # housekeeping
@@ -190,7 +194,10 @@ def split_dataframe(filename, df, df_triggers):
         except:
             pass
         fn_out = os.path.join(output_dir, path_subj + '_run-{:02}_physio.tsv'.format(run_counter+1))
-        subj_merged.to_csv(fn_out, sep=' ') 
+        
+        # drop index and column headers
+        subj_merged.to_csv(fn_out, sep='\t', header=False, index=False) 
+        
         print('splitting... {}'.format(fn_out))
     # save triggers too
     df_triggers.to_csv(os.path.join(output_dir, path_subj + '_triggers.csv'))
@@ -275,7 +282,7 @@ def rename_physio():
                         orig_fname = phys.split("/")[-1].split("_")
 
                         old_name = phys
-                        new_name = os.path.join(output_dir, '{}_{}_{}_physio.txt'.format(orig_fname[0], orig_fname[1], runs[rcounter]))
+                        new_name = os.path.join(output_dir, '{}_{}_{}_physio.tsv'.format(orig_fname[0], orig_fname[1], runs[rcounter]))
                         print(old_name)
                         print(new_name)
                         print()
@@ -295,7 +302,7 @@ def rename_physio():
 # -----------------------   
 if __name__ == "__main__":
     loop_raw_physio()
-    descriptives_physio()
+    # descriptives_physio()
     rename_physio()
 
     
