@@ -769,41 +769,6 @@ class preprocess_class(object):
                         self.preprocessing_job.close()
         print('success: register_ventricle2native')
        
-
-    def physiological_noise_removal(self, ):
-        """Remove physiological noise and 4th ventricle signal.
-        
-        Args:
-            bold_run (str): The bold run to use for registration target.
-        
-        Notes:
-        ------
-            https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/PNM
-            'Pnm_gui' will open the PNM GUI in FSL.
-            Settings pnm_stage1 ->
-            Columns: 'idx', 'HR', 'Resp', 'trigger' but NO column headers!
-            Sampling rate = 5000 Hz, TR = 1.5, Slice order = Interleaved Up (Siemens), Scanner Slice Direction = z, 
-            Orders: Cardiac=4, Resp=4, Cardiac_Int=2, Resp_Int=2
-            Options: RVT, HeartRate, Smoothing defaults 
-        """
-        
-        # pnm_stage1 -s':str(sample_rate), '--tr='+str(TR):' ', '--smoothcard='+str(0.1):' ', '--smoothresp='+str(0.1):' ', '--resp='+str(2):' ', '--cardiac='+str(1):' ', '--trigger='+str(4):'', '--rvt':' ','--heartrate':' '}
-        print('success: physiological_noise_removal')
-        
-        # popp '-s':str(sample_rate), '--tr='+str(TR):' ', '--smoothcard='+str(0.1):' ', '--smoothresp='+str(0.1):' ', '--resp='+str(2):' ', '--cardiac='+str(1):' ', '--trigger='+str(4):'', '--rvt':' ','--heartrate':' '})
-        
-        # pnm_evs '--tr='+str(TR):' ', '-c':card, '-r':resp, '--oc='+str(card_order):' ', '--or='+str(resp_order):' ', '--multc='+str(card_resp_order):' ', '--multr='+str(resp_card_order):' ', '--slicedir='+slicedir:' ', '--sliceorder='+sliceorder:' ', '-v':' ', '--rvt='+rvt:' ', '--heartrate='+hr:' '})
-        
-        
-		# grab regressors:
-		regressors = [reg for reg in np.sort(glob.glob(base + 'ev*.nii*'))]
-		text_file = open(base+'_evs_list.txt', 'w')
-		for reg in regressors:
-			text_file.write('{}\n'.format(reg))
-		text_file.close()
-        print('success: physiological_noise_removal')
-        
-        
         
     def ventricle_fluctations(self,dtype,session):
         # extracts the 4th ventricle fluctuations for the nuisance regression    
@@ -815,6 +780,67 @@ class preprocess_class(object):
         return roi_data
 
 
+    def physiological_noise_removal(self, ):
+        """Remove physiological noise and 4th ventricle signal.
+                
+        Notes:
+        ------
+            https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/PNM
+            'Pnm_gui' will open the PNM GUI in FSL.
+            commands are 'popp' then 'pnm_evs'
+            Columns: 'idx', 'HR', 'Resp', 'trigger' but NO column headers!
+            Sampling rate = 5000 Hz, TR = 1.5, Slice order = custom b/c mutli-band 4 interleaved up (Siemens), Scanner Slice Direction = z, 
+            Orders: Cardiac=4, Resp=4, Cardiac_Int=2, Resp_Int=2
+            Options: RVT, HeartRate, Smoothing defaults 
+        """
+        
+        slice_timing = os.path.join(self.template_dir, 'bold_slice_timing.txt') # custom multi-band 4 interleaved up
+        
+        for rsa_run in ['run-01', 'run-02', 'run-03', 'run-04']:
+            
+            physio_input = os.path.join(self.deriv_dir, self.subject, self.session, 'func', '{}_{}_task-rsa_{}_physio.txt'.format(self.subject, self.session, rsa_run))
+            
+            if os.path.exists(phyio_input):
+                # convert physio file to standard file format and name
+                bold_input = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, session, task, bold_run), 'filtered_func_data.nii.gz')
+                pnm_input = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, session, task, bold_run), 'pnm_input.txt')
+                pnm_dir = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, session, task, bold_run))
+                pnm_out = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, session, task, bold_run), 'pnm')
+                
+                ###### CONVERT TEXT FILE FORMAT
+                # fslFixText sub-201_ses-01_task-rsa_run-01_physio.txt pnm_input.txt
+                cmd1 = 'fslFixText {} {}'.format(this_physio, pnm_input)
+                print(cmd1)
+        
+                ###### PROCESS PHYSIO
+                # popp -i pnm_input.txt -o pnm -s 5000 --tr=1.5 --smoothcard=0.1 --smoothresp=0.1 --resp=4 --cardiac=3 --trigger=5 --rvt --heartrate --verbose
+                cmd2 = 'popp -i {} -o pnm -s 5000 --tr=1.5 --smoothcard=0.1 --smoothresp=0.1 --resp=4 --cardiac=3 --trigger=5 --rvt --heartrate --verbose'.format(pnm_input)
+                print(cmd2)
+                
+                ###### MAKE RETROICOR REGRESSORS (NIFTI)
+                # pnm_evs --oc=4 --or=4 --multc=2 --multr=2 --slicedir='z' --slicetiming=bold_slice_timing.txt -v --tr=1.5 -i filtered_func_data.nii.gz -o pnmevs -r pnm_resp.txt -c pnm_card.txt --rvt=pnm_rvt.txt --heartrate=pnm_hr.txt --verbose
+                cmd3 = 'pnm_evs --oc=4 --or=4 --multc=2 --multr=2 --slicedir=z --slicetiming={} --tr=1.5 -i {} -o {}/pnmevs -r {}/pnm_resp.txt -c {}/pnm_card.txt --rvt={}/pnm_rvt.txt --heartrate={}/pnm_hr.txt --verbose'.format(slice_timing, bold_input, pnm_base, pnm_base, pnm_base, pnm_base, pnm_base)
+                print(cmd3)
+                
+                # open preprocessing job and write commands as new line
+                self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
+                self.preprocessing_job.write(cmd1)   # command
+                self.preprocessing_job.write("\n\n")  # new line
+                self.preprocessing_job.write(cmd2)   # command
+                self.preprocessing_job.write("\n\n")  # new line
+                self.preprocessing_job.write(cmd3)   # command
+                self.preprocessing_job.write("\n\n")  # new line
+                self.preprocessing_job.close()
+        
+                # # grab regressors:
+                # regressors = [reg for reg in np.sort(glob.glob(base + 'ev*.nii*'))]
+                # text_file = open(base+'_evs_list.txt', 'w')
+                # for reg in regressors:
+                #     text_file.write('{}\n'.format(reg))
+                # text_file.close()
+        print('success: physiological_noise_removal')
+        
+        
     def GLM_nuisance(self,tsnr):
         # Nuisance GLM for the tSNR analysis:
         # for tSNR:
