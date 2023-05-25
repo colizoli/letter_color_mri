@@ -302,7 +302,7 @@ def rename_physio():
 # -----------------------   
 if __name__ == "__main__":
     loop_raw_physio()
-    # descriptives_physio()
+    descriptives_physio()
     rename_physio()
 
     
