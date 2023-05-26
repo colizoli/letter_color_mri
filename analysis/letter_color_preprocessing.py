@@ -305,20 +305,10 @@ class preprocess_class(object):
         
         for phys in subj_fns:
             src = os.path.join(self.phys_dir, phys) # from physiology_processed
-            dst = os.path.join(self.raw_dir, self.subject, self.session, 'func', phys.split("/")[-1]) # bids_raw 
+            dst = os.path.join(self.bids_raw, self.subject, self.session, 'func', phys.split("/")[-1]) # bids_raw 
             sh.copyfile(src, dst)
             print('copying: src={} , dst={}'.format(src,dst))
         print('success: copy_physio')
-    
-    
-    def remove_filename(self, ):
-        
-        subj_dir = os.path.join(self.deriv_dir, self.subject, self.session, 'func')
-        
-        cmd = 'rm {}*physio.tsv'.format(subj_dir)
-        print(cmd)
-        #results = subprocess.call(cmd, shell=True, bufsize=0)
-        print('success: remove_filename')
         
     
     def housekeeping(self, ):
@@ -336,7 +326,7 @@ class preprocess_class(object):
         # ## WARNING!! don't remove timestamps twice on same participant
         # self.remove_timestamps_logfiles(behav_sess) # removes the trailing timestamps from the psychopy output
         # self.copy_logfiles(behav_sess)              # copy logfiles to bids_raw folder with mri data
-        # self.copy_physio()                            # copy processed physio files into bids_raw directory after process_source_physio()
+        # self.copy_physio()                          # copy processed physio files into bids_raw directory after process_source_physio()
         print('success: housekeeping')
     
     
@@ -770,27 +760,81 @@ class preprocess_class(object):
         print('success: register_ventricle2native')
        
         
-    def ventricle_fluctations(self,dtype,session):
-        # extracts the 4th ventricle fluctuations for the nuisance regression    
-        # files have been copied to the combined folder
-        BOLD_data = np.array(nib.load(os.path.join(self.project.base_dir, self.subject.initials, 'FSL_files', 'detection_data_{}_{}_{}.nii.gz'.format(dtype,self.subject.initials,session))).get_data(), dtype=float)
-        mask = np.array(nib.load(os.path.join(self.project.base_dir, self.subject.initials, 'FSL_files', 'masks', '{}_{}.nii.gz'.format('4th_ventricle_MNI',session))).get_data(), dtype=bool)
-        roi_data = bn.nanmean(BOLD_data[mask,:], axis=0)
-        # roi_data = (roi_data - np.mean(roi_data)) / np.std(roi_data) # center variable around 0 mean
-        return roi_data
+    def ventricle_regressor(self, ):
+        """Extract the mean 4th ventricle signal as NIFTI image for regression.
+                
+        """
+        for rsa_run in ['run-01', 'run-02', 'run-03', 'run-04']:
+            
+            bold_in = os.path.join(self.preprocess_dir, 'task-rsa', '{}_{}_task-rsa_{}_preprocessing.feat'.format(self.subject, self.session, rsa_run), 'filtered_func_data.nii.gz')
+            
+            if os.path.exists(bold_in):
+                bold_out = os.path.join(self.preprocess_dir, 'task-rsa', '{}_{}_task-rsa_{}_preprocessing.feat'.format(self.subject, self.session, rsa_run), 'pnm_ev4th_ventricle.nii.gz')
+                ventricle_in = os.path.join(self.preprocess_dir, 'task-rsa', '{}_{}_task-rsa_{}_preprocessing.feat'.format(self.subject, self.session, rsa_run), 'reg', 'ventricle2example_func.nii.gz')
+                ventricle_nii = nib.load(ventricle_in)
+            
+                # extract 4th ventricle and demean signal
+                bold_data = np.array(nib.load(bold_in).get_data(), dtype=float)
+                mask = np.array(ventricle_nii.get_data(), dtype=bool)
+                roi_data = np.nanmean(bold_data[mask,:], axis=0)
+                roi_data = np.true_divide((roi_data - np.mean(roi_data)) , np.std(roi_data)) # center variable around 0 mean
+            
+                # reshape 1 x 1 x 1 x TRs
+                roi_data = np.reshape(roi_data, (1,1,1,roi_data.shape[0]))
+        
+                # save as a nifti file for regression
+                nii_file = nib.Nifti1Image(roi_data, nib.load(bold_in).affine, nib.load(bold_in).header)
+                nii_file.set_data_dtype(np.float32)
+                nib.save(nii_file, bold_out)            
+        print('success: ventricle_regressor')
 
-
-    def physiological_noise_removal(self, ):
-        """Remove physiological noise and 4th ventricle signal.
+    def motion_regressors(self, ):
+        """Convert the motion correction parameters output from MCFLIRT to NIFTI images for regression.
+                
+        """
+        
+        bold_run = ['' , '' , '_run-01', '_run-02', '_run-03', '_run-04']
+        for t,task in enumerate(['letters', 'colors', 'rsa', 'rsa', 'rsa', 'rsa']):
+            
+            bold_in = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}{}_preprocessing.feat'.format(self.subject, self.session, task, bold_run[t]), 'filtered_func_data.nii.gz')
+            
+            if os.path.exists(bold_in):
+                mcflirt_in = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}{}_preprocessing.feat'.format(self.subject, self.session, task, bold_run[t]), 'mc', 'prefiltered_func_data_mcf.par')                
+                mc = pd.read_csv(mcflirt_in, header=None, sep='\s+') # double spaces
+                
+                for col in np.arange(mc.shape[1]):
+                    mcflirt_out = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}{}_preprocessing.feat'.format(self.subject, self.session, task, bold_run[t]), 'mc', 'mcf_par{}.nii.gz'.format(col + 1)) # start 1
+                    
+                    # save column as NIFTI regressor
+                    mc_reg = mc.iloc[:,col]
+            
+                    # reshape 1 x 1 x 1 x TRs
+                    mc_reg = np.reshape(np.array(mc_reg), (1,1,1,mc_reg.shape[0]))
+        
+                    # save as a nifti file for regression
+                    nii_file = nib.Nifti1Image(mc_reg, nib.load(bold_in).affine, nib.load(bold_in).header)
+                    nii_file.set_data_dtype(np.float32)
+                    nib.save(nii_file, mcflirt_out)            
+        print('success: ventricle_regressor')
+        
+        
+    def physiological_noise_regressors(self, ):
+        """Create physiological noise regressors in NIFTI format for RSA task runs only.
                 
         Notes:
         ------
+            Harvey et al. 2008 JoMRI: "The optimal model, containing three cardiac (C) and four respiratory (R) harmonics, and one multiplicative
+            (X) term, “3C4R1X,” significantly reduced signal variability without overfitting to noise."
+        
+            Here we additionally add on heart rate per volume (HRV) and one respiration volume per time (RVT) terms as a regressors.
+            18 RETROICOR + 1 HRV + 1 RVT regressors = 20 total
+        
             https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/PNM
             'Pnm_gui' will open the PNM GUI in FSL.
             commands are 'popp' then 'pnm_evs'
             Columns: 'idx', 'HR', 'Resp', 'trigger' but NO column headers!
             Sampling rate = 5000 Hz, TR = 1.5, Slice order = custom b/c mutli-band 4 interleaved up (Siemens), Scanner Slice Direction = z, 
-            Orders: Cardiac=4, Resp=4, Cardiac_Int=2, Resp_Int=2
+            Orders: Cardiac=3, Resp=4, Cardiac_Int=1, Resp_Int=1
             Options: RVT, HeartRate, Smoothing defaults 
         """
         
@@ -798,127 +842,180 @@ class preprocess_class(object):
         
         for rsa_run in ['run-01', 'run-02', 'run-03', 'run-04']:
             
-            physio_input = os.path.join(self.deriv_dir, self.subject, self.session, 'func', '{}_{}_task-rsa_{}_physio.txt'.format(self.subject, self.session, rsa_run))
+            physio_input = os.path.join(self.deriv_dir, self.subject, self.session, 'func', '{}_{}_task-rsa_{}_physio.tsv'.format(self.subject, self.session, rsa_run))
             
-            if os.path.exists(phyio_input):
+            if os.path.exists(physio_input):
                 # convert physio file to standard file format and name
-                bold_input = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, session, task, bold_run), 'filtered_func_data.nii.gz')
-                pnm_input = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, session, task, bold_run), 'pnm_input.txt')
-                pnm_dir = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, session, task, bold_run))
-                pnm_out = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, session, task, bold_run), 'pnm')
+                pnm_dir    = os.path.join(self.preprocess_dir, 'task-rsa', '{}_{}_task-rsa_{}_preprocessing.feat'.format(self.subject, self.session, rsa_run))
+                bold_input = os.path.join(pnm_dir, 'filtered_func_data.nii.gz')
+                pnm_input  = os.path.join(pnm_dir, 'pnm_input.txt')
+                pnm_out    = os.path.join(pnm_dir, 'pnm')
                 
-                ###### CONVERT TEXT FILE FORMAT
-                # fslFixText sub-201_ses-01_task-rsa_run-01_physio.txt pnm_input.txt
-                cmd1 = 'fslFixText {} {}'.format(this_physio, pnm_input)
-                print(cmd1)
-        
-                ###### PROCESS PHYSIO
-                # popp -i pnm_input.txt -o pnm -s 5000 --tr=1.5 --smoothcard=0.1 --smoothresp=0.1 --resp=4 --cardiac=3 --trigger=5 --rvt --heartrate --verbose
-                cmd2 = 'popp -i {} -o pnm -s 5000 --tr=1.5 --smoothcard=0.1 --smoothresp=0.1 --resp=4 --cardiac=3 --trigger=5 --rvt --heartrate --verbose'.format(pnm_input)
-                print(cmd2)
+                # check that number of samples matches number of EPI volumes
+                phys = pd.read_csv(physio_input, sep='\t')
+                if phys.shape[0] / (5000 * 1.5) ==  nib.load(bold_input).get_data().shape[-1]:
+                    
+                    ###### CONVERT TEXT FILE FORMAT ######
+                    # >> fslFixText sub-201_ses-01_task-rsa_run-01_physio.txt pnm_input.txt
+                    cmd1 = 'fslFixText {} {}'.format(physio_input, pnm_input)
+                    print(cmd1)
+         
+                    ###### PROCESS PHYSIO ######
+                    # >> popp -i pnm_input.txt -o pnm -s 5000 --tr=1.5 --smoothcard=0.1 --smoothresp=0.1 --resp=4 --cardiac=3 --trigger=5 --rvt --heartrate --verbose
+                    cmd2 = 'popp -i {} -o {}/pnm -s 5000 --tr=1.5 --smoothcard=0.1 --smoothresp=0.1 --cardiac=2 --resp=3 --trigger=4 --rvt --heartrate --verbose'.format(pnm_input, pnm_dir)
+                    print(cmd2)
                 
-                ###### MAKE RETROICOR REGRESSORS (NIFTI)
-                # pnm_evs --oc=4 --or=4 --multc=2 --multr=2 --slicedir='z' --slicetiming=bold_slice_timing.txt -v --tr=1.5 -i filtered_func_data.nii.gz -o pnmevs -r pnm_resp.txt -c pnm_card.txt --rvt=pnm_rvt.txt --heartrate=pnm_hr.txt --verbose
-                cmd3 = 'pnm_evs --oc=4 --or=4 --multc=2 --multr=2 --slicedir=z --slicetiming={} --tr=1.5 -i {} -o {}/pnmevs -r {}/pnm_resp.txt -c {}/pnm_card.txt --rvt={}/pnm_rvt.txt --heartrate={}/pnm_hr.txt --verbose'.format(slice_timing, bold_input, pnm_base, pnm_base, pnm_base, pnm_base, pnm_base)
-                print(cmd3)
+                    ###### MAKE RETROICOR REGRESSORS (NIFTI) ######
+                    # >> pnm_evs --oc=4 --or=4 --multc=2 --multr=2 --slicedir='z' --slicetiming=bold_slice_timing.txt -v --tr=1.5 -i filtered_func_data.nii.gz -o pnmevs -r pnm_resp.txt -c pnm_card.txt --rvt=pnm_rvt.txt --heartrate=pnm_hr.txt --verbose
+                    cmd3 = 'pnm_evs --oc=3 --or=4 --multc=1 --multr=1 --slicedir=z --slicetiming={} --tr=1.5 -i {} -o {}/pnm_ -r {}/pnm_resp.txt -c {}/pnm_card.txt --rvt={}/pnm_rvt.txt --heartrate={}/pnm_hr.txt --verbose'.format(slice_timing, bold_input, pnm_dir, pnm_dir, pnm_dir, pnm_dir, pnm_dir)
+                    print(cmd3)
                 
-                # open preprocessing job and write commands as new line
-                self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
-                self.preprocessing_job.write(cmd1)   # command
-                self.preprocessing_job.write("\n\n")  # new line
-                self.preprocessing_job.write(cmd2)   # command
-                self.preprocessing_job.write("\n\n")  # new line
-                self.preprocessing_job.write(cmd3)   # command
-                self.preprocessing_job.write("\n\n")  # new line
-                self.preprocessing_job.close()
+                    # open preprocessing job and write commands as new line
+                    self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
+                    self.preprocessing_job.write(cmd1)   # command
+                    self.preprocessing_job.write("\n\n")  # new line
+                    self.preprocessing_job.write(cmd2)   # command
+                    self.preprocessing_job.write("\n\n")  # new line
+                    self.preprocessing_job.write(cmd3)   # command
+                    self.preprocessing_job.write("\n\n")  # new line
+                    self.preprocessing_job.close()
+                
+                else:
+                    print('Error! Physio samples do not match EPI volumes! {} {} task-rsa_{} '.format(self.subject, self.session, rsa_run))
+        print('success: physiological_noise_regressors')
+    
+    
+    def nuisance_regressor_list(self, ):
+        """Create a list of all nuisance regressors for 1st level analysis
+                
+        Notes:
+        ------
+            RSA runs:
+                Physiological noise regressors: 20
+                4th ventricle: 1
+            Motion regressors: 6
         
-                # # grab regressors:
-                # regressors = [reg for reg in np.sort(glob.glob(base + 'ev*.nii*'))]
-                # text_file = open(base+'_evs_list.txt', 'w')
-                # for reg in regressors:
-                #     text_file.write('{}\n'.format(reg))
-                # text_file.close()
-        print('success: physiological_noise_removal')
+            Localizers:
+                Motion regressors: 6
+        """
         
         
-    def GLM_nuisance(self,tsnr):
-        # Nuisance GLM for the tSNR analysis:
-        # for tSNR:
-        # removing  i) the physiological fluctuations, ii) the task-evoked fluctuations, and iii) the 4th ventricle fluctuations
-        # for task-evoked 
-        # removing  i) the physiological fluctuations, ii) the 4th ventricle fluctuations
-        # Include all of the above regressors in one nuisance GLM (i.e. in one step along with the RETROICOR). 
-        # run from combined folder (except brain masks)
+        for task in ['letters', 'colors']:
+            
+            feat_dir = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_preprocessing.feat'.format(self.subject, self.session, task))
+            mcflirt_dir = os.path.join(feat_dir, 'mc')
+            
+            text_file = open(os.path.join(feat_dir, 'evs_list.txt'), 'w')
+            
+            # grab motion regressors:
+            regressors = [reg for reg in np.sort(glob.glob(os.path.join(mcflirt_dir, 'mcf_par*.nii*')))]
+            for reg in regressors:
+                text_file.write('{}\n'.format(reg))
+            text_file.close()
+            
+        for bold_run in ['run-01', 'run-02', 'run-03', 'run-04']:
+            
+            feat_dir = os.path.join(self.preprocess_dir, 'task-rsa', '{}_{}_task-rsa_{}_preprocessing.feat'.format(self.subject, self.session, bold_run))
+            mcflirt_dir = os.path.join(feat_dir, 'mc')
+            
+            text_file = open(os.path.join(feat_dir, 'evs_list.txt'), 'w')
+            
+            # grab RETROICOR regressors and 4th ventricle:
+            regressors = [reg for reg in np.sort(glob.glob(os.path.join(feat_dir, 'pnm_ev*.nii*')))]
+            for reg in regressors:
+                text_file.write('{}\n'.format(reg))
+            
+            # grab motion regressors:
+            regressors = [reg for reg in np.sort(glob.glob(os.path.join(mcflirt_dir, 'mcf_par*.nii*')))]
+            for reg in regressors:
+                text_file.write('{}\n'.format(reg))
+                        
+            text_file.close()
+            
+            shell()
+        
+        
+        print('success: nuisance_regressor_list')
 
-        session = [self.runList[i] for i in self.conditionDict['task']][0].session
-        dtype = 'hp'
-        if tsnr:
-            task_regressors = self.make_task_evoked_regressors(session) # make 3 column format from stimulus and feedback onsets
-            dtype_out = 'hp'
-           # dtype = 'hp'
-        else:
-            dtype_out = 'hp_evoked'
-           # dtype = 'psc'
-        ventricle_regressor = self.ventricle_fluctations(dtype=dtype,session=session)  # one column of average activity in ventricle per TR
-
-        nr_runs = len([self.runList[i] for i in self.conditionDict['task']])
-        nii_file = nib.load(os.path.join(self.project.base_dir, self.subject.initials, 'FSL_files', 'detection_data_{}_{}_{}.nii.gz'.format(dtype,self.subject.initials, session)))
-        nii_file_data = nii_file.get_data()
-
-        if tsnr:
-            # make box car for task regressors, convolve with HRF
-            task_regressors = self.convolve_hrf(task_regressors, nii_file_data.shape[-1], self.tr)
-            # fig = plt.figure(figsize=(5,5))
-            # ax = fig.add_subplot(211)
-            # ax.plot(task_regressors[0][:400])
-            # ax = fig.add_subplot(212)
-            # ax.plot(task_regressors[1][:400])
-            # fig.savefig(os.path.join(self.project.base_dir, self.subject.initials, 'FSL_files','task_regressors_{}.pdf'.format(session)))
-        with open(os.path.join(self.project.base_dir, self.subject.initials, 'FSL_files', 'retroicor_data_{}_{}_evs_list.txt'.format(self.subject.initials, session)), 'r') as f:
-            retroicor_files = [x.strip('\n') for x in f.readlines()]
-        retroicor_evs = []
-        for r in retroicor_files:
-            retroicor_evs.append(nib.load(r))
-
-        brain_mask = np.array(nib.load(self.runFile(stage = 'processed/mri/masks/anat', base='brain_mask')).get_data(), dtype=bool)
-        brain_mask[:,:,:] = True
-
-        residuals = np.zeros(nii_file_data.shape)
-        nr_slices = nii_file.shape[2]
-
-        for s in range(nr_slices):
-   
-            slice_indices = (np.arange(nr_slices) == s)
-            mask = brain_mask[:,:,slice_indices][:,:,0] # voxels x,y inplane
-   
-            retroicor_slice_wise_evs = []
-           for r in retroicor_evs:
-               retroicor_slice_wise_evs.append(r.get_data()[0,0,s,:])
-           retroicor_slice_wise_evs = np.vstack(retroicor_slice_wise_evs) # design matrix for retriocor
-       
-           # combine all regressors
-           joined_design_matrix = np.mat(retroicor_slice_wise_evs).T  # timepoints x regressors
-           if tsnr: # include task-evoked fluctuations as nuisance
-               joined_design_matrix = np.mat(np.vstack([task_regressors, retroicor_slice_wise_evs, ventricle_regressor]).T)
-           else:
-               joined_design_matrix = np.mat(np.vstack([retroicor_slice_wise_evs, ventricle_regressor]).T) # X = time x regressors
-           data = nii_file_data[mask,s,:].T  # time x voxels (flattened inplane x*y)
-   
-           # T is transpose, I inverse, # betas = # regressors
-           betas = ((joined_design_matrix.T * joined_design_matrix).I * joined_design_matrix.T) * np.mat(data.T).T # betas = regressors x voxels
-           explained_signal = np.array((np.mat(joined_design_matrix) * np.mat(betas))) # explained = time x voxels
-           res = data - explained_signal # res = time x voxels
-
-           # add mean over time back into residuals
-           for tr in range(res.shape[0]): # time
-               res[tr,:] = res[tr,:] + np.mean(data,axis=0)
-           residuals[mask,s,:] = res.T # voxels x time
-           # residuals shape is x-voxels x y-voxels x slices x time
-   
-        res_nii_file = nib.Nifti1Image(residuals, affine=nii_file.get_affine(), header=nii_file.get_header())
-        res_nii_file.set_data_dtype(np.float32)
-        nib.save(res_nii_file, os.path.join(self.project.base_dir, self.subject.initials, 'FSL_files', 'detection_data_{}_clean_{}_{}.nii.gz'.format(dtype_out,self.subject.initials, session)))     
-
+        
+    # def GLM_nuisance(self,tsnr):
+    #     # Nuisance GLM for the tSNR analysis:
+    #     # for tSNR:
+    #     # removing  i) the physiological fluctuations, ii) the task-evoked fluctuations, and iii) the 4th ventricle fluctuations
+    #     # for task-evoked
+    #     # removing  i) the physiological fluctuations, ii) the 4th ventricle fluctuations
+    #     # Include all of the above regressors in one nuisance GLM (i.e. in one step along with the RETROICOR).
+    #     # run from combined folder (except brain masks)
+    #
+    #     session = [self.runList[i] for i in self.conditionDict['task']][0].session
+    #     dtype = 'hp'
+    #     if tsnr:
+    #         task_regressors = self.make_task_evoked_regressors(session) # make 3 column format from stimulus and feedback onsets
+    #         dtype_out = 'hp'
+    #        # dtype = 'hp'
+    #     else:
+    #         dtype_out = 'hp_evoked'
+    #        # dtype = 'psc'
+    #     ventricle_regressor = self.ventricle_fluctations(dtype=dtype,session=session)  # one column of average activity in ventricle per TR
+    #
+    #     nr_runs = len([self.runList[i] for i in self.conditionDict['task']])
+    #     nii_file = nib.load(os.path.join(self.project.base_dir, self.subject.initials, 'FSL_files', 'detection_data_{}_{}_{}.nii.gz'.format(dtype,self.subject.initials, session)))
+    #     nii_file_data = nii_file.get_data()
+    #
+    #     if tsnr:
+    #         # make box car for task regressors, convolve with HRF
+    #         task_regressors = self.convolve_hrf(task_regressors, nii_file_data.shape[-1], self.tr)
+    #         # fig = plt.figure(figsize=(5,5))
+    #         # ax = fig.add_subplot(211)
+    #         # ax.plot(task_regressors[0][:400])
+    #         # ax = fig.add_subplot(212)
+    #         # ax.plot(task_regressors[1][:400])
+    #         # fig.savefig(os.path.join(self.project.base_dir, self.subject.initials, 'FSL_files','task_regressors_{}.pdf'.format(session)))
+    #     with open(os.path.join(self.project.base_dir, self.subject.initials, 'FSL_files', 'retroicor_data_{}_{}_evs_list.txt'.format(self.subject.initials, session)), 'r') as f:
+    #         retroicor_files = [x.strip('\n') for x in f.readlines()]
+    #     retroicor_evs = []
+    #     for r in retroicor_files:
+    #         retroicor_evs.append(nib.load(r))
+    #
+    #     brain_mask = np.array(nib.load(self.runFile(stage = 'processed/mri/masks/anat', base='brain_mask')).get_data(), dtype=bool)
+    #     brain_mask[:,:,:] = True
+    #
+    #     residuals = np.zeros(nii_file_data.shape)
+    #     nr_slices = nii_file.shape[2]
+    #
+    #     for s in range(nr_slices):
+    #
+    #         slice_indices = (np.arange(nr_slices) == s)
+    #         mask = brain_mask[:,:,slice_indices][:,:,0] # voxels x,y inplane
+    #
+    #         retroicor_slice_wise_evs = []
+    #        for r in retroicor_evs:
+    #            retroicor_slice_wise_evs.append(r.get_data()[0,0,s,:])
+    #        retroicor_slice_wise_evs = np.vstack(retroicor_slice_wise_evs) # design matrix for retriocor
+    #
+    #        # combine all regressors
+    #        joined_design_matrix = np.mat(retroicor_slice_wise_evs).T  # timepoints x regressors
+    #        if tsnr: # include task-evoked fluctuations as nuisance
+    #            joined_design_matrix = np.mat(np.vstack([task_regressors, retroicor_slice_wise_evs, ventricle_regressor]).T)
+    #        else:
+    #            joined_design_matrix = np.mat(np.vstack([retroicor_slice_wise_evs, ventricle_regressor]).T) # X = time x regressors
+    #        data = nii_file_data[mask,s,:].T  # time x voxels (flattened inplane x*y)
+    #
+    #        # T is transpose, I inverse, # betas = # regressors
+    #        betas = ((joined_design_matrix.T * joined_design_matrix).I * joined_design_matrix.T) * np.mat(data.T).T # betas = regressors x voxels
+    #        explained_signal = np.array((np.mat(joined_design_matrix) * np.mat(betas))) # explained = time x voxels
+    #        res = data - explained_signal # res = time x voxels
+    #
+    #        # add mean over time back into residuals
+    #        for tr in range(res.shape[0]): # time
+    #            res[tr,:] = res[tr,:] + np.mean(data,axis=0)
+    #        residuals[mask,s,:] = res.T # voxels x time
+    #        # residuals shape is x-voxels x y-voxels x slices x time
+    #
+    #     res_nii_file = nib.Nifti1Image(residuals, affine=nii_file.get_affine(), header=nii_file.get_header())
+    #     res_nii_file.set_data_dtype(np.float32)
+    #     nib.save(res_nii_file, os.path.join(self.project.base_dir, self.subject.initials, 'FSL_files', 'detection_data_{}_clean_{}_{}.nii.gz'.format(dtype_out,self.subject.initials, session)))
+    #
 
 
 

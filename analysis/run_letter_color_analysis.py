@@ -127,13 +127,19 @@ if run_preprocessing:
             # preprocess.bet_brains_fmap()          # B0 unwarping needs 'tight' brain extracted magnitude images of field map, better too small than too big!
             # preprocess.prepare_fmap()             # prepares the field map image in radians/sec
             
-            preprocess.remove_filename()
             #### Everything below here writes commands to a batch job ####
-            # preprocess.preprocess_fsf()           # after motion_correction, generate FSF file for preprocessing in FEAT (run from command line - batch)
-            # preprocess.register_native2native_target() # transform all runs to native_target, compute matrices but don't apply yet to bold time series
-            # preprocess.invert_registrations()       # inverse and concatenate all necessary registration transformations
-            # preprocess.register_ventricle2native()  # register the 4th ventricle (MNI space) to native space
-            shell()            
+            
+            preprocess.preprocess_fsf()                   # generate FSF file for preprocessing in FEAT (run from command line - batch)
+            
+            #### AFTER FEAT FINISHES run:
+            # preprocess.register_native2native_target()    # transform all runs to native_target, compute matrices but don't apply yet to bold time series
+            # preprocess.invert_registrations()             # inverse and concatenate all necessary registration transformations
+            # preprocess.register_ventricle2native()        # register the 4th ventricle (MNI space) to native space
+            # preprocess.ventricle_regressor()                # create a 4th ventricle regressor (NIFTI)
+            # preprocess.motion_regressors()                  # create motion regressors (NIFTI)
+            # preprocess.physiological_noise_regressors()     # creates the RETROICOR regressors from physiological recordings
+            # preprocess.nuisance_regressor_list()            # create a list of all the nuisance regressors for the 1st level analysis
+            shell()
             
             
 # -----------------------

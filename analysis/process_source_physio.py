@@ -275,23 +275,23 @@ def rename_physio():
             subj_fns = glob.glob(os.path.join(output_dir, 'sub-{}_{}_run-*_physio.tsv'.format(subj,sess)))
             
             if not subj == 201: # localizer first
+                subj_fns = subj_fns[::-1] # last run to first run
+                
+            if len(subj_fns) == 6:
+                for rcounter, phys in enumerate(subj_fns):
+                    orig_fname = phys.split("/")[-1].split("_")
 
-                subj_fns = subj_fns[::-1] # started with localizer
-                if len(subj_fns) == 6:
-                    for rcounter, phys in enumerate(subj_fns):
-                        orig_fname = phys.split("/")[-1].split("_")
-
-                        old_name = phys
-                        new_name = os.path.join(output_dir, '{}_{}_{}_physio.tsv'.format(orig_fname[0], orig_fname[1], runs[rcounter]))
-                        print(old_name)
-                        print(new_name)
-                        print()
-                        
-                        os.rename(old_name, new_name)
-                        # cmd = sh.copyfile(src, dst)
-                else:
-                    #flag
-                    flag_subjects.append('sub-{} {}'.format(subj, sess))
+                    old_name = phys
+                    new_name = os.path.join(output_dir, '{}_{}_{}_physio.tsv'.format(orig_fname[0], orig_fname[1], runs[rcounter]))
+                    print(old_name)
+                    print(new_name)
+                    print()
+                    
+                    os.rename(old_name, new_name)
+                    # cmd = sh.copyfile(src, dst)
+            else:
+                #flag
+                flag_subjects.append('sub-{} {}'.format(subj, sess))
     print('WARNING: check the following by hand and correct')
     print(flag_subjects)
     print('success: rename_physio')
