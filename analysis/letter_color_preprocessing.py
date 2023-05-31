@@ -853,7 +853,7 @@ class preprocess_class(object):
                 
                 # check that number of samples matches number of EPI volumes
                 phys = pd.read_csv(physio_input, sep='\t')
-                if phys.shape[0] / (5000 * 1.5) ==  nib.load(bold_input).get_data().shape[-1]:
+                if np.round(phys.shape[0] / (5000 * 1.5)) ==  nib.load(bold_input).get_data().shape[-1]:
                     
                     ###### CONVERT TEXT FILE FORMAT ######
                     # >> fslFixText sub-201_ses-01_task-rsa_run-01_physio.txt pnm_input.txt
@@ -881,6 +881,7 @@ class preprocess_class(object):
                     self.preprocessing_job.close()
                 
                 else:
+                    shell()
                     print('Error! Physio samples do not match EPI volumes! {} {} task-rsa_{} '.format(self.subject, self.session, rsa_run))
         print('success: physiological_noise_regressors')
     
@@ -913,9 +914,9 @@ class preprocess_class(object):
                 text_file.write('{}\n'.format(reg))
             text_file.close()
             
-        for bold_run in ['run-01', 'run-02', 'run-03', 'run-04']:
+        for rsa_run in ['run-01', 'run-02', 'run-03', 'run-04']:
             
-            feat_dir = os.path.join(self.preprocess_dir, 'task-rsa', '{}_{}_task-rsa_{}_preprocessing.feat'.format(self.subject, self.session, bold_run))
+            feat_dir = os.path.join(self.preprocess_dir, 'task-rsa', '{}_{}_task-rsa_{}_preprocessing.feat'.format(self.subject, self.session, rsa_run))
             mcflirt_dir = os.path.join(feat_dir, 'mc')
             
             text_file = open(os.path.join(feat_dir, 'evs_list.txt'), 'w')
@@ -930,10 +931,7 @@ class preprocess_class(object):
             for reg in regressors:
                 text_file.write('{}\n'.format(reg))
                         
-            text_file.close()
-            
-            shell()
-        
+            text_file.close()        
         
         print('success: nuisance_regressor_list')
 
