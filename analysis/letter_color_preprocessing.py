@@ -64,6 +64,11 @@ class preprocess_class(object):
         bet_brains_T1( postfix='brain')
         preprocess_fsf()
         register_native2native_target(task='rsa', session='ses-01', bold_run='run-01')
+        ventricle_regressor()
+        motion_regressors()
+        physiological_noise_regressors()
+        nuisance_regressor_list()
+        transform_native2native_target(self, task='rsa', session='ses-01', bold_run='run-01')
     """
     
     def __init__(self, subject, mri_subject, session, analysis_dir, source_dir, raw_dir, deriv_dir, mask_dir, template_dir, EPI_TE, EPI_EECHO, TDIFF_ECHO, UNWARP, FWHM, t1_sess):        
@@ -85,10 +90,13 @@ class preprocess_class(object):
             
         if not os.path.isdir(self.raw_dir):
             os.mkdir(self.raw_dir)
+        
         if not os.path.isdir(self.deriv_dir):
             os.mkdir(self.deriv_dir)
+        
         if not os.path.isdir(self.mask_dir):
             os.mkdir(self.mask_dir)
+        
         if not os.path.isdir(self.template_dir):
             os.mkdir(self.template_dir)
         
@@ -935,7 +943,56 @@ class preprocess_class(object):
         
         print('success: nuisance_regressor_list')
 
+
+    def transform_native2native_target(self, task='rsa', session='ses-01', bold_run='run-01'):
+        """Apply the transformations to the EPI timeseries that were computed in register_native2native_target on example_func.
         
+        Notes:
+        ------
+            The target should be the first session, 1st run (RSA1), target of motion correction, middle volume ("example_func").
+            Renames the original filtered_func_data -> filtered_func_data_native files to prevent overwriting.
+        """
+        
+        for preprocess_task in ['letters','colors','rsa']:
+            
+            dir_path = os.path.join(self.preprocess_dir, 'task-{}'.format(preprocess_task) ) # preprocessing directory path
+            
+            for f in os.listdir(dir_path):
+                if (self.session in f) and ('.feat' in f): # check if feat directory and avoid double sessions
+                    
+                    # skip if already native_target run
+                    if not ((task in preprocess_task) and (session in f) and (bold_run in f)):
+                        
+                        # Rename original filtered_func_data file 
+                        old_name = os.path.join(dir_path, f, 'filtered_func_data.nii.gz')
+                        new_name = os.path.join(dir_path, f, 'filtered_func_data_native.nii.gz')
+                        
+                        if os.path.exists(old_name):
+                            os.rename(old_name, new_name) 
+                            
+                        mri_in        = new_name # filtered_func_data_native
+                        mri_out       = old_name # filtered_func_data
+                        mri_reg       = os.path.join(dir_path, f, 'reg', 'example_func2native_target')
+                        native_target = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, session, task, bold_run), 'example_func.nii.gz')
+        
+                        ###################
+                        # APPLY XFM COMMAND
+                        ###################
+                        # flirt -in filtered_func_data_native.nii.gz -applyxfm -init /reg/example_func2native_target.mat -out filtered_func_data_test.nii.gz -paddingsize 0.0 -interp sinc -sincwidth 7 -sincwindow hanning -ref native_target
+                        cmd1 = 'flirt -in {} -applyxfm -init {}.mat -ref {} -out {} -paddingsize 0.0 -interp sinc -sincwidth 7 -sincwindow hanning -v'.format(mri_in, mri_reg, native_target, mri_out)
+                        print(cmd1)
+                        # results = subprocess.call(cmd, shell=True, bufsize=0)
+                        
+                        # open preprocessing job and write commands as new line
+                        self.preprocessing_job = open(self.preprocessing_job_path, "a") # append is important, not write
+                        self.preprocessing_job.write(cmd1)   # command
+                        self.preprocessing_job.write("\n\n")  # new line
+                        self.preprocessing_job.close()                
+        print('success: register_native2native_target')
+
+
+    #### NOT USING
+
     # def GLM_nuisance(self,tsnr):
     #     # Nuisance GLM for the tSNR analysis:
     #     # for tSNR:
@@ -1016,10 +1073,6 @@ class preprocess_class(object):
     #
 
 
-
-    #### NOT USING
-
-    
     def native_target_2_mni(self, ):
         """Compute the registration from the subject-specific native target to MNI space via the T1.
         

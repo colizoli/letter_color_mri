@@ -61,7 +61,7 @@ run_higher_level    = False    # group-level analyses and statistics
 # Notes
 # sub-211_ses-02 has no events file for RSA run 2 (need to adjust all first level functions)
 # sub-107_ses-01 no T1 anatomical, have to overwrite in preprocessing FSF by hand to use session 2's T1
-participants    = pd.read_csv(os.path.join(analysis_dir,'participants_full_mri.csv'), dtype=str) # open in textmate, not excel!
+participants    = pd.read_csv(os.path.join(analysis_dir,'participants_debug.csv'), dtype=str) # open in textmate, not excel!
 mri_subjects    = participants['mri_subjects']
 subjects_group  = participants['subjects']
 sessions        = ['ses-01','ses-02']
@@ -137,10 +137,13 @@ if run_preprocessing:
             # preprocess.register_ventricle2native()        # register the 4th ventricle (MNI space) to native space
             
             #### AFTER REGISTRATION run:
-            preprocess.ventricle_regressor()                # create a 4th ventricle regressor (NIFTI)
-            preprocess.motion_regressors()                  # create motion regressors (NIFTI)
-            preprocess.physiological_noise_regressors()     # creates the RETROICOR regressors from physiological recordings
-            preprocess.nuisance_regressor_list()            # create a list of all the nuisance regressors for the 1st level analysis
+            # preprocess.ventricle_regressor()                # create a 4th ventricle regressor (NIFTI)
+            # preprocess.motion_regressors()                  # create motion regressors (NIFTI)
+            # preprocess.physiological_noise_regressors()     # creates the RETROICOR regressors from physiological recordings
+            # preprocess.nuisance_regressor_list()            # create a list of all the nuisance regressors for the 1st level analysis
+            
+            preprocess.transform_native2native_target()    # transform all bold time series runs to native_target
+            
             shell()
             
             
@@ -159,17 +162,19 @@ if run_first_level:
             timing_files_dir = timing_files_dir,
             TR              = TR, # repitition time in seconds
             )
-        # first_level.loc_combine_epi('colors')             # concantenate both runs of localizer to perform 1 GLM
+        first_level.loc_combine_epi('colors')             # concantenate both runs of localizer to perform 1 GLM
         # first_level.loc_combine_timing_files('colors')    # timing files for color localizer GLM
-        # first_level.loc_nuisance_regressors('colors')     # concatenate motion parameters from preprocessing, also outputs cols of 1s for each blocks' mean
+        # first_level.loc_combine_motion_regressors('colors')     # concatenate motion parameters from preprocessing, also outputs cols of 1s for each blocks' mean
         # first_level.loc_fsf('colors')                     # generates the first level FSF for the localizers
         # 
         # first_level.loc_combine_epi('letters')            # concantenate both runs of localizer to perform 1 GLM
         # first_level.loc_combine_timing_files('letters')   # timing files for color localizer GLM
         # first_level.loc_nuisance_regressors('letters')    # concatenate motion parameters from preprocessing, also outputs cols of 1s for each blocks' mean
         # first_level.loc_fsf('letters')                    # generates the first level FSF for the localizers
-        #
-        first_level.rsa_combine_epi()                     # concatenate EPI data for the 4 runs of the RSA task
+        
+        # first_level.combine_phys_regressors()             # concatenate retroicor and 4th ventricle
+        
+        # first_level.rsa_combine_epi()                     # concatenate EPI data for the 4 runs of the RSA task
         # first_level.rsa_combine_events()                  # concatenate events files for the 4 runs of the RSA task
         # first_level.rsa_nuisance_regressors()             # motion parameters, run means, and oddball trials as nuisance
         #

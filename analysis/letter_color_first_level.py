@@ -33,10 +33,6 @@ class first_level_class(object):
         self.timing_files_dir = str(timing_files_dir)
         self.TR             = str(TR)
 
-        if not os.path.isdir(self.mask_dir):
-            os.mkdir(self.mask_dir)
-        if not os.path.isdir(self.template_dir):
-            os.mkdir(self.template_dir)
         if not os.path.isdir(self.timing_files_dir):
             os.mkdir(self.timing_files_dir)   
             os.mkdir(os.path.join(self.timing_files_dir,'task-colors'))
@@ -63,83 +59,138 @@ class first_level_class(object):
             self.first_level_job.write("#!/bin/bash\n")
             self.first_level_job.close()
             
+            
     def loc_combine_epi(self, task):
-        # concatenate the 2 sessions of EPI data to perform a single GLM
+        """Concatenate the 2 sessions of EPI data to perform a single GLM on localizers.
         
-        # output is the concantenated bold of both sessions (input to first level)
-        outFile = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_bold_mni.nii.gz'.format(task,self.subject)) 
-        N1 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,'ses-01'),'filtered_func_data_mni.nii.gz')) # preprocessed session 1
-        N2 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,'ses-02'),'filtered_func_data_mni.nii.gz')) # preprocessed session 2
-        BOLD1 = N1.get_data()
-        BOLD2 = N2.get_data()
+        Args:
+            task (str): which localizer task.
         
-        BOLD = np.concatenate([BOLD1,BOLD2],axis=-1)
-        outData = nib.Nifti1Image(BOLD, affine=N1.affine, header=N1.header) # pass affine and header from last MNI image
-        outData.set_data_dtype(np.float32)
-        nib.save(outData, outFile)
+        Notes:
+            The output is the concantenated bold of both sessions (input to first level).
+            Also makes the session regressors as EV text files.
+        """
+        mri_out = os.path.join(self.first_level_dir, 'task-{}'.format(task), 'task-{}_{}_bold.nii.gz'.format(task, self.subject)) 
+                
+        n1_fn = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_preprocessing.feat'.format(self.subject, 'ses-01', task), 'filtered_func_data.nii.gz')
+        n2_fn = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_preprocessing.feat'.format(self.subject, 'ses-02', task), 'filtered_func_data.nii.gz')
         
+        # check if both localizers present
+        if os.path.exists(n1_fn) and os.path.exists(n2_fn):
+            n1 = nib.load(n1_fn) # preprocessed session 1
+            n2 = nib.load(n2_fn) # preprocessed session 2
+            
+            bold1 = n1.get_data()
+            bold2 = n2.get_data()
+            bold = np.concatenate([bold1, bold2],axis=-1)
+            
+            nii_out = nib.Nifti1Image(bold, affine=n1.affine, header=n1.header) # pass affine and header from last MNI image
+            nii_out.set_data_dtype(np.float32)
+            nib.save(nii_out, mri_out)
+        
+            # output session regressors as custom 1 column EV files
+            ses1 = np.concatenate( (np.repeat(1,len(bold1)),  np.repeat(0,len(bold2)) ), axis=0) # session 1: 1s run 1
+            ses2 = np.concatenate( (np.repeat(0,len(bold1)),  np.repeat(1,len(bold2)) ), axis=0) # session 2: 1s run 2
+            # ses-01 EV
+            out_ses = os.path.join(self.deriv_dir, 'timing_files','task-{}'.format(task), 'task-{}_{}_{}.txt'.format(task, self.subject, 'ses-01'))
+            output = np.array(ses1.T) # 1 x TR
+            np.savetxt(out_fn, output, delimiter='/t', fmt='%i') #column has to be an integer for FSL!
+            # ses-02 EV
+            out_ses = os.path.join(self.deriv_dir, 'timing_files','task-{}'.format(task), 'task-{}_{}_{}.txt'.format(task, self.subject, 'ses-02'))
+            output = np.array(ses2.T) # 1 x TR
+            np.savetxt(out_fn, output, delimiter='/t', fmt='%i') #column has to be an integer for FSL!
+        else:
+            print('{} {} missing task-{}!'.format(self.subject, self.session, task))
         print('success: loc_combine_epi {}'.format(self.subject))
      
+     
     def loc_combine_timing_files(self, task):
-        # concatenate the timing files: 2nd session have to add time = #TRs * TR
-        # GLM timing files for blocked design (localizers)
-        # ABAB blocked designs
-        stim_dur = 0.75 # stimulus duration seconds
+        """Concatenate the timing files of 2 sessions to perform a single GLM on localizers.
         
-        # take FIRST session's BOLD to count TRs to add to 2nd sessions' onsets
-        BOLD1 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,'ses-01'),'filtered_func_data_mni.nii.gz'))
-        ntrs = BOLD1.shape[-1]  # number of TRs
-        time2add = ntrs*float(self.TR) # time to add in seconds to block 2's onsets
-        print('Time to add to run 2: {}'.format(time2add))
+        Args:
+            task (str): which localizer task.
         
-        # open block 2's events
-        events2 = pd.read_csv(os.path.join(self.deriv_dir,self.subject,'ses-02','func','{}_{}_task-{}_events.tsv'.format(self.subject,'ses-02',task)),sep='\t')
-        events2['onset'] =  events2['onset'] + time2add
-        # open block 1's events and concantenate
-        events1 = pd.read_csv(os.path.join(self.deriv_dir,self.subject,'ses-01','func','{}_{}_task-{}_events.tsv'.format(self.subject,'ses-01',task)),sep='\t')
-        events = pd.concat([events1,events2],axis=0)
-        events.to_csv(os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_events.tsv'.format(task,self.subject)),sep='\t')  # save concantenated events file
+        Notes:
+            2nd session have to add time = #TRs * TR
+            GLM timing files for ABAB blocked design (localizers)
+        """
+        STIM_DUR = 0.75 # stimulus duration seconds
+        
+        n1_fn = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_preprocessing.feat'.format(self.subject, 'ses-01', task), 'filtered_func_data.nii.gz')
+        n2_fn = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_preprocessing.feat'.format(self.subject, 'ses-02', task), 'filtered_func_data.nii.gz')
+        
+        # check if both localizers present
+        if os.path.exists(n1_fn) and os.path.exists(n2_fn):
+            
+            # take FIRST session's BOLD to count TRs to add to 2nd sessions' onsets
+            bold1 = nib.load(n1_fn)
+            ntrs = bold1.shape[-1]  # number of TRs
+            time2add = ntrs*float(self.TR) # time to add in seconds to block 2's onsets
+            print('Time to add to run 2: {}'.format(time2add))
+        
+            # open block 2's events
+            events2 = pd.read_csv(os.path.join(self.deriv_dir, self.subject, 'ses-02', 'func', '{}_{}_task-{}_events.tsv'.format(self.subject, 'ses-02', task)), sep='\t')
+            events2['onset'] =  events2['onset'] + time2add
+            
+            # open block 1's events and concantenate
+            events1 = pd.read_csv(os.path.join(self.deriv_dir, self.subject, 'ses-01', 'func', '{}_{}_task-{}_events.tsv'.format(self.subject, 'ses-01', task)), sep='\t')
+            events = pd.concat([events1, events2], axis=0)
+            events.to_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), 'task-{}_{}_events.tsv'.format(task, self.subject)), sep='\t')  # save concantenated events file
 
-        # generate 3 column files for each of the 2x2 conditions
-        for c,cond in enumerate(np.unique(events['trial_type'])):
-            outFile = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}.txt'.format(task,self.subject,cond))
+            # generate 3 column files for each of the 2x2 conditions
+            for c,cond in enumerate(np.unique(events['trial_type'])):
+                out_fn = os.path.join(self.deriv_dir, 'timing_files','task-{}'.format(task), 'task-{}_{}_{}.txt'.format(task,self.subject,cond))
 
-            # main regressors
-            first = np.array(events[events['trial_type']==cond]['onset']) # onset in s
-            second = np.repeat(stim_dur, len(first))    # duration in s
-            third = np.array(np.repeat(1, len(first)),dtype=int)    # amplitude
-            output = np.array(np.vstack((first, second, third)).T) # 1 x 3
-            np.savetxt(outFile, output, delimiter='/t', fmt='%.2f %.2f %i') #3rd column has to be an integer for FSL!
-            print(outFile)
+                # main regressors
+                first = np.array(events[events['trial_type']==cond]['onset']) # onset in s
+                second = np.repeat(STIM_DUR, len(first))    # duration in s
+                third = np.array(np.repeat(1, len(first)),dtype=int)    # amplitude
+                output = np.array(np.vstack((first, second, third)).T) # 1 x 3
+                np.savetxt(out_fn, output, delimiter='/t', fmt='%.2f %.2f %i') #3rd column has to be an integer for FSL!
+                print(out_fn)
+        else:
+            print('{} {} missing task-{}!'.format(self.subject, self.session, task))
         print('success: loc_combine_timing_files {}'.format(self.subject))
     
-    def loc_nuisance_regressors(self, task):
-        # concatenate the 2 sessions of motion parameters from preprocessing
-        # these are found in derivatives/preprocessing/task/task_subject_session.feat/mc/prefiltered_func_data_mcf.par
-        # Nrows = NTRs, Ncols = 6 (mc directions), note space separated
-        # This function also outputs the columns of 1s and 0s for each blocks' mean 
+    
+    def loc_combine_motion_regressors(self, task):
+        """Concatenate the 2 sessions of the motion regressors to perform a single GLM.
+        
+        Args:
+            task (str): which localizer task.
+        
+        Notes:
+            The output is the concantenated motion regressors as nifti files of both sessions.
+        """
         
         #### Motion parameters ####
-        mc1 = pd.read_csv(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,'ses-01'),'mc','prefiltered_func_data_mcf.par'),header=None,sep='\s+',float_precision='round_trip')
-        mc2 = pd.read_csv(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}.feat'.format(task,self.subject,'ses-02'),'mc','prefiltered_func_data_mcf.par'),header=None,sep='\s+',float_precision='round_trip')
+        n1_fn = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_preprocessing.feat'.format(self.subject, 'ses-01', task), 'filtered_func_data.nii.gz')
+        n2_fn = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_preprocessing.feat'.format(self.subject, 'ses-02', task), 'filtered_func_data.nii.gz')
+        
+        # check if both localizers present
+        if os.path.exists(n1_fn) and os.path.exists(n2_fn):
+            # 6 motion regressors
+            for mcf in np.arange(6):
+                mcf_out = os.path.join(self.first_level_dir, 'task-{}'.format(task), 'task-{}_{}_mcf_par{}.nii.gz'.format(task, self.subject. mcf + 1)) 
+                
+                mcf_fn1 = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_preprocessing.feat'.format(self.subject, 'ses-01', task), 'mc', 'mcf_par{}.nii.gz'.format(mcf + 1))
+                mcf_fn2 = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_preprocessing.feat'.format(self.subject, 'ses-02', task), 'mc', 'mcf_par{}.nii.gz'.format(mcf + 1))
+                n1 = nib.load(mcf_fn1) # preprocessed session 1
+                n2 = nib.load(mcf_fn2) # preprocessed session 2
             
-        for col in mc1.columns.values: # convert data to numeric
-            mc1[col] = pd.to_numeric(mc1[col])
-            mc2[col] = pd.to_numeric(mc2[col])
+                bold1 = n1.get_data()
+                bold2 = n2.get_data()
+                bold = np.concatenate([bold1, bold2],axis=-1)
+            
+                nii_out = nib.Nifti1Image(bold, affine=n1.affine, header=n1.header) # pass affine and header from last MNI image
+                nii_out.set_data_dtype(np.float32)
+                nib.save(nii_out, mri_out)        
+        else:
+            print('{} {} missing task-{}!'.format(self.subject, self.session, task))
+           
+        print('success: loc_combine_motion_regressors {}'.format(self.subject))
+        
 
-        mc = pd.concat([mc1,mc2],axis=0) # concantenate the motion regressors
-        
-        #### Session means - make columns of 1s and 0s for the length of each session ####
-        b1 = np.concatenate((np.repeat(1,len(mc1)),np.repeat(0,len(mc2))),axis=0) # session 1: 1s then 0s
-        b2 = np.concatenate((np.repeat(0,len(mc1)),np.repeat(1,len(mc2))),axis=0) # sessoin 2: 0s then 1s
-        # add to motion dataframe
-        mc['b1'] = b1
-        mc['b2'] = b2
-        
-        # save without header or index! suppress scientific notation!
-        mc.to_csv(os.path.join(self.timing_files_dir,'task-{}'.format(task),'task-{}_{}_nuisance_regressors.txt'.format(task,self.subject)),header=None,index=False,sep=',',float_format='%.15f')        
-        print('success: loc_nuisance_regressors {}'.format(self.subject))
-        
     def loc_fsf(self,task):
         # Creates the FSF files for each subject's first level analysis - localizers
         # Run the actual FSF from the command line: feat task-colors_sub-01_ses-01.fsf
@@ -213,6 +264,7 @@ class first_level_class(object):
         self.first_level_job.close()
         print('success: loc_fsf {}'.format(FSF_filename))
     
+    
     def rsa_combine_epi(self,task='rsa'):
         # concatenates the 4 runs per session of EPI data to perform a single GLM (RSA task)
         
@@ -234,6 +286,7 @@ class first_level_class(object):
             nib.save(outData, outFile)
             print(BOLD.shape)
         print('success: rsa_combine_epi')
+        
         
     def rsa_combine_events(self,task='rsa'):
         # for the RSA task, concantenates the events files of all 4 runs and outputs in first_level directory 
@@ -325,6 +378,7 @@ class first_level_class(object):
 
         print('success: rsa_combine_events')    
 
+
     def rsa_nuisance_regressors(self,task='rsa'):
         # concatenate the 4 runs of motion parameters from preprocessing
         # these are found in derivatives/preprocessing/task/task_subject_session.feat/mc/prefiltered_func_data_mcf.par
@@ -334,6 +388,11 @@ class first_level_class(object):
         # RT on oddball trials set as duration (not amplitude), if no button press then set to stimulus duration
         
         for self.session in ['ses-01','ses-02']:
+            
+            phys_fn = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_preprocessing.feat'.format(self.subject, self.session, task), 'pnm_ev{}.nii.gz'.format(phys + 1))
+            mcf_fn = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_preprocessing.feat'.format(self.subject, self.session, task), 'mc', 'mcf_par{}.nii.gz'.format(mcf + 1))
+            
+            
             #### Motion parameters of each run's preprocessing ####
             mc1 = pd.read_csv(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-01'),'mc','prefiltered_func_data_mcf.par'),header=None,sep='\s+',float_precision='round_trip')
             mc2 = pd.read_csv(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-02'),'mc','prefiltered_func_data_mcf.par'),header=None,sep='\s+',float_precision='round_trip')
