@@ -264,92 +264,137 @@ class first_level_class(object):
         self.first_level_job.close()
         print('success: loc_fsf {}'.format(FSF_filename))
     
+    def rsa_run_mask(self, task='rsa'):
+        """Equalize number of runs per session per participant (in case of missing runs).
+        
+        Args:
+            task (str): which task. Default 'rsa'
+        
+        Returns:
+            rsa_runs (list): list of runs to use.
+        """
+        # check how many runs are in each session.
+        ses1_mask = [
+            os.path.exists(os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, 'ses-01', task, 'run-01'), 'filtered_func_data.nii.gz')), # preprocessed run 1
+            os.path.exists(os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, 'ses-01', task, 'run-02'), 'filtered_func_data.nii.gz')), # preprocessed run 2
+            os.path.exists(os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, 'ses-01', task, 'run-03'), 'filtered_func_data.nii.gz')), # preprocessed run 3
+            os.path.exists(os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, 'ses-01', task, 'run-04'), 'filtered_func_data.nii.gz')), # preprocessed run 4
+        ]
+        
+        ses2_mask = [
+            os.path.exists(os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, 'ses-02', task, 'run-01'), 'filtered_func_data.nii.gz')), # preprocessed run 1
+            os.path.exists(os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, 'ses-02', task, 'run-02'), 'filtered_func_data.nii.gz')), # preprocessed run 2
+            os.path.exists(os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, 'ses-02', task, 'run-03'), 'filtered_func_data.nii.gz')), # preprocessed run 3
+            os.path.exists(os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, 'ses-02', task, 'run-04'), 'filtered_func_data.nii.gz')), # preprocessed run 4
+        ]
+        
+        # delete after debugging!        
+        ses2_mask = [1, 1, 1, 1] 
+        
+        # use the same runs for each session for this participant.
+        rsa_mask = np.array(ses1_mask)*np.array(ses2_mask)
+        rsa_mask = np.array(rsa_mask, dtype=bool) # bools crucial for masking!
+        
+        rsa_runs = np.array(['run-01', 'run-02', 'run-03', 'run-04'])
+        rsa_runs = rsa_runs[rsa_mask]
+        print('{} rsa runs = {}'.format(self.subject, rsa_runs))
+        return rsa_runs
+        
     
-    def rsa_combine_epi(self,task='rsa'):
-        # concatenates the 4 runs per session of EPI data to perform a single GLM (RSA task)
+    def rsa_combine_epi(self, task='rsa'):
+        """Concatenate the 4 runs per session of EPI data to perform a single GLM (RSA task).
+        
+        Args:
+            task (str): which task. Default 'rsa'
+        
+        Notes:
+            The output is the concantenated bold of all runs (input to first level).
+            Also makes the run regressors as EV text files.
+            Equalize number of runs per session per participant (in case of missing runs).
+        """
+        
+        rsa_runs = self.rsa_run_mask() # check which runs to use
         
         for self.session in ['ses-01','ses-02']:
             # output is the concantenated bold of all runs per session (input to first level)
-            outFile = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_bold_mni.nii.gz'.format(task,self.subject,self.session)) 
-            N1 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-01'),'filtered_func_data_mni.nii.gz')) # preprocessed run 1
-            N2 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-02'),'filtered_func_data_mni.nii.gz')) # preprocessed run 2
-            N3 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-03'),'filtered_func_data_mni.nii.gz')) # preprocessed run 3
-            N4 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-04'),'filtered_func_data_mni.nii.gz')) # preprocessed run 4
-            BOLD1 = N1.get_data()
-            BOLD2 = N2.get_data()
-            BOLD3 = N3.get_data()
-            BOLD4 = N4.get_data()
-        
-            BOLD = np.concatenate([BOLD1,BOLD2,BOLD3,BOLD4],axis=-1)
-            outData = nib.Nifti1Image(BOLD, affine=N1.affine, header=N1.header) # pass affine and header from last MNI image
-            outData.set_data_dtype(np.float32)
-            nib.save(outData, outFile)
-            print(BOLD.shape)
+            out_file = os.path.join(self.first_level_dir, 'task-{}'.format(task), '{}_{}_task-{}_filtered_func_data.nii.gz'.format(self.subject, self.session, task))
+            
+            bold = []
+            for this_run in rsa_runs:
+                nii = nib.load(os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, self.session, task, this_run), 'filtered_func_data.nii.gz'))
+                bold.append(nii.get_data())
+                        
+            bold = np.concatenate(bold, axis=-1)
+            
+            n1 = nib.load(os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, 'ses-01', task, 'run-01'), 'filtered_func_data.nii.gz'))
+            out_data = nib.Nifti1Image(bold, affine=n1.affine, header=n1.header) # pass affine and header from last MNI image
+            out_data.set_data_dtype(np.float32)
+            nib.save(out_data, out_file)
+            print(bold.shape)
+            shell()
         print('success: rsa_combine_epi')
         
         
-    def rsa_combine_events(self,task='rsa'):
-        # for the RSA task, concantenates the events files of all 4 runs and outputs in first_level directory 
+    def rsa_combine_events(self, task='rsa'):
+        """For the RSA task, concantenate the events files of all runs and output in first_level directory.
+        
+        Args:
+            task (str): which task. Default 'rsa'
+        
+        Notes:
+            Equalize number of runs per session per participant (in case of missing runs).
+        """
+        
+        rsa_runs = self.rsa_run_mask() # check which runs to use
         
         for self.session in ['ses-01','ses-02']:
-            ### 1 ###
-            # take FIRST run's BOLD to count TRs to add to 2nd runs' onsets
-            BOLD1 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-01'),'filtered_func_data_mni.nii.gz'))
-            ntrs = BOLD1.shape[-1]  # number of TRs
-            time2add = ntrs*float(self.TR) # time to add in seconds to run 2's onsets
-            print('Time to add to run 2: {}'.format(time2add))
-        
-            # open run 2's events
-            events2 = pd.read_csv(os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_task-{}_{}_events.tsv'.format(self.subject,self.session,task,'run-02')),sep='\t')
-            events2['onset'] =  events2['onset'] + time2add
-        
-            ### 2 ###
-            # take SECOND run's BOLD to count TRs to add to 3rd runs' onsets
-            BOLD2 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-02'),'filtered_func_data_mni.nii.gz'))
-            ntrs = BOLD2.shape[-1]  # number of TRs
-            time2add = time2add + ntrs*float(self.TR) # time to add in seconds to run 3's onsets
-            print('Time to add to run 3: {}'.format(time2add))
-        
-            # open run 3's events
-            events3 = pd.read_csv(os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_task-{}_{}_events.tsv'.format(self.subject,self.session,task,'run-03')),sep='\t')
-            events3['onset'] =  events3['onset'] + time2add
-        
-            ### 4 ###
-            # take THIRD run's BOLD to count TRs to add to 4th runs' onsets
-            BOLD3 = nib.load(os.path.join(self.preprocess_dir,'task-{}'.format(task),'task-{}_{}_{}_{}.feat'.format(task,self.subject,self.session,'run-03'),'filtered_func_data_mni.nii.gz'))
-            ntrs = BOLD3.shape[-1]  # number of TRs
-            time2add = time2add + ntrs*float(self.TR) # time to add in seconds to run 4's onsets
-            print('Time to add to run 4: {}'.format(time2add))
-        
-            # open block 4's events
-            events4 = pd.read_csv(os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_task-{}_{}_events.tsv'.format(self.subject,self.session,task,'run-04')),sep='\t')
-            events4['onset'] =  events4['onset'] + time2add
             
-            # concantenate all runs
-            # open run 1's events
-            events1 = pd.read_csv(os.path.join(self.deriv_dir,self.subject,self.session,'func','{}_{}_task-{}_{}_events.tsv'.format(self.subject,self.session,task,'run-01')),sep='\t')
-            events = pd.concat([events1,events2,events3,events4],axis=0)
-            events = events.loc[:, ~events.columns.str.contains('^Unnamed')] # drop unnamed columns
+            nruns = len(rsa_runs)
+            
+            time2add = []
+            
+            # check how long each run was and calculate seconds
+            for r, this_run in enumerate(rsa_runs):
                 
+                bold = nib.load(os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, self.session, task, this_run), 'filtered_func_data.nii.gz'))
+                ntrs = bold.shape[-1]  # number of TRs
+                time2add.append(ntrs*float(self.TR)) # time to add in seconds to next run's onsets
+                print('Time to add to run {}: {}'.format(r + 1, ntrs*float(self.TR)))
+                
+            time2add = np.cumsum(time2add) # cummulative sum per run
+            
+            # open events files and add times
+            all_events = pd.DataFrame()
+            for r, this_run in enumerate(rsa_runs):
+                if r==0: # first run
+                    # open file but don't add time
+                    events = pd.read_csv(os.path.join(self.deriv_dir, self.subject, self.session, 'func', '{}_{}_task-{}_{}_events.tsv'.format(self.subject, self.session, task, this_run)), sep='\t')
+                    all_events = pd.concat([all_events, events], axis=0)
+                else:
+                    events = pd.read_csv(os.path.join(self.deriv_dir, self.subject, self.session, 'func', '{}_{}_task-{}_{}_events.tsv'.format(self.subject, self.session, task, this_run)), sep='\t')
+                    events['onset'] =  events['onset'] + time2add[r]
+                    all_events = pd.concat([all_events, events], axis=0)
+                print(all_events.shape)
+
             # add unique identifiers for each color
             rgb_codes = [
-                (events['r'] == 188) & (events['g'] == 188) & (events['b'] == 188), # grey (oddballs)
-                (events['r'] == 117) & (events['g'] == 117) & (events['b'] == 117), # grey (oddballs)
-                (events['r'] == 128) & (events['g'] == 128) & (events['b'] == 128), # grey (oddballs)
-                (events['r'] == 0) & (events['g'] == 0) & (events['b'] == 0), # black
-                (events['r'] == 0) & (events['g'] == 163) & (events['b'] == 228), # light_blue
-                (events['r'] == 161) & (events['g'] == 199) & (events['b'] == 70), # lime_green
-                (events['r'] == 183) & (events['g'] == 61) & (events['b'] == 160), # magenta
-                (events['r'] == 181) & (events['g'] == 44) & (events['b'] == 67), # dark_red
-                (events['r'] == 16) & (events['g'] == 114) & (events['b'] == 86), # dark_green
-                (events['r'] == 237) & (events['g'] == 114) & (events['b'] == 162), # pink
-                (events['r'] == 58) & (events['g'] == 175) & (events['b'] == 75), # green
-                (events['r'] == 248) & (events['g'] == 154) & (events['b'] == 28), # light_orange
-                (events['r'] == 109) & (events['g'] == 57) & (events['b'] == 142), # purple
-                (events['r'] == 239) & (events['g'] == 79) & (events['b'] == 41), # orange
-                (events['r'] == 49) & (events['g'] == 60) & (events['b'] == 163), # blue
-                (events['r'] == 255) & (events['g'] == 211) & (events['b'] == 0), # yellow
-                (events['r'] == 9) & (events['g'] == 181) & (events['b'] == 172) # teal
+                (all_events['r'] == 188) & (all_events['g'] == 188) & (all_events['b'] == 188), # grey (oddballs)
+                (all_events['r'] == 117) & (all_events['g'] == 117) & (all_events['b'] == 117), # grey (oddballs)
+                (all_events['r'] == 128) & (all_events['g'] == 128) & (all_events['b'] == 128), # grey (oddballs)
+                (all_events['r'] == 0) & (all_events['g'] == 0) & (all_events['b'] == 0), # black
+                (all_events['r'] == 0) & (all_events['g'] == 163) & (all_events['b'] == 228), # light_blue
+                (all_events['r'] == 161) & (all_events['g'] == 199) & (all_events['b'] == 70), # lime_green
+                (all_events['r'] == 183) & (all_events['g'] == 61) & (all_events['b'] == 160), # magenta
+                (all_events['r'] == 181) & (all_events['g'] == 44) & (all_events['b'] == 67), # dark_red
+                (all_events['r'] == 16) & (all_events['g'] == 114) & (all_events['b'] == 86), # dark_green
+                (all_events['r'] == 237) & (all_events['g'] == 114) & (all_events['b'] == 162), # pink
+                (all_events['r'] == 58) & (all_events['g'] == 175) & (all_events['b'] == 75), # green
+                (all_events['r'] == 248) & (all_events['g'] == 154) & (all_events['b'] == 28), # light_orange
+                (all_events['r'] == 109) & (all_events['g'] == 57) & (all_events['b'] == 142), # purple
+                (all_events['r'] == 239) & (all_events['g'] == 79) & (all_events['b'] == 41), # orange
+                (all_events['r'] == 49) & (all_events['g'] == 60) & (all_events['b'] == 163), # blue
+                (all_events['r'] == 255) & (all_events['g'] == 211) & (all_events['b'] == 0), # yellow
+                (all_events['r'] == 9) & (all_events['g'] == 181) & (all_events['b'] == 172) # teal
             ]
             
             color_names = [
@@ -371,10 +416,10 @@ class first_level_class(object):
                 'yellow',
                 'teal'
             ]
-            events['color_name'] = np.select(rgb_codes, color_names)
+            all_events['color_name'] = np.select(rgb_codes, color_names)
                     
             # save concantenated events file
-            events.to_csv(os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_{}_events.tsv'.format(task,self.subject,self.session)),sep='\t') 
+            all_events.to_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), '{}_{}_task-{}_events.tsv'.format(self.subject, self.session, task)), sep='\t') 
 
         print('success: rsa_combine_events')    
 

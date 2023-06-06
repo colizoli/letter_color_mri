@@ -51,8 +51,8 @@ timing_files_dir = os.path.join(deriv_dir,'timing_files')   # custom 3 column fo
 # -----------------------
 # Levels (switch ON/OFF)
 # ----------------------- 
-run_preprocessing   = True    # motion correction, unwarping, registration, filtering, retroicor
-run_first_level     = False     # concatenate runs, timing files, 1st level GLMs
+run_preprocessing   = False    # motion correction, unwarping, registration, filtering, retroicor
+run_first_level     = True     # concatenate runs, timing files, 1st level GLMs
 run_higher_level    = False    # group-level analyses and statistics
 
 # -----------------------
@@ -139,10 +139,10 @@ if run_preprocessing:
             #### AFTER REGISTRATION run:
             # preprocess.ventricle_regressor()                # create a 4th ventricle regressor (NIFTI)
             # preprocess.motion_regressors()                  # create motion regressors (NIFTI)
-            # preprocess.physiological_noise_regressors()     # creates the RETROICOR regressors from physiological recordings
-            # preprocess.nuisance_regressor_list()            # create a list of all the nuisance regressors for the 1st level analysis
+            preprocess.physiological_noise_regressors()     # creates the RETROICOR regressors from physiological recordings
+            preprocess.nuisance_regressor_list()            # create a list of all the nuisance regressors for the 1st level analysis
             
-            preprocess.transform_native2native_target()    # transform all bold time series runs to native_target
+            # preprocess.transform_native2native_target()    # transform all bold time series runs to native_target
             
             shell()
             
@@ -162,7 +162,7 @@ if run_first_level:
             timing_files_dir = timing_files_dir,
             TR              = TR, # repitition time in seconds
             )
-        first_level.loc_combine_epi('colors')             # concantenate both runs of localizer to perform 1 GLM
+        # first_level.loc_combine_epi('colors')             # concantenate both runs of localizer to perform 1 GLM
         # first_level.loc_combine_timing_files('colors')    # timing files for color localizer GLM
         # first_level.loc_combine_motion_regressors('colors')     # concatenate motion parameters from preprocessing, also outputs cols of 1s for each blocks' mean
         # first_level.loc_fsf('colors')                     # generates the first level FSF for the localizers
@@ -171,11 +171,9 @@ if run_first_level:
         # first_level.loc_combine_timing_files('letters')   # timing files for color localizer GLM
         # first_level.loc_nuisance_regressors('letters')    # concatenate motion parameters from preprocessing, also outputs cols of 1s for each blocks' mean
         # first_level.loc_fsf('letters')                    # generates the first level FSF for the localizers
-        
-        # first_level.combine_phys_regressors()             # concatenate retroicor and 4th ventricle
-        
+                
         # first_level.rsa_combine_epi()                     # concatenate EPI data for the 4 runs of the RSA task
-        # first_level.rsa_combine_events()                  # concatenate events files for the 4 runs of the RSA task
+        first_level.rsa_combine_events()                  # concatenate events files for the 4 runs of the RSA task
         # first_level.rsa_nuisance_regressors()             # motion parameters, run means, and oddball trials as nuisance
         #
         # first_level.rsa_timing_files_letters()            # each letter in it's color and black: trained/untrained vs. color/black
