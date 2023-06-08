@@ -158,8 +158,7 @@ if run_first_level:
             deriv_dir       = deriv_dir,
             mask_dir        = mask_dir,
             template_dir    = template_dir,
-            timing_files_dir = timing_files_dir,
-            TR              = TR, # repitition time in seconds
+            TR              = TR, # repetition time in seconds
             )
         # first_level.loc_combine_epi('colors')             # concantenate both runs of localizer to perform 1 GLM
         # first_level.loc_combine_timing_files('colors')    # timing files for color localizer GLM
@@ -174,7 +173,7 @@ if run_first_level:
         # first_level.rsa_combine_epi()                     # concatenate EPI data for the 4 runs of the RSA task
         # first_level.rsa_combine_events()                  # concatenate events files for the 4 runs of the RSA task
         # first_level.rsa_nuisance_regressors()             # motion parameters, run means, and oddball trials as nuisance
-        first_level.nuisance_regressor_list(task='rsa')            # create a list of all the nuisance regressors for the 1st level analysis
+        # first_level.nuisance_regressor_list(task='rsa')   # create a list of all the nuisance regressors for the 1st level analysis
         
         # first_level.rsa_timing_files_letters()            # each letter in it's color and black: trained/untrained vs. color/black
         # first_level.rsa_letters_fsf()                     # generates the first level FSF for the RSA design
