@@ -245,7 +245,7 @@ set fmri(regstandard_yn) 1
 set fmri(alternateReference_yn) 0
 
 # Standard image
-set fmri(regstandard) "[$MNI_BRAIN]"
+set fmri(regstandard) ""
 
 # Search space for registration to standard space
 # 0   : No search
