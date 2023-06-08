@@ -893,56 +893,6 @@ class preprocess_class(object):
                     print('Error! Physio samples do not match EPI volumes! {} {} task-rsa_{} '.format(self.subject, self.session, rsa_run))
         print('success: physiological_noise_regressors')
     
-    
-    def nuisance_regressor_list(self, ):
-        """Create a list of all nuisance regressors for 1st level analysis
-                
-        Notes:
-        ------
-            RSA runs:
-                Physiological noise regressors: 20
-                4th ventricle: 1
-            Motion regressors: 6
-        
-            Localizers:
-                Motion regressors: 6
-        """
-        
-        
-        for task in ['letters', 'colors']:
-            
-            feat_dir = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_preprocessing.feat'.format(self.subject, self.session, task))
-            mcflirt_dir = os.path.join(feat_dir, 'mc')
-            
-            text_file = open(os.path.join(feat_dir, 'evs_list.txt'), 'w')
-            
-            # grab motion regressors:
-            regressors = [reg for reg in np.sort(glob.glob(os.path.join(mcflirt_dir, 'mcf_par*.nii*')))]
-            for reg in regressors:
-                text_file.write('{}\n'.format(reg))
-            text_file.close()
-            
-        for rsa_run in ['run-01', 'run-02', 'run-03', 'run-04']:
-            
-            feat_dir = os.path.join(self.preprocess_dir, 'task-rsa', '{}_{}_task-rsa_{}_preprocessing.feat'.format(self.subject, self.session, rsa_run))
-            mcflirt_dir = os.path.join(feat_dir, 'mc')
-            
-            text_file = open(os.path.join(feat_dir, 'evs_list.txt'), 'w')
-            
-            # grab RETROICOR regressors and 4th ventricle:
-            regressors = [reg for reg in np.sort(glob.glob(os.path.join(feat_dir, 'pnm_ev*.nii*')))]
-            for reg in regressors:
-                text_file.write('{}\n'.format(reg))
-            
-            # grab motion regressors:
-            regressors = [reg for reg in np.sort(glob.glob(os.path.join(mcflirt_dir, 'mcf_par*.nii*')))]
-            for reg in regressors:
-                text_file.write('{}\n'.format(reg))
-                        
-            text_file.close()        
-        
-        print('success: nuisance_regressor_list')
-
 
     def transform_native2native_target(self, task='rsa', session='ses-01', bold_run='run-01'):
         """Apply the transformations to the EPI timeseries that were computed in register_native2native_target on example_func.

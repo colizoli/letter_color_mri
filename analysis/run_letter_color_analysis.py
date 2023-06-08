@@ -140,7 +140,6 @@ if run_preprocessing:
             # preprocess.ventricle_regressor()                # create a 4th ventricle regressor (NIFTI)
             # preprocess.motion_regressors()                  # create motion regressors (NIFTI)
             preprocess.physiological_noise_regressors()     # creates the RETROICOR regressors from physiological recordings
-            preprocess.nuisance_regressor_list()            # create a list of all the nuisance regressors for the 1st level analysis
             
             # preprocess.transform_native2native_target()    # transform all bold time series runs to native_target
             
@@ -173,9 +172,10 @@ if run_first_level:
         # first_level.loc_fsf('letters')                    # generates the first level FSF for the localizers
                 
         # first_level.rsa_combine_epi()                     # concatenate EPI data for the 4 runs of the RSA task
-        first_level.rsa_combine_events()                  # concatenate events files for the 4 runs of the RSA task
+        # first_level.rsa_combine_events()                  # concatenate events files for the 4 runs of the RSA task
         # first_level.rsa_nuisance_regressors()             # motion parameters, run means, and oddball trials as nuisance
-        #
+        first_level.nuisance_regressor_list(task='rsa')            # create a list of all the nuisance regressors for the 1st level analysis
+        
         # first_level.rsa_timing_files_letters()            # each letter in it's color and black: trained/untrained vs. color/black
         # first_level.rsa_letters_fsf()                     # generates the first level FSF for the RSA design
         
