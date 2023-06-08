@@ -12,7 +12,7 @@ import os, time # for paths and data
 from docx import Document
 from docx.shared import Pt
 from docx.shared import RGBColor
-from IPython import embed as shell
+#from IPython import embed as shell
 import numpy as np
 import pandas as pd
 import general_parameters as gp

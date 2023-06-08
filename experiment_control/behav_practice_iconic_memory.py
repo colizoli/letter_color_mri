@@ -12,7 +12,7 @@ import random
 import numpy as np
 import os, time # for paths and data
 import pandas as pd
-from IPython import embed as shell
+#from IPython import embed as shell
 import general_parameters as gp # for letter sets, counterbalancing, iconic memory parameters
 
 ######################################################

@@ -15,7 +15,7 @@ import random
 import numpy as np
 import pandas as pd
 import os, time  # for paths and data
-from IPython import embed as shell
+#from IPython import embed as shell
 try:
     import Tkinter as tk # py27
     from tkColorChooser import askcolor

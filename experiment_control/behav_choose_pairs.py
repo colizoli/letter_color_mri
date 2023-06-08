@@ -14,7 +14,7 @@ from psychopy import core, visual, event, gui, monitors
 import random
 import numpy as np
 import pandas as pd
-from IPython import embed as shell
+#from IPython import embed as shell
 import general_parameters as gp # letter conditions, counterbalancing
 
 debug_mode = False

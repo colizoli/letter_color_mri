@@ -1,7 +1,7 @@
 from docx import Document
 import copy
 import re
-from IPython import embed as shell
+#from IPython import embed as shell
 
 # -------------
 # Character formatting is applied at the Run level. 
