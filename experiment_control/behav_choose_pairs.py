@@ -443,7 +443,7 @@ if subject_ID:
                     ]  
             
             data_pairs.to_csv(output_filename,sep='\t')
-            if subject_ID < 200:
+            if subject_ID < 400:
                 data_pairs.to_csv(output_filename_g2,sep='\t') # G2 gets G1's colors
             writer_count += 1
                 
