@@ -14,7 +14,7 @@ import general_parameters as p # for letter sets, counterbalancing
 #from rusocsci import buttonbox
 #from IPython import embed as shell
 
-debug_mode = True
+debug_mode = False
 
 cwd = os.getcwd() # current working directory
 
@@ -28,7 +28,7 @@ buttons = ["z","x","c","v"] # colors 1,2,3,4 in order
 
 ### PARAMETERS ###
 # Timing in seconds
-REPS    = 48   # how many times to repeat all trials in button_trials
+REPS    = 24   # how many times to repeat all trials in button_trials
 t_stim  = 1.0  # stimulus duration of colored letter, maximum RT
 t_ITI   = [0.8,1.2]  # feedback (ITI)
         

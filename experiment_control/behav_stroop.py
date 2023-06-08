@@ -14,7 +14,7 @@ import general_parameters as p # for letter sets, counterbalancing
 #from rusocsci import buttonbox
 # from IPython import embed as shell
 
-debug_mode = True
+debug_mode = False
 
 cwd = os.getcwd() # current working directory
 
