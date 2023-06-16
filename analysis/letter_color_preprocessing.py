@@ -447,7 +447,7 @@ class preprocess_class(object):
             **
             Values to enter into FEAT during unwarping step in preprocessing:
             **
-            EPI TE (s) of localizer = 0.0396
+            EPI TE (s) = 0.0396
             'dwell_time' refers to effective echo spacing of EPI data (s) = 0.000580009
             **
             Important! effective echo spacing and EPI TE (ms) refer to the fMRI EPI data! not the field map data - look in the JSON file for the bold runs.
@@ -823,7 +823,7 @@ class preprocess_class(object):
                     nii_file = nib.Nifti1Image(mc_reg, nib.load(bold_in).affine, nib.load(bold_in).header)
                     nii_file.set_data_dtype(np.float32)
                     nib.save(nii_file, mcflirt_out)            
-        print('success: ventricle_regressor')
+        print('success: motion_regressors')
         
         
     def physiological_noise_regressors(self, ):

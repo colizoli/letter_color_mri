@@ -51,8 +51,8 @@ timing_files_dir = os.path.join(deriv_dir,'timing_files')   # custom 3 column fo
 # -----------------------
 # Levels (switch ON/OFF)
 # ----------------------- 
-run_preprocessing   = False    # motion correction, unwarping, registration, filtering, retroicor
-run_first_level     = True     # concatenate runs, timing files, 1st level GLMs
+run_preprocessing   = True    # motion correction, unwarping, registration, filtering, retroicor
+run_first_level     = False     # concatenate runs, timing files, 1st level GLMs
 run_higher_level    = False    # group-level analyses and statistics
 
 # -----------------------
@@ -129,7 +129,7 @@ if run_preprocessing:
             
             #### Everything below here writes commands to a batch job ####
             
-            # preprocess.preprocess_fsf()                   # generate FSF file for preprocessing in FEAT (run from command line - batch)
+            preprocess.preprocess_fsf()                   # generate FSF file for preprocessing in FEAT (run from command line - batch)
             
             #### AFTER FEAT FINISHES run:
             # preprocess.register_native2native_target()    # transform all runs to native_target, compute matrices but don't apply yet to bold time series
@@ -139,7 +139,7 @@ if run_preprocessing:
             #### AFTER REGISTRATION run:
             # preprocess.ventricle_regressor()                # create a 4th ventricle regressor (NIFTI)
             # preprocess.motion_regressors()                  # create motion regressors (NIFTI)
-            preprocess.physiological_noise_regressors()     # creates the RETROICOR regressors from physiological recordings
+            # preprocess.physiological_noise_regressors()     # creates the RETROICOR regressors from physiological recordings
             
             # preprocess.transform_native2native_target()    # transform all bold time series runs to native_target
             
