@@ -66,6 +66,8 @@ class higher_level_class(object):
         if not os.path.isdir(self.higher_level_dir):
             os.mkdir(self.higher_level_dir)
 
+        if not os.path.isdir(os.path.join(self.higher_level_dir,'task-questionnaires')):
+            os.mkdir(os.path.join(self.higher_level_dir,'task-questionnaires'))
         if not os.path.isdir(os.path.join(self.higher_level_dir,'task-iconic_memory')):
             os.mkdir(os.path.join(self.higher_level_dir,'task-iconic_memory'))
         if not os.path.isdir(os.path.join(self.higher_level_dir,'task-consistency')):
@@ -136,7 +138,7 @@ class higher_level_class(object):
         # associator = [ '10', '3', '14', '12', '18', '1']
         # projector = ['17', '2', '9', '11', '4', '13']
 
-        DF = pd.read_csv(os.path.join(self.higher_level_dir, 'task-questionnaires', 'participants_qualia.tsv'),sep='\t')
+        DF = pd.read_csv(os.path.join(self.higher_level_dir, 'task-questionnaires', 'participants_qualia.tsv'))
         DF = DF.loc[:, ~DF.columns.str.contains('^Unnamed')] # remove all unnamed columns
         
         DF2 = DF.copy()
@@ -155,7 +157,7 @@ class higher_level_class(object):
         values = [1,2]
         DF['group'] = np.select(group, values)
         
-        DF.to_csv(os.path.join(self.higher_level_dir, 'task-questionnaires','participants_qualia.tsv'),sep='\t')
+        DF.to_csv(os.path.join(self.higher_level_dir, 'task-questionnaires','participants_qualia.tsv'), sep='\t')
         print('success: dataframe_qualia')
     
     

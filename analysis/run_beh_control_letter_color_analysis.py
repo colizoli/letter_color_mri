@@ -60,9 +60,9 @@ if run_higher_level:
             participants = participants
             )
             
-    # higher_level.housekeeping()                             # ses-1 to ses-01
+    # higher_level.housekeeping()                           # ses-1 to ses-01
     # higher_level.dataframe_qualia()                       # calculates the PA score from the questionnaire
-    # higher_level.plot_qualia()                            # plots histograms and means of the PA scores
+    higher_level.plot_qualia()                            # plots histograms and means of the PA scores
     
     # higher_level.dataframe_choose_pairs()                 # all group1 and group2's choices in a single dataframe
     # higher_level.plot_choose_pairs()                      # pie charts for frequency of color choices
@@ -80,6 +80,6 @@ if run_higher_level:
 
     # higher_level.dataframe_subjects_stroop()
     # higher_level.dataframe_anova_stroop()
-    higher_level.plot_anova_stroop()                 # plot ANOVA 2x2 (collapsed over groups)
+    # higher_level.plot_anova_stroop()                 # plot ANOVA 2x2 (collapsed over groups)
     
 
