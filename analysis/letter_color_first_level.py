@@ -4,8 +4,8 @@
 """
 first_level.py
 Created by O.Colizoli, June-2019
-Last update: 11-06-2019
-Python version 2.7
+Last update: 14-01-2025
+Python version 3.9
 
 The following packages need to be installed because they are called from the command line, but not imported:
 fsl
@@ -13,8 +13,6 @@ fsl
 """
 
 # TO DO:
-# bids output files: sub, session, task, run, filetypebids coverted does latter...
-# run-01 or run-1?? bids coverted does latter...
 
 import os, subprocess, sys, glob
 import shutil as sh
@@ -24,36 +22,43 @@ import numpy as np
 from IPython import embed as shell # for Oly's debugging only
 
 class first_level_class(object):
-    def __init__(self, subject, analysis_dir, deriv_dir, mask_dir, template_dir, TR):        
+    def __init__(self, subject, analysis_dir, bids_dir, deriv_dir, mask_dir, template_dir, timing_files_dir, TR):        
         self.subject        = 'sub-'+str(subject)
         self.analysis_dir   = str(analysis_dir)
+        self.bids_dir       = str(bids_dir)
         self.deriv_dir      = str(deriv_dir)
         self.mask_dir       = str(mask_dir)
         self.template_dir   = str(template_dir)
+        self.timing_files_dir = str(timing_files_dir)
         self.TR             = str(TR)
-            
-        self.preprocess_dir = os.path.join(self.deriv_dir,'preprocessing')
         
-        self.first_level_dir = os.path.join(self.deriv_dir,'first_level')
-        if not os.path.isdir(self.first_level_dir):
-            os.mkdir(self.first_level_dir)
-            
-        self.timing_files_dir = os.path.join(self.first_level_dir,'timing_files')
+        # path to fmriprep output (preprocessed fmri data)
+        self.fmriprep_dir = os.path.join(self.deriv_dir, 'fmriprep')
+        
+        # make directories for timing files, each task
         if not os.path.isdir(self.timing_files_dir):
             os.mkdir(self.timing_files_dir)   
-            os.mkdir(os.path.join(self.timing_files_dir,'task-colors'))
-            os.mkdir(os.path.join(self.timing_files_dir,'task-letters'))
-            os.mkdir(os.path.join(self.timing_files_dir,'task-rsa'))
-            
-        if not os.path.isdir(os.path.join(self.first_level_dir,'task-colors')):
-            os.mkdir(os.path.join(self.first_level_dir,'task-colors'))
-        if not os.path.isdir(os.path.join(self.first_level_dir,'task-letters')):
-            os.mkdir(os.path.join(self.first_level_dir,'task-letters'))
-        if not os.path.isdir(os.path.join(self.first_level_dir,'task-rsa')):
-            os.mkdir(os.path.join(self.first_level_dir,'task-rsa'))
+            os.mkdir(os.path.join(self.timing_files_dir, 'task-colors'))
+            os.mkdir(os.path.join(self.timing_files_dir, 'task-letters'))
+            os.mkdir(os.path.join(self.timing_files_dir, 'task-rsa'))
+        
+        # make directories for first level output (FSL), each task       
+        self.first_level_dir = os.path.join(self.deriv_dir, 'first_level')
+        if not os.path.isdir(self.first_level_dir):
+            os.mkdir(self.first_level_dir)
+        if not os.path.isdir(os.path.join(self.first_level_dir, 'task-colors')):
+            os.mkdir(os.path.join(self.first_level_dir, 'task-colors'))
+        if not os.path.isdir(os.path.join(self.first_level_dir, 'task-letters')):
+            os.mkdir(os.path.join(self.first_level_dir, 'task-letters'))
+        if not os.path.isdir(os.path.join(self.first_level_dir, 'task-rsa')):
+            os.mkdir(os.path.join(self.first_level_dir, 'task-rsa'))
         
         # write unix commands to job to run in parallel
-        self.first_level_job_path = os.path.join(self.analysis_dir,'jobs','job_first_level_{}.txt'.format(self.subject))
+        job_dir = os.path.join(self.analysis_dir, 'jobs')
+        if not os.path.isdir(job_dir):
+            os.mkdir(job_dir)
+            
+        self.first_level_job_path = os.path.join(self.analysis_dir, 'jobs', 'job_first_level_{}.txt'.format(self.subject))
         if not os.path.exists(self.first_level_job_path):
             self.first_level_job = open(self.first_level_job_path, "w")
             self.first_level_job.write("#!/bin/bash\n")
@@ -264,41 +269,43 @@ class first_level_class(object):
         self.first_level_job.close()
         print('success: loc_fsf {}'.format(FSF_filename))
     
-    def rsa_run_mask(self, task='rsa'):
-        """Equalize number of runs per session per participant (in case of missing runs).
-        
-        Args:
-            task (str): which task. Default 'rsa'
-        
-        Returns:
-            rsa_runs (list): list of runs to use.
-        """
-        # check how many runs are in each session.
-        ses1_mask = [
-            os.path.exists(os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, 'ses-01', task, 'run-01'), 'filtered_func_data.nii.gz')), # preprocessed run 1
-            os.path.exists(os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, 'ses-01', task, 'run-02'), 'filtered_func_data.nii.gz')), # preprocessed run 2
-            os.path.exists(os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, 'ses-01', task, 'run-03'), 'filtered_func_data.nii.gz')), # preprocessed run 3
-            os.path.exists(os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, 'ses-01', task, 'run-04'), 'filtered_func_data.nii.gz')), # preprocessed run 4
-        ]
-        
-        ses2_mask = [
-            os.path.exists(os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, 'ses-02', task, 'run-01'), 'filtered_func_data.nii.gz')), # preprocessed run 1
-            os.path.exists(os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, 'ses-02', task, 'run-02'), 'filtered_func_data.nii.gz')), # preprocessed run 2
-            os.path.exists(os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, 'ses-02', task, 'run-03'), 'filtered_func_data.nii.gz')), # preprocessed run 3
-            os.path.exists(os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, 'ses-02', task, 'run-04'), 'filtered_func_data.nii.gz')), # preprocessed run 4
-        ]
-        
-        # delete after debugging!        
-        ses2_mask = [1, 1, 1, 1] 
-        
-        # use the same runs for each session for this participant.
-        rsa_mask = np.array(ses1_mask)*np.array(ses2_mask)
-        rsa_mask = np.array(rsa_mask, dtype=bool) # bools crucial for masking!
-        
-        rsa_runs = np.array(['run-01', 'run-02', 'run-03', 'run-04'])
-        rsa_runs = rsa_runs[rsa_mask]
-        print('{} rsa runs = {}'.format(self.subject, rsa_runs))
-        return rsa_runs
+    # def rsa_run_mask(self, task='rsa'):
+    #     """Equalize number of runs per session per participant (in case of missing runs).
+    #
+    #     Args:
+    #         task (str): which task. Default 'rsa'
+    #
+    #     Returns:
+    #         rsa_runs (list): list of runs to use.
+    #     """
+    #     # check how many runs are in each session.
+    #     ses1_mask = [
+    #         os.path.exists(os.path.join(self.fmriprep_dir, '{}'.format(self.subject), '{}'.format('ses-mri01'), 'func', '{}_{}_task-cmrr2isomb4TR1500RSA_dir-AP_{}_space-T1w_desc-preproc_bold.nii.gz'.format(self.subject, 'ses-mri01', 'run-1'), )), # preprocessed run 1
+    #
+    #
+    #         os.path.exists(os.path.join(self.fmriprep_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, 'ses-01', task, 'run-02'), 'filtered_func_data.nii.gz')), # preprocessed run 2
+    #         os.path.exists(os.path.join(self.fmriprep_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, 'ses-01', task, 'run-03'), 'filtered_func_data.nii.gz')), # preprocessed run 3
+    #         os.path.exists(os.path.join(self.fmriprep_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, 'ses-01', task, 'run-04'), 'filtered_func_data.nii.gz')), # preprocessed run 4
+    #     ]
+    #
+    #     ses2_mask = [
+    #         os.path.exists(os.path.join(self.fmriprep_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, 'ses-02', task, 'run-01'), 'filtered_func_data.nii.gz')), # preprocessed run 1
+    #         os.path.exists(os.path.join(self.fmriprep_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, 'ses-02', task, 'run-02'), 'filtered_func_data.nii.gz')), # preprocessed run 2
+    #         os.path.exists(os.path.join(self.fmriprep_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, 'ses-02', task, 'run-03'), 'filtered_func_data.nii.gz')), # preprocessed run 3
+    #         os.path.exists(os.path.join(self.fmriprep_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, 'ses-02', task, 'run-04'), 'filtered_func_data.nii.gz')), # preprocessed run 4
+    #     ]
+    #
+    #     # delete after debugging!
+    #     ses2_mask = [1, 1, 1, 1]
+    #
+    #     # use the same runs for each session for this participant.
+    #     rsa_mask = np.array(ses1_mask)*np.array(ses2_mask)
+    #     rsa_mask = np.array(rsa_mask, dtype=bool) # bools crucial for masking!
+    #
+    #     rsa_runs = np.array(['run-01', 'run-02', 'run-03', 'run-04'])
+    #     rsa_runs = rsa_runs[rsa_mask]
+    #     print('{} rsa runs = {}'.format(self.subject, rsa_runs))
+    #     return rsa_runs
         
     
     def rsa_combine_epi(self, task='rsa'):
@@ -309,28 +316,33 @@ class first_level_class(object):
         
         Notes:
             The output is the concantenated bold of all runs (input to first level).
-            Equalize number of runs per session per participant (in case of missing runs).
+            TO DO: Equalize number of runs per session per participant (in case of missing runs).
         """
         
-        rsa_runs = self.rsa_run_mask() # check which runs to use
+        # rsa_runs = self.rsa_run_mask() # check which runs to use
+        preprocessed_tag = 'space-T1w_desc-preproc_bold'
         
-        for self.session in ['ses-01','ses-02']:
+        for session in ['ses-mri01','ses-mri02']:
             # output is the concantenated bold of all runs per session (input to first level)
-            out_file = os.path.join(self.first_level_dir, 'task-{}'.format(task), '{}_{}_task-{}_filtered_func_data.nii.gz'.format(self.subject, self.session, task))
+            out_file = os.path.join(self.first_level_dir, 'task-{}'.format(task), '{}_{}_task-{}_run-concat_{}.nii.gz'.format(self.subject, session, task, preprocessed_tag))
             
             bold = []
-            for this_run in rsa_runs:
-                nii = nib.load(os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, self.session, task, this_run), 'filtered_func_data.nii.gz'))
-                bold.append(nii.get_data())
+            for this_run in ['run-1', 'run-2', 'run-3', 'run-4']: # this will break down for exceptions
+                nii_path = os.path.join(self.fmriprep_dir, '{}'.format(self.subject), '{}'.format(session), 'func', '{}_{}_task-cmrr2isomb4TR1500RSA_dir-AP_{}_{}.nii.gz'.format(self.subject, session, this_run, preprocessed_tag))
+                nii = nib.load(nii_path)
+                bold.append(nii.get_fdata())
+                if '1' in this_run:
+                    save_path = nii_path
                         
             bold = np.concatenate(bold, axis=-1)
             
-            n1 = nib.load(os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, 'ses-01', task, 'run-01'), 'filtered_func_data.nii.gz'))
+            # get nifti header from first run
+            n1 = nib.load(save_path)
             out_data = nib.Nifti1Image(bold, affine=n1.affine, header=n1.header) # pass affine and header from last MNI image
             out_data.set_data_dtype(np.float32)
             nib.save(out_data, out_file)
             print(bold.shape)
-            shell()
+        shell()
         print('success: rsa_combine_epi')
         
         

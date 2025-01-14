@@ -1,0 +1,8 @@
+fmriprep_sub.py /project/3018051.01/ruggero/bids -o /project/3018051.01/ruggero/fmriprep -p sub-126 --nthreads 3 -r "slurm" --mem_mb 28000 --args "--output-spaces MNI152NLin6Asym anat --ignore slicetiming"" --workdir /project/3018051.01/ruggero/tempdir
+
+fmriprep_sub.py /project/3018051.01/ruggero/bids -o /project/3018051.01/ruggero/fmriprep -p sub-126 --nthreads 3 --mem_mb 28000 --args "--output-spaces MNI152NLin6Asym anat --ignore slicetiming" --workdir /project/3018051.01/ruggero/tempdir
+
+python fmriprep_sub_copy.py /project/3018051.01/ruggero/bids -o /project/3018051.01/ruggero/fmriprep -p sub-126 --nthreads 3 --mem_mb 28000 --args "--output-spaces MNI152NLin6Asym anat --ignore slicetiming" --workdir /project/3018051.01/ruggero/tempdir
+
+
+/opt/fmriprep/24.0.0/fmriprep-24.0.0.simg /project/3018051.01/ruggero/bids /project/3018051.01/ruggero/fmriprep participant -w /project/3018051.01/ruggero/tempdir/sub-126 --participant-label 126  --fs-license-file /opt_host/fmriprep/license.txt --mem_mb 28000 --omp-nthreads 3 --nthreads 3 --output-spaces MNI152NLin6Asym anat --ignore slicetiming
