@@ -105,8 +105,8 @@ if run_first_level:
         # first_level.loc_nuisance_regressors('letters')    # concatenate motion parameters from preprocessing, also outputs cols of 1s for each blocks' mean
         # first_level.loc_fsf('letters')                    # generates the first level FSF for the localizers
                 
-        first_level.rsa_combine_epi()                     # concatenate EPI data for the 4 runs of the RSA task
-        # first_level.rsa_combine_events()                  # concatenate events files for the 4 runs of the RSA task
+        # first_level.rsa_combine_epi()                     # concatenate EPI data for the 4 runs of the RSA task
+        first_level.rsa_combine_events()                  # concatenate events files for the 4 runs of the RSA task
         # first_level.rsa_nuisance_regressors()             # motion parameters, run means, and oddball trials as nuisance
         # first_level.nuisance_regressor_list(task='rsa')   # create a list of all the nuisance regressors for the 1st level analysis
         

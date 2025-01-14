@@ -318,31 +318,42 @@ class first_level_class(object):
             The output is the concantenated bold of all runs (input to first level).
             TO DO: Equalize number of runs per session per participant (in case of missing runs).
         """
-        
+                
         # rsa_runs = self.rsa_run_mask() # check which runs to use
         preprocessed_tag = 'space-T1w_desc-preproc_bold'
         
         for session in ['ses-mri01','ses-mri02']:
+            
+            df_trs = pd.DataFrame() # save number of TRs for events file concatenation
+            
             # output is the concantenated bold of all runs per session (input to first level)
             out_file = os.path.join(self.first_level_dir, 'task-{}'.format(task), '{}_{}_task-{}_run-concat_{}.nii.gz'.format(self.subject, session, task, preprocessed_tag))
             
             bold = []
-            for this_run in ['run-1', 'run-2', 'run-3', 'run-4']: # this will break down for exceptions
-                nii_path = os.path.join(self.fmriprep_dir, '{}'.format(self.subject), '{}'.format(session), 'func', '{}_{}_task-cmrr2isomb4TR1500RSA_dir-AP_{}_{}.nii.gz'.format(self.subject, session, this_run, preprocessed_tag))
-                nii = nib.load(nii_path)
-                bold.append(nii.get_fdata())
-                if '1' in this_run:
-                    save_path = nii_path
-                        
-            bold = np.concatenate(bold, axis=-1)
+            for r, this_run in enumerate(['run-1', 'run-2', 'run-3', 'run-4']): 
+                for this_file in os.listdir(os.path.join(self.fmriprep_dir, self.subject, session, 'func')):
+                    if (this_run in this_file) and ('space-T1w_desc-preproc_bold.nii.gz' in this_file):
+                        nii_path = os.path.join(self.fmriprep_dir, self.subject, session, 'func', '{}_{}_task-cmrr2isomb4TR1500RSA_dir-AP_{}_{}.nii.gz'.format(self.subject, session, this_run, preprocessed_tag))
+                        nii = nib.load(nii_path)
+                        # count TRs
+                        df_trs[this_run] = [nii.get_fdata().shape[-1]] # 4th dimension
+                        # append to list
+                        bold.append(nii.get_fdata())
+                        if '1' in this_run:
+                            save_path = nii_path
+                            
+            bold = np.concatenate(bold, axis=-1) # concatenate list to one long ndarray
             
             # get nifti header from first run
             n1 = nib.load(save_path)
             out_data = nib.Nifti1Image(bold, affine=n1.affine, header=n1.header) # pass affine and header from last MNI image
             out_data.set_data_dtype(np.float32)
             nib.save(out_data, out_file)
+            
+            # save trs per session
+            df_trs.to_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), '{}_{}_task-{}_TRs.tsv'.format(self.subject, session, task)), sep='\t')
             print(bold.shape)
-        shell()
+                    
         print('success: rsa_combine_epi')
         
         
@@ -353,40 +364,45 @@ class first_level_class(object):
             task (str): which task. Default 'rsa'
         
         Notes:
-            Equalize number of runs per session per participant (in case of missing runs).
+            To DO Equalize number of runs per session per participant (in case of missing runs).
         """
         
-        rsa_runs = self.rsa_run_mask() # check which runs to use
+        # rsa_runs = self.rsa_run_mask() # check which runs to use
+        preprocessed_tag = 'space-T1w_desc-preproc_bold'
         
-        for self.session in ['ses-01','ses-02']:
+        for session in ['ses-mri01','ses-mri02']:
             
-            nruns = len(rsa_runs)
+            # open tr count from rsa_combine_epi()
+            df_trs = pd.read_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), '{}_{}_task-{}_TRs.tsv'.format(self.subject, session, task)), sep='\t')
+            df_trs = df_trs.loc[:, ~df_trs.columns.str.contains('^Unnamed')]
+                        
+            rsa_runs = df_trs.columns.values
+            nruns = len(df_trs.columns.values)
             
-            time2add = []
+            time2add = [0] # don't add anytime to run 1
             
             # check how long each run was and calculate seconds
-            for r, this_run in enumerate(rsa_runs):
-                
-                bold = nib.load(os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_{}_preprocessing.feat'.format(self.subject, self.session, task, this_run), 'filtered_func_data.nii.gz'))
-                ntrs = bold.shape[-1]  # number of TRs
+            for this_run in rsa_runs:
+                ntrs = df_trs[this_run][0]  # number of TRs
                 time2add.append(ntrs*float(self.TR)) # time to add in seconds to next run's onsets
-                print('Time to add to run {}: {}'.format(r + 1, ntrs*float(self.TR)))
+                print('Time to add to {}: {}'.format(this_run, ntrs*float(self.TR)))
                 
             time2add = np.cumsum(time2add) # cummulative sum per run
             
             # open events files and add times
             all_events = pd.DataFrame()
             for r, this_run in enumerate(rsa_runs):
-                if r==0: # first run
-                    # open file but don't add time
-                    events = pd.read_csv(os.path.join(self.deriv_dir, self.subject, self.session, 'func', '{}_{}_task-{}_{}_events.tsv'.format(self.subject, self.session, task, this_run)), sep='\t')
-                    all_events = pd.concat([all_events, events], axis=0)
-                else:
-                    events = pd.read_csv(os.path.join(self.deriv_dir, self.subject, self.session, 'func', '{}_{}_task-{}_{}_events.tsv'.format(self.subject, self.session, task, this_run)), sep='\t')
-                    events['onset'] =  events['onset'] + time2add[r]
-                    all_events = pd.concat([all_events, events], axis=0)
+                for this_file in os.listdir(os.path.join(self.bids_dir, self.subject, session, 'func')):
+                    if (task in this_file) and (this_run in this_file) and ('events' in this_file):
+                        print(this_file)
+                        print(this_run)
+                        print(time2add[r])
+                        events = pd.read_csv(os.path.join(self.bids_dir, self.subject, session, 'func', this_file), sep='\t')
+                        events['onset'] =  events['onset'] + time2add[r]
+                        all_events = pd.concat([all_events, events], axis=0)
                 print(all_events.shape)
-
+            
+            # shell()
             # add unique identifiers for each color
             rgb_codes = [
                 (all_events['r'] == 188) & (all_events['g'] == 188) & (all_events['b'] == 188), # grey (oddballs)
@@ -430,7 +446,7 @@ class first_level_class(object):
             all_events['color_name'] = np.select(rgb_codes, color_names)
                     
             # save concantenated events file
-            all_events.to_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), '{}_{}_task-{}_events.tsv'.format(self.subject, self.session, task)), sep='\t') 
+            all_events.to_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), '{}_{}_task-{}_run-concat_events.tsv'.format(self.subject, session, task)), sep='\t') 
 
         print('success: rsa_combine_events')    
 
