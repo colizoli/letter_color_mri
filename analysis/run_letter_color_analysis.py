@@ -73,9 +73,10 @@ if run_housekeeping:
         housekeeping = letter_color_housekeeping.housekeeping_class(
             subject         = subject, # experiment subject number
             bids_dir        = bids_dir,
+            deriv_dir       = deriv_dir,
             )            
-        housekeeping.rename_behav_logfiles() # rename behavioral logfile names
-
+        # housekeeping.rename_behav_logfiles()      # rename behavioral logfile names
+        shell()
         
         # shell()
           
@@ -95,6 +96,7 @@ if run_first_level:
             timing_files_dir = timing_files_dir,
             TR              = TR, # repetition time in seconds
             )
+        first_level.loc_match_bold()          # match loc1 and loc2 in nifti file to letters and colors in events files
         # first_level.loc_combine_epi('colors')             # concantenate both runs of localizer to perform 1 GLM
         # first_level.loc_combine_timing_files('colors')    # timing files for color localizer GLM
         # first_level.loc_combine_motion_regressors('colors')     # concatenate motion parameters from preprocessing, also outputs cols of 1s for each blocks' mean
