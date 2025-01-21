@@ -76,11 +76,11 @@ class first_level_class(object):
         """
         T = 6 # number of trailing timestamp characters in events file names
         
-        localizer_df = pd.DataFrame()
-        loc1 = []
-        loc2 = []
+        letters = []
+        colors = []
+        sessions = ['ses-mri01', 'ses-mri02']
         
-        for session in ['ses-mri01', 'ses-mri02']:
+        for session in sessions:
             ###################
             # check acquisition time in JSON files
             ###################
@@ -120,27 +120,31 @@ class first_level_class(object):
                 if loc1_first:
                     # letters == loc1
                     # colors = loc2
-                    loc1.append('letters')
-                    loc2.append('colors')                    
+                    letters.append('LOC01')
+                    colors.append('LOC02')                    
                 else:
                     # colors = loc1
                     # letters  = loc2
-                    loc1.append('colors')
-                    loc2.append('letters')
+                    colors.append('LOC01')
+                    letters.append('LOC02')
         
             print('{} {} loc1_first={} letters_first={}'.format(self.subject, session, letters_first, loc1_first))       
         
-        localizer_df['session'] = ['ses-mri01', 'ses-mri02']
-        localizer_df['LOC01'] = loc1
-        localizer_df['LOC02'] = loc2
-        # save two copies in both localizer folders
-        localizer_df.to_csv(os.path.join(self.first_level_dir, 'task-letters', '{}_localizer_matching.tsv'.format(self.subject)), sep='\t')
-        localizer_df.to_csv(os.path.join(self.first_level_dir, 'task-colors', '{}_localizer_matching.tsv'.format(self.subject)), sep='\t')
-        shell()
+        # save matching in each of the two localizer folders
+        # letters localizer
+        localizer_df = pd.DataFrame()
+        localizer_df['session'] = sessions
+        localizer_df['letters'] = letters
+        localizer_df.to_csv(os.path.join(self.first_level_dir, 'task-letters', '{}_task-letters_localizer_matching.tsv'.format(self.subject)), sep='\t')
+        # colors localizer
+        localizer_df = pd.DataFrame()
+        localizer_df['session'] = sessions
+        localizer_df['colors'] = colors
+        localizer_df.to_csv(os.path.join(self.first_level_dir, 'task-colors', '{}_task-colors_localizer_matching.tsv'.format(self.subject)), sep='\t')
         print('success: loc_match_bold')
         
         
-    def loc_combine_epi(self, task):
+    def loc_combine_epi(self, ):
         """Concatenate the 2 sessions of EPI data to perform a single GLM on localizers.
         
         Args:
@@ -153,212 +157,272 @@ class first_level_class(object):
         
         for preprocessed_tag in ['space-MNI152NLin6Asym_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
             
-            df_trs = pd.DataFrame() # save number of TRs for events file concatenation
+            for task in ['letters', 'colors']:
+                # open matching file to grab correct NIFTI localizer file
+                localizer_df = pd.read_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), '{}_task-{}_localizer_matching.tsv'.format(self.subject, task)), sep='\t')
+                
+                df_trs = pd.DataFrame() # save number of TRs for events file concatenation
         
-            # output is the concantenated bold of all runs per session (input to first level)
-            out_file = os.path.join(self.first_level_dir, 'task-{}'.format(task), '{}_ses-concat_task-{}_{}.nii.gz'.format(self.subject, task, preprocessed_tag))
-        
-            for s, session in enumerate(['ses-mri01', 'ses-mri02']): 
-                for this_file in os.listdir(os.path.join(self.fmriprep_dir, self.subject, session, 'func')):
-                    shell()
-                    if (task in this_file) and (session in this_file) and (preprocessed_tag in this_file) and ('nii.gz' in this_file):
+                # output is the concantenated bold of all runs per session (input to first level)
+                out_file = os.path.join(self.first_level_dir, 'task-{}'.format(task), '{}_ses-concat_task-{}_{}.nii.gz'.format(self.subject, task, preprocessed_tag))
+                
+                bold = [] # to concatenate
+                # grap both sessions
+                for session in ['ses-mri01', 'ses-mri02']:
+                    # grab correct localizer for current session for current task
+                    this_loc = localizer_df[(localizer_df['session']==session)][task]
+                    this_loc = str(np.array(this_loc)[0])
+                    # get nifti and load 
+                    nii_path = os.path.join(self.fmriprep_dir, self.subject, session, 'func', '{}_{}_task-cmrr2isomb4TR1500{}_dir-AP_{}.nii.gz'.format(self.subject, session, this_loc, preprocessed_tag))
+                    nii = nib.load(nii_path)
+                    # count TRs
+                    df_trs[session] = [nii.get_fdata().shape[-1]] # 4th dimension
+                    # append to concatenate later
+                    bold.append(nii.get_fdata())
+                    if '1' in session:
+                        save_path = nii_path
                         
-                        shell()
-                        nii = nib.load(nii_path)
-                        # count TRs
-                        df_trs[this_run] = [nii.get_fdata().shape[-1]] # 4th dimension
-                        # append to list
-                        bold.append(nii.get_fdata())
-                        if '1' in this_run:
-                            save_path = nii_path
-                        
-            bold = np.concatenate(bold, axis=-1) # concatenate list to one long ndarray
+                bold = np.concatenate(bold, axis=-1) # concatenate list to one long ndarray
         
-            # get nifti header from first run
-            n1 = nib.load(save_path)
-            out_data = nib.Nifti1Image(bold, affine=n1.affine, header=n1.header) # pass affine and header from last MNI image
-            out_data.set_data_dtype(np.float32)
-            nib.save(out_data, out_file)
+                # get nifti header from first run
+                n1 = nib.load(save_path)
+                out_data = nib.Nifti1Image(bold, affine=n1.affine, header=n1.header) # pass affine and header from last MNI image
+                out_data.set_data_dtype(np.float32)
+                nib.save(out_data, out_file)
         
-            # save trs per session
-            df_trs.to_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), '{}_{}_task-{}_TRs.tsv'.format(self.subject, session, task)), sep='\t')
-            print(bold.shape)
+                # save trs per session
+                df_trs.to_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), '{}_task-{}_TRs.tsv'.format(self.subject, task)), sep='\t')
+                print(bold.shape)
             
-        
-            # output session regressors as custom 1 column EV files
-            ses1 = np.concatenate( (np.repeat(1,len(bold1)),  np.repeat(0,len(bold2)) ), axis=0) # session 1: 1s run 1
-            ses2 = np.concatenate( (np.repeat(0,len(bold1)),  np.repeat(1,len(bold2)) ), axis=0) # session 2: 1s run 2
-            # ses-01 EV
-            out_ses = os.path.join(self.deriv_dir, 'timing_files','task-{}'.format(task), 'task-{}_{}_{}.txt'.format(task, self.subject, 'ses-01'))
-            output = np.array(ses1.T) # 1 x TR
-            np.savetxt(out_fn, output, delimiter='/t', fmt='%i') #column has to be an integer for FSL!
-            # ses-02 EV
-            out_ses = os.path.join(self.deriv_dir, 'timing_files','task-{}'.format(task), 'task-{}_{}_{}.txt'.format(task, self.subject, 'ses-02'))
-            output = np.array(ses2.T) # 1 x TR
-            np.savetxt(out_fn, output, delimiter='/t', fmt='%i') #column has to be an integer for FSL!
 
             print('success: loc_combine_epi {}'.format(self.subject))
-     
-     
-    def loc_combine_timing_files(self, task):
-        """Concatenate the timing files of 2 sessions to perform a single GLM on localizers.
-        
-        Args:
-            task (str): which localizer task.
+    
+    
+    def loc_combine_events(self, ):
+        """For the each localizer task, concantenate the events files of both sessions and output in first_level directory.
         
         Notes:
-            2nd session have to add time = #TRs * TR
+            To DO Equalize number of sessions per session per participant (in case of missing session data).
+        """
+        
+        for task in ['letters', 'colors']:
+            
+            # open tr count from loc_combine_epi()
+            df_trs = pd.read_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), '{}_task-{}_TRs.tsv'.format(self.subject, task)), sep='\t')
+            df_trs = df_trs.loc[:, ~df_trs.columns.str.contains('^Unnamed')]
+                    
+            loc_runs = df_trs.columns.values
+            nruns = len(df_trs.columns.values)
+        
+            time2add = [0] # don't add anytime to run 1
+        
+            # check how long each run was and calculate seconds
+            for session in loc_runs:
+                ntrs = df_trs[session][0]  # number of TRs
+                time2add.append(ntrs*float(self.TR)) # time to add in seconds to next run's onsets
+                print('Time to add to {}: {}'.format(session, ntrs*float(self.TR)))
+            
+            time2add = np.cumsum(time2add) # cummulative sum per run
+        
+            # open events files and add times
+            all_events = pd.DataFrame()
+            for r, session in enumerate(loc_runs):
+                for this_file in os.listdir(os.path.join(self.bids_dir, self.subject, session, 'func')):
+                    if ('task-{}loc'.format(task) in this_file) and ('events' in this_file):
+                        print(this_file)
+                        print(session)
+                        print(time2add[r])
+
+                        events = pd.read_csv(os.path.join(self.bids_dir, self.subject, session, 'func', this_file), sep='\t')
+                        events['onset'] =  events['onset'] + time2add[r]
+                        all_events = pd.concat([all_events, events], axis=0)
+                print(all_events.shape)
+                
+            # save concantenated events file
+            all_events.to_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), '{}_ses-concat_task-{}_events.tsv'.format(self.subject, task)), sep='\t') 
+
+        print('success: rsa_combine_events')    
+    
+    
+    def loc_nuisance_regressors(self, ):
+        """Combine all TR-based nuisance regressors for both sessions into a single file (localizers).
+        
+        Notes:
+            Includes the following nuisance regressors:
+            1. first 5 principle components of the compcor output of fmriprep (white matter and csf).
+            2. 6 motion parameters from fmriprep.
+            3. cosine regressors for low-frequency drift.
+            4. the 2 session regressors (for concantenations).
+                    
+            confounds file name: derivatives/fmriprep/sub-xxx/ses-mri-xx/func/sub-xxx_ses-mrixx_task-cmrr2isomb4TR1500LOCXX_dir-AP_run-x_desc-confounds_timeseries.tsv
+            anatomical compcor column names in confounds file: a_comp_cor_00, a_comp_cor_01, a_comp_cor_02, a_comp_cor_03, a_comp_cor_04
+            motion column names in confounds file: trans_x, trans_y, trans_z, rot_x, rot_y, rot_z
+        """
+        
+        for task in ['letters', 'colors']:
+            
+            save_regressors = pd.DataFrame() # output file
+            
+            # open matching localizer dataframe
+            localizer_df = pd.read_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), '{}_task-{}_localizer_matching.tsv'.format(self.subject, task)), sep='\t')
+            
+            # open tr count from loc_combine_epi()
+            df_trs = pd.read_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), '{}_task-{}_TRs.tsv'.format(self.subject, task)), sep='\t')
+            df_trs = df_trs.loc[:, ~df_trs.columns.str.contains('^Unnamed')]
+                        
+            loc_runs = df_trs.columns.values # use these runs
+            nruns = len(df_trs.columns.values) # number of trs per run
+            
+            for session in loc_runs:
+                # grab correct localizer for current session for current task from matching file
+                this_loc = localizer_df[(localizer_df['session']==session)][task]
+                this_loc = str(np.array(this_loc)[0])
+                    
+                this_run_regressors = pd.DataFrame()
+                # output of fmriprep per subject, per session, per run
+                confounds = pd.read_csv(os.path.join(self.fmriprep_dir, self.subject, session, 'func', '{}_{}_task-cmrr2isomb4TR1500{}_dir-AP_desc-confounds_timeseries.tsv'.format(self.subject, session, this_loc)), sep='\t', float_precision='high')
+                # compcor
+                this_run_regressors['a_comp_cor_00'] = np.array(confounds['a_comp_cor_00'])
+                this_run_regressors['a_comp_cor_01'] = np.array(confounds['a_comp_cor_01'])
+                this_run_regressors['a_comp_cor_02'] = np.array(confounds['a_comp_cor_02'])
+                this_run_regressors['a_comp_cor_03'] = np.array(confounds['a_comp_cor_03'])
+                this_run_regressors['a_comp_cor_04'] = np.array(confounds['a_comp_cor_04'])
+                # motion
+                this_run_regressors['trans_x'] = np.array(confounds['trans_x'])
+                this_run_regressors['trans_y'] = np.array(confounds['trans_y'])
+                this_run_regressors['trans_z'] = np.array(confounds['trans_z'])
+                this_run_regressors['rot_x'] = np.array(confounds['rot_x'])
+                this_run_regressors['rot_y'] = np.array(confounds['rot_y'])
+                this_run_regressors['rot_z'] = np.array(confounds['rot_z'])
+                # cosine (low-frequency drift)
+                this_run_regressors['cosine00'] = np.array(confounds['cosine00'])
+                this_run_regressors['cosine01'] = np.array(confounds['cosine01'])
+                this_run_regressors['cosine02'] = np.array(confounds['cosine02'])
+                this_run_regressors['cosine03'] = np.array(confounds['cosine03'])
+                # runs
+                this_run_regressors[session] = np.repeat(1, confounds.shape[0])
+                
+                save_regressors = pd.concat([save_regressors, this_run_regressors], axis=0)
+            
+            save_regressors = save_regressors.fillna(0)   
+            # save without headers and without index, tab separated
+            save_regressors.to_csv(
+                os.path.join(self.first_level_dir, 'task-{}'.format(task), '{}_ses-concat_task-{}_nuisance_regressors.txt'.format(self.subject, task)),
+                sep='\t', float_format='%.16f', header=None, index_label=False, index=False)
+            
+        print('success: loc_nuisance_regressors {}'.format(self.subject))
+        
+        
+    def loc_timing_files(self, ):
+        """Create the timing files to perform a single GLM on each localizer.
+        
+        Notes:
             GLM timing files for ABAB blocked design (localizers)
         """
         STIM_DUR = 0.75 # stimulus duration seconds
         
-        n1_fn = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_preprocessing.feat'.format(self.subject, 'ses-01', task), 'filtered_func_data.nii.gz')
-        n2_fn = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_preprocessing.feat'.format(self.subject, 'ses-02', task), 'filtered_func_data.nii.gz')
+        localizers = ['letters', 'colors']
+        # contrast conditions
+        letters = ['Letter', 'Symbol']
+        colors = ['Color', 'Black']
+        conditions = [letters, colors]
         
-        # check if both localizers present
-        if os.path.exists(n1_fn) and os.path.exists(n2_fn):
-            
-            # take FIRST session's BOLD to count TRs to add to 2nd sessions' onsets
-            bold1 = nib.load(n1_fn)
-            ntrs = bold1.shape[-1]  # number of TRs
-            time2add = ntrs*float(self.TR) # time to add in seconds to block 2's onsets
-            print('Time to add to run 2: {}'.format(time2add))
+        for t,task in enumerate(localizers):
+            events = pd.read_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), '{}_ses-concat_task-{}_events.tsv'.format(self.subject, task)), sep='\t') # get concantenated events file
         
-            # open block 2's events
-            events2 = pd.read_csv(os.path.join(self.deriv_dir, self.subject, 'ses-02', 'func', '{}_{}_task-{}_events.tsv'.format(self.subject, 'ses-02', task)), sep='\t')
-            events2['onset'] =  events2['onset'] + time2add
-            
-            # open block 1's events and concantenate
-            events1 = pd.read_csv(os.path.join(self.deriv_dir, self.subject, 'ses-01', 'func', '{}_{}_task-{}_events.tsv'.format(self.subject, 'ses-01', task)), sep='\t')
-            events = pd.concat([events1, events2], axis=0)
-            events.to_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), 'task-{}_{}_events.tsv'.format(task, self.subject)), sep='\t')  # save concantenated events file
-
-            # generate 3 column files for each of the 2x2 conditions
-            for c,cond in enumerate(np.unique(events['trial_type'])):
-                out_fn = os.path.join(self.deriv_dir, 'timing_files','task-{}'.format(task), 'task-{}_{}_{}.txt'.format(task,self.subject,cond))
-
+            # generate 3 column files for each of the conditions of interest
+            for cond in conditions[t]: # contrast conditions
+    
+                out_file = os.path.join(self.timing_files_dir, 'task-{}'.format(task), '{}_task-{}_{}.txt'.format(self.subject, task, cond))
+                
                 # main regressors
                 first = np.array(events[events['trial_type']==cond]['onset']) # onset in s
-                second = np.repeat(STIM_DUR, len(first))    # duration in s
-                third = np.array(np.repeat(1, len(first)),dtype=int)    # amplitude
+                second = np.array(events[events['trial_type']==cond]['duration']) # duration in s
+                third = np.array(np.repeat(1, len(first)), dtype=int) # amplitude
                 output = np.array(np.vstack((first, second, third)).T) # 1 x 3
-                np.savetxt(out_fn, output, delimiter='/t', fmt='%.2f %.2f %i') #3rd column has to be an integer for FSL!
-                print(out_fn)
-        else:
-            print('{} {} missing task-{}!'.format(self.subject, session, task))
-        print('success: loc_combine_timing_files {}'.format(self.subject))
+                np.savetxt(out_file, output, delimiter='/t', fmt='%.2f %.2f %i') #3rd column has to be an integer for FSL!
+                print(out_file)
+        print('success: loc_timing_files {}'.format(self.subject))
     
     
-    def loc_combine_motion_regressors(self, task):
-        """Concatenate the 2 sessions of the motion regressors to perform a single GLM.
-        
-        Args:
-            task (str): which localizer task.
+
+    def loc_fsf(self,):
+        """Creates the FSF files for each subject's first level analysis - localizers
         
         Notes:
-            The output is the concantenated motion regressors as nifti files of both sessions.
+            Run the actual FSF from the command line: feat task-colors_sub-01_ses-01.fsf
         """
+        localizers = ['letters', 'colors']
+        # contrast conditions
+        letters = ['Letter', 'Symbol']
+        colors = ['Color', 'Black']
+        conditions = [letters, colors]
         
-        #### Motion parameters ####
-        n1_fn = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_preprocessing.feat'.format(self.subject, 'ses-01', task), 'filtered_func_data.nii.gz')
-        n2_fn = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_preprocessing.feat'.format(self.subject, 'ses-02', task), 'filtered_func_data.nii.gz')
-        
-        # check if both localizers present
-        if os.path.exists(n1_fn) and os.path.exists(n2_fn):
-            # 6 motion regressors
-            for mcf in np.arange(6):
-                mcf_out = os.path.join(self.first_level_dir, 'task-{}'.format(task), 'task-{}_{}_mcf_par{}.nii.gz'.format(task, self.subject. mcf + 1)) 
+        for t,task in enumerate(localizers):
+            
+            for preprocessed_tag in ['space-MNI152NLin6Asym_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
                 
-                mcf_fn1 = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_preprocessing.feat'.format(self.subject, 'ses-01', task), 'mc', 'mcf_par{}.nii.gz'.format(mcf + 1))
-                mcf_fn2 = os.path.join(self.preprocess_dir, 'task-{}'.format(task), '{}_{}_task-{}_preprocessing.feat'.format(self.subject, 'ses-02', task), 'mc', 'mcf_par{}.nii.gz'.format(mcf + 1))
-                n1 = nib.load(mcf_fn1) # preprocessed session 1
-                n2 = nib.load(mcf_fn2) # preprocessed session 2
-            
-                bold1 = n1.get_data()
-                bold2 = n2.get_data()
-                bold = np.concatenate([bold1, bold2],axis=-1)
-            
-                nii_out = nib.Nifti1Image(bold, affine=n1.affine, header=n1.header) # pass affine and header from last MNI image
-                nii_out.set_data_dtype(np.float32)
-                nib.save(nii_out, mri_out)        
-        else:
-            print('{} {} missing task-{}!'.format(self.subject, session, task))
-           
-        print('success: loc_combine_motion_regressors {}'.format(self.subject))
-        
-
-    def loc_fsf(self,task):
-        # Creates the FSF files for each subject's first level analysis - localizers
-        # Run the actual FSF from the command line: feat task-colors_sub-01_ses-01.fsf
-            
-        template_filename = os.path.join(self.analysis_dir,'templates','task-{}_first_level_template.fsf'.format(task))
+                template_filename = os.path.join(self.analysis_dir, 'templates','task-{}_first_level_template.fsf'.format(task))
     
-        markers = [
-            '[$OUTPUT_PATH]', 
-            '[$NR_TRS]', 
-            '[$INPUT_FILENAME]', 
-            '[$NUISANCE]', 
-            '[$EV1_FILENAME]',
-            '[$EV2_FILENAME]', 
-            '[$NR_VOXELS]',
-            '[$MNI_BRAIN]'
-        ]
+                markers = [
+                    '[$OUTPUT_PATH]', 
+                    '[$NR_TRS]', 
+                    '[$INPUT_FILENAME]', 
+                    '[$NUISANCE]', 
+                    '[$EV1_FILENAME]',
+                    '[$EV2_FILENAME]', 
+                    '[$NR_VOXELS]'
+                ]
         
-        FSF_filename = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}.fsf'.format(task,self.subject)) # save fsf
-        output_path = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}'.format(task,self.subject)) 
+                FSF_filename = os.path.join(self.first_level_dir, 'task-{}'.format(task), '{}_task-{}_{}.fsf'.format(self.subject, task, preprocessed_tag)) # save fsf
+                output_path = os.path.join(self.first_level_dir, 'task-{}'.format(task), '{}_task-{}_{}'.format(self.subject, task, preprocessed_tag)) 
         
-        BOLD = os.path.join(self.first_level_dir,'task-{}'.format(task),'task-{}_{}_bold_mni.nii.gz'.format(task,self.subject)) 
-        # calculate size of input data
-        nii = nib.load(BOLD).get_data() # only do once 
-        nr_trs = str(nii.shape[-1])
-        nr_voxels = str(nii.size)
+                BOLD = os.path.join(self.first_level_dir, 'task-{}'.format(task), '{}_ses-concat_task-{}_{}.nii.gz'.format(self.subject, task, preprocessed_tag))
+                
+                # calculate size of input data
+                nii = nib.load(BOLD).get_fdata() # only do once 
+                nr_trs = str(nii.shape[-1])
+                nr_voxels = str(nii.size)
         
-        # motion parameters and columns for each session's mean
-        nuisance_regressors = os.path.join(self.timing_files_dir,'task-{}'.format(task),'task-{}_{}_nuisance_regressors.txt'.format(task,self.subject))
+                # motion parameters and columns for each session's mean
+                nuisance_regressors = os.path.join(self.first_level_dir, 'task-{}'.format(task), '{}_ses-concat_task-{}_nuisance_regressors.txt'.format(self.subject, task))
         
-        # timing files for each EV
-        if task == 'colors':
-            EVS = ['Color','Black']
-        elif task == 'letters':
-            EVS = ['Letter','Symbol']
-        EV1_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}.txt'.format(task,self.subject,EVS[0]))
-        EV2_path = os.path.join(self.deriv_dir,'timing_files','task-{}'.format(task),'task-{}_{}_{}.txt'.format(task,self.subject,EVS[1]))
-        
-        MNI_BRAIN  = os.path.join(self.mask_dir, 'MNI152_T1_2mm_brain.nii.gz')
-        
-        # replacements
-        replacements = [ # needs to match order of 'markers'
-            output_path,
-            nr_trs,
-            BOLD,
-            nuisance_regressors,
-            EV1_path,
-            EV2_path,
-            nr_voxels,
-            MNI_BRAIN
-        ]
+                # timing files for each EV
+                EV1_path = os.path.join(self.timing_files_dir, 'task-{}'.format(task), '{}_task-{}_{}.txt'.format(self.subject, task, conditions[t][0]))
+                EV2_path = os.path.join(self.timing_files_dir, 'task-{}'.format(task), '{}_task-{}_{}.txt'.format(self.subject, task, conditions[t][1]))
+                
+                # replacements
+                replacements = [ # needs to match order of 'markers'
+                    output_path,
+                    nr_trs,
+                    BOLD,
+                    nuisance_regressors,
+                    EV1_path,
+                    EV2_path,
+                    nr_voxels,
+                ]
 
-        # open the template file, load the text data
-        f = open(template_filename,'r')
-        filedata = f.read()
-        f.close()
+                # open the template file, load the text data
+                f = open(template_filename,'r')
+                filedata = f.read()
+                f.close()
 
-        # search and replace
-        for st,this_string in enumerate(markers):
-            filedata = filedata.replace(this_string,replacements[st])
+                # search and replace
+                for st,this_string in enumerate(markers):
+                    filedata = filedata.replace(this_string,replacements[st])
 
-        # write output file
-        f = open(FSF_filename,'w')
-        f.write(filedata)
-        f.close()
+                # write output file
+                f = open(FSF_filename,'w')
+                f.write(filedata)
+                f.close()
     
-        # open job and write command as new line
-        cmd = 'feat {}'.format(FSF_filename)
-        self.first_level_job = open(self.first_level_job_path, "a") # append is important, not write
-        self.first_level_job.write(cmd)   # feat command
-        self.first_level_job.write("\n\n")  # new line
-        self.first_level_job.close()
-        print('success: loc_fsf {}'.format(FSF_filename))
+                # open job and write command as new line
+                cmd = 'feat {}'.format(FSF_filename)
+                self.first_level_job = open(self.first_level_job_path, "a") # append is important, not write
+                self.first_level_job.write(cmd)   # feat command
+                self.first_level_job.write("\n\n")  # new line
+                self.first_level_job.close()
+            print('success: loc_fsf {}'.format(FSF_filename))
         
     
     def rsa_combine_epi(self, task='rsa'):
@@ -418,9 +482,7 @@ class first_level_class(object):
         Notes:
             To DO Equalize number of runs per session per participant (in case of missing runs).
         """
-        
-        preprocessed_tag = 'space-T1w_desc-preproc_bold'
-        
+                
         for session in ['ses-mri01','ses-mri02']:
             
             # open tr count from rsa_combine_epi()

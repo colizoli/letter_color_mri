@@ -41,7 +41,7 @@ analysis_dir    = os.path.join(home_dir, 'analysis')        # scripts + configur
 bids_dir        = os.path.join(home_dir, 'bids')        # NIFTI versions of DICOM files for processing
 deriv_dir       = os.path.join(home_dir, 'derivatives')      # Processed data, fmriprep
 mask_dir        = os.path.join(deriv_dir, 'masks')           # brain masks
-template_dir    = os.path.join(deriv_dir, 'templates')    # fsl templates
+template_dir    = os.path.join(analysis_dir, 'templates')    # fsl templates
 timing_files_dir = os.path.join(deriv_dir, 'timing_files')   # custom 3 column format for 1st levels
 
 # -----------------------
@@ -96,16 +96,12 @@ if run_first_level:
             timing_files_dir = timing_files_dir,
             TR              = TR, # repetition time in seconds
             )
-        first_level.loc_match_bold()          # match loc1 and loc2 in nifti file to letters and colors in events files
-        # first_level.loc_combine_epi('colors')             # concantenate both runs of localizer to perform 1 GLM
-        # first_level.loc_combine_timing_files('colors')    # timing files for color localizer GLM
-        # first_level.loc_combine_motion_regressors('colors')     # concatenate motion parameters from preprocessing, also outputs cols of 1s for each blocks' mean
-        # first_level.loc_fsf('colors')                     # generates the first level FSF for the localizers
-        # 
-        # first_level.loc_combine_epi('letters')            # concantenate both runs of localizer to perform 1 GLM
-        # first_level.loc_combine_timing_files('letters')   # timing files for color localizer GLM
-        # first_level.loc_nuisance_regressors('letters')    # concatenate motion parameters from preprocessing, also outputs cols of 1s for each blocks' mean
-        # first_level.loc_fsf('letters')                    # generates the first level FSF for the localizers
+        # first_level.loc_match_bold()                      # match loc1 and loc2 in nifti file to letters and colors in events files
+        # first_level.loc_combine_epi()                     # concantenate both runs of localizer to perform 1 GLM
+        # first_level.loc_combine_events()                  # concatenate events for localizers GLM
+        # first_level.loc_nuisance_regressors()             # volume-based physiological components, motion parameters, cosine (low-fres), and run means
+        # first_level.loc_timing_files()                    # timing files for localizers GLM
+        # first_level.loc_fsf()                             # generates the first level FSF for the localizers
                 
         # first_level.rsa_combine_epi()                     # concatenate EPI data for the 4 runs of the RSA task
         # first_level.rsa_combine_events()                  # concatenate events files for the 4 runs of the RSA task
@@ -118,7 +114,8 @@ if run_first_level:
         
         # first_level.rsa_letters_fsf()                     # generates the first level FSF for the RSA design
         # first_level.rsa_2x2_fsf()                         # generates the first level FSF for the 2x2 design
-        shell()
+        shell() # stop here or repeats ALL subjects!
+        
 # -----------------------
 # Run higher-level class
 # -----------------------
