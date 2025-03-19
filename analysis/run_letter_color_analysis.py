@@ -42,7 +42,6 @@ bids_dir        = os.path.join(home_dir, 'bids')        # NIFTI versions of DICO
 deriv_dir       = os.path.join(home_dir, 'derivatives')      # Processed data, fmriprep
 mask_dir        = os.path.join(deriv_dir, 'masks')           # brain masks
 template_dir    = os.path.join(analysis_dir, 'templates')    # fsl templates
-timing_files_dir = os.path.join(deriv_dir, 'timing_files')   # custom 3 column format for 1st levels
 
 # -----------------------
 # Parameters
@@ -59,7 +58,8 @@ run_higher_level    = False    # group-level analyses and statistics
 # -----------------------
 # Participants
 # -----------------------
-participants    = pd.read_csv(os.path.join(home_dir, 'participants_full_mri.csv'), dtype=str) # open in textmate, not excel!
+# participants    = pd.read_csv(os.path.join(home_dir, 'participants_full_mri.csv'), dtype=str) # open in textmate, not excel!
+participants    = pd.read_csv(os.path.join(home_dir, 'participants_process.csv'), dtype=str) # open in textmate, not excel!
 subjects  = participants['subjects']
 
 
@@ -93,17 +93,21 @@ if run_first_level:
             deriv_dir       = deriv_dir,
             mask_dir        = mask_dir,
             template_dir    = template_dir,
-            timing_files_dir = timing_files_dir,
+            # timing_files_dir = timing_files_dir,
             TR              = TR, # repetition time in seconds
             )
         # first_level.loc_match_bold()                      # match loc1 and loc2 in nifti file to letters and colors in events files
+        first_level.loc_combine_brain_masks()               # make a union of brain masks for the localizers (they are not the same for each run)
         # first_level.loc_combine_epi()                     # concantenate both runs of localizer to perform 1 GLM
+        first_level.loc_mask_epi()                          # apply brain mask to localizers
         # first_level.loc_combine_events()                  # concatenate events for localizers GLM
         # first_level.loc_nuisance_regressors()             # volume-based physiological components, motion parameters, cosine (low-fres), and run means
         # first_level.loc_timing_files()                    # timing files for localizers GLM
         # first_level.loc_fsf()                             # generates the first level FSF for the localizers
                 
+        first_level.rsa_combine_brain_masks()               # make a union of brain masks for the RSA task (they are not the same for each run)
         # first_level.rsa_combine_epi()                     # concatenate EPI data for the 4 runs of the RSA task
+        first_level.rsa_mask_epi()                          # apply brain mask to RSA task
         # first_level.rsa_combine_events()                  # concatenate events files for the 4 runs of the RSA task
         # first_level.rsa_dcm_split_nifti()                 # for spm, split the four-run concatenated nifti into single volume images and unzip
         # first_level.rsa_nuisance_regressors()             # volume-based physiological components, motion parameters, cosine (low-fres), and run means
@@ -114,7 +118,8 @@ if run_first_level:
         
         # first_level.rsa_letters_fsf()                     # generates the first level FSF for the RSA design
         # first_level.rsa_2x2_fsf()                         # generates the first level FSF for the 2x2 design
-        shell() # stop here or repeats ALL subjects!
+        
+        # shell() # stop here or repeats ALL subjects!
         
 # -----------------------
 # Run higher-level class

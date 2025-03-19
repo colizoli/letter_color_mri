@@ -24,28 +24,17 @@ from datetime import datetime
 from IPython import embed as shell # for Oly's debugging only
 
 class first_level_class(object):
-    def __init__(self, subject, analysis_dir, bids_dir, deriv_dir, mask_dir, template_dir, timing_files_dir, TR):        
+    def __init__(self, subject, analysis_dir, bids_dir, deriv_dir, mask_dir, template_dir, TR):        
         self.subject        = 'sub-'+str(subject)
         self.analysis_dir   = str(analysis_dir)
         self.bids_dir       = str(bids_dir)
         self.deriv_dir      = str(deriv_dir)
         self.mask_dir       = str(mask_dir)
         self.template_dir   = str(template_dir)
-        self.timing_files_dir = str(timing_files_dir)
         self.TR             = str(TR)
         
         # path to fmriprep output (preprocessed fmri data)
         self.fmriprep_dir = os.path.join(self.deriv_dir, 'fmriprep')
-        
-        # make directories for timing files, each task
-        if not os.path.isdir(self.timing_files_dir):
-            os.mkdir(self.timing_files_dir)  
-        if not os.path.isdir(os.path.join(self.timing_files_dir, 'task-colors')):
-            os.mkdir(os.path.join(self.timing_files_dir, 'task-colors'))
-        if not os.path.isdir(os.path.join(self.timing_files_dir, 'task-letters')):
-            os.mkdir(os.path.join(self.timing_files_dir, 'task-letters'))
-        if not os.path.isdir(os.path.join(self.timing_files_dir, 'task-rsa')):
-            os.mkdir(os.path.join(self.timing_files_dir, 'task-rsa'))
         
         # make directories for first level output (FSL), each task       
         self.first_level_dir = os.path.join(self.deriv_dir, 'first_level')
@@ -57,6 +46,22 @@ class first_level_class(object):
             os.mkdir(os.path.join(self.first_level_dir, 'task-letters'))
         if not os.path.isdir(os.path.join(self.first_level_dir, 'task-rsa')):
             os.mkdir(os.path.join(self.first_level_dir, 'task-rsa'))
+        # subject-specific paths
+        if not os.path.isdir(os.path.join(self.first_level_dir, 'task-colors', self.subject)):
+            os.mkdir(os.path.join(self.first_level_dir, 'task-colors', self.subject))
+        if not os.path.isdir(os.path.join(self.first_level_dir, 'task-letters', self.subject)):
+            os.mkdir(os.path.join(self.first_level_dir, 'task-letters', self.subject))
+        if not os.path.isdir(os.path.join(self.first_level_dir, 'task-rsa', self.subject)):
+            os.mkdir(os.path.join(self.first_level_dir, 'task-rsa', self.subject))
+            
+        # make subject-specific timing file directory
+        
+        if not os.path.isdir(os.path.join(self.first_level_dir, 'task-colors', self.subject, '{}_task-colors_timing_files'.format(self.subject))):
+            os.mkdir(os.path.join(self.first_level_dir, 'task-colors', self.subject, '{}_task-colors_timing_files'.format(self.subject)))
+        if not os.path.isdir(os.path.join(self.first_level_dir, 'task-letters', self.subject, '{}_task-letters_timing_files'.format(self.subject))):
+            os.mkdir(os.path.join(self.first_level_dir, 'task-letters', self.subject, '{}_task-letters_timing_files'.format(self.subject)))
+        if not os.path.isdir(os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_task-rsa_timing_files'.format(self.subject))):
+            os.mkdir(os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_task-rsa_timing_files'.format(self.subject)))
         
         # write unix commands to job to run in parallel
         job_dir = os.path.join(self.analysis_dir, 'jobs')
@@ -111,7 +116,7 @@ class first_level_class(object):
                 if ('task-colors' in f2) and ('events' in f2):
                     fname, extension = os.path.splitext(f2) # split name from extension
                     colors_acq = fname[-T:]
-        
+
             ### MATCHING ###
             letters_first = int(letters_acq) < int(colors_acq) # if letters are first, acquisition time is less
             loc1_first = datetime.strptime(loc1_acq, '%H:%M:%S') < datetime.strptime(loc2_acq, '%H:%M:%S') # if loc1 is first, acquisition time is less
@@ -135,12 +140,12 @@ class first_level_class(object):
         localizer_df = pd.DataFrame()
         localizer_df['session'] = sessions
         localizer_df['letters'] = letters
-        localizer_df.to_csv(os.path.join(self.first_level_dir, 'task-letters', '{}_task-letters_localizer_matching.tsv'.format(self.subject)), sep='\t')
+        localizer_df.to_csv(os.path.join(self.first_level_dir, 'task-letters', self.subject, '{}_task-letters_localizer_matching.tsv'.format(self.subject)), sep='\t')
         # colors localizer
         localizer_df = pd.DataFrame()
         localizer_df['session'] = sessions
         localizer_df['colors'] = colors
-        localizer_df.to_csv(os.path.join(self.first_level_dir, 'task-colors', '{}_task-colors_localizer_matching.tsv'.format(self.subject)), sep='\t')
+        localizer_df.to_csv(os.path.join(self.first_level_dir, 'task-colors', self.subject, '{}_task-colors_localizer_matching.tsv'.format(self.subject)), sep='\t')
         print('success: loc_match_bold')
         
         
@@ -155,16 +160,16 @@ class first_level_class(object):
             Also makes the session regressors as EV text files.
         """
         
-        for preprocessed_tag in ['space-MNI152NLin6Asym_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
+        for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
             
             for task in ['letters', 'colors']:
                 # open matching file to grab correct NIFTI localizer file
-                localizer_df = pd.read_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), '{}_task-{}_localizer_matching.tsv'.format(self.subject, task)), sep='\t')
+                localizer_df = pd.read_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_localizer_matching.tsv'.format(self.subject, task)), sep='\t')
                 
                 df_trs = pd.DataFrame() # save number of TRs for events file concatenation
         
                 # output is the concantenated bold of all runs per session (input to first level)
-                out_file = os.path.join(self.first_level_dir, 'task-{}'.format(task), '{}_ses-concat_task-{}_{}.nii.gz'.format(self.subject, task, preprocessed_tag))
+                out_file = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_ses-concat_task-{}_{}.nii.gz'.format(self.subject, task, preprocessed_tag))
                 
                 bold = [] # to concatenate
                 # grap both sessions
@@ -191,7 +196,7 @@ class first_level_class(object):
                 nib.save(out_data, out_file)
         
                 # save trs per session
-                df_trs.to_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), '{}_task-{}_TRs.tsv'.format(self.subject, task)), sep='\t')
+                df_trs.to_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_TRs.tsv'.format(self.subject, task)), sep='\t')
                 print(bold.shape)
             
 
