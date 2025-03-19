@@ -7,6 +7,4 @@ MRI experiment PsychoPy: standalone versions https://github.com/psychopy/psychop
 
 Behavioral control experiment PsychoPy: standalone version 2020.2.10 has been installed in the root of the Python3.7 64-bit version
 
-Instructions researcher: https://docs.google.com/document/d/1hwT6s0I0_pDNHR-lzS_r88YBOxosGWczPCNQL988zfs/edit?usp=sharing
-
 fMRI trigger = keyboard input '5'
