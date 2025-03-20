@@ -11,6 +11,9 @@ The following packages need to be installed because they are called from the com
 
 fsl
 
+Notes:
+Need to use torque on mentat 1 with —mem=64gb to run first_level functions (otherwise get a numpy memory error)
+
 """
 
 # TO DO:
@@ -96,28 +99,28 @@ if run_first_level:
             # timing_files_dir = timing_files_dir,
             TR              = TR, # repetition time in seconds
             )
+        # first_level.rsa_combine_brain_masks()             # make a union of brain masks from RSA runs for all tasks (they are not the same for each run)
+        # first_level.rsa_combine_epi()                     # concatenate EPI data for the 4 runs of the RSA task
+        # first_level.rsa_mask_epi()                        # apply brain mask to RSA task
+        # first_level.rsa_dcm_split_nifti()                 # for spm, split the four-run concatenated nifti into single volume images and unzip
+        # first_level.rsa_combine_events()                  # concatenate events files for the 4 runs of the RSA task
+        # first_level.rsa_nuisance_regressors()             # volume-based physiological components, motion parameters, cosine (low-fres), and run means
+        # first_level.rsa_timing_files_oddballs()           # create timing files for oddball stimuli
+        # first_level.rsa_timing_files_letters()            # each letter in it's color and black: trained/untrained vs. color/black
+        # first_level.rsa_timing_files_2x2()                # simple 2x2 design: trained/untrained vs. color/black
+        # first_level.rsa_letters_fsf()                     # generates the first level FSF for the RSA design
+        # first_level.rsa_2x2_fsf()                         # generates the first level FSF for the 2x2 design
+        
         # first_level.loc_match_bold()                      # match loc1 and loc2 in nifti file to letters and colors in events files
-        first_level.loc_combine_brain_masks()               # make a union of brain masks for the localizers (they are not the same for each run)
         # first_level.loc_combine_epi()                     # concantenate both runs of localizer to perform 1 GLM
-        first_level.loc_mask_epi()                          # apply brain mask to localizers
+        # first_level.loc_mask_epi()                        # apply brain mask to localizers
         # first_level.loc_combine_events()                  # concatenate events for localizers GLM
         # first_level.loc_nuisance_regressors()             # volume-based physiological components, motion parameters, cosine (low-fres), and run means
         # first_level.loc_timing_files()                    # timing files for localizers GLM
         # first_level.loc_fsf()                             # generates the first level FSF for the localizers
-                
-        first_level.rsa_combine_brain_masks()               # make a union of brain masks for the RSA task (they are not the same for each run)
-        # first_level.rsa_combine_epi()                     # concatenate EPI data for the 4 runs of the RSA task
-        first_level.rsa_mask_epi()                          # apply brain mask to RSA task
-        # first_level.rsa_combine_events()                  # concatenate events files for the 4 runs of the RSA task
-        # first_level.rsa_dcm_split_nifti()                 # for spm, split the four-run concatenated nifti into single volume images and unzip
-        # first_level.rsa_nuisance_regressors()             # volume-based physiological components, motion parameters, cosine (low-fres), and run means
         
-        # first_level.rsa_timing_files_oddballs()           # create timing files for oddball stimuli
-        # first_level.rsa_timing_files_letters()            # each letter in it's color and black: trained/untrained vs. color/black
-        # first_level.rsa_timing_files_2x2()                # simple 2x2 design: trained/untrained vs. color/black
-        
-        # first_level.rsa_letters_fsf()                     # generates the first level FSF for the RSA design
-        # first_level.rsa_2x2_fsf()                         # generates the first level FSF for the 2x2 design
+        first_level.transform_anatomical_masks()          # apply reverse transformations from MNI anatomical masks into native-space
+
         
         # shell() # stop here or repeats ALL subjects!
         
