@@ -119,8 +119,9 @@ if run_first_level:
         # first_level.loc_timing_files()                    # timing files for localizers GLM
         # first_level.loc_fsf()                             # generates the first level FSF for the localizers
         
-        first_level.transform_anatomical_masks()          # apply reverse transformations from MNI anatomical masks into native-space
-
+        # first_level.transform_anatomical_masks()          # apply reverse transformations from MNI anatomical masks into native-space
+        # first_level.loc_extra_rois()                      # after FEAT is finished, extract ROIs from stats within the anatomical mask of interest
+        first_level.count_roi_voxels()                      # counts voxels for each ROI and overlap, outputs in single dataframe in derivatives/first_level
         
         # shell() # stop here or repeats ALL subjects!
         

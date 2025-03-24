@@ -705,6 +705,7 @@ class first_level_class(object):
         ]
         
         for session in ['ses-mri01','ses-mri02']:
+            
             fsf_filename = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_2x2.fsf'.format(self.subject, session, task)) # save fsf
             output_path = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_2x2'.format(self.subject, session, task)) 
         
@@ -1257,5 +1258,77 @@ class first_level_class(object):
         print('success: transform_anatomical_masks')
     
     
+    def loc_extra_rois(self,):
+        """Extract significant voxels for each localizer within the anatomical mask of interest.
 
+        Notes:
+            The first-level analyses need to be finished already!
+            loc-colors: task-rsa/sub-xxx/sub-xxx_masks/sub-xxx_OFG_in_bold.nii.gz
+            loc-letters: task-rsa/sub-xxx/sub-xxx_masks/sub-xxx_VOT_L_in_bold.nii.gz
+            The output is saved in: task-rsa/sub-xxx/sub-xxx_masks/
+        
+        """       
+        # letter, colors
+        thresholds = [2.5, 3.1] # z-stat threshold for masking
+        thresh_name = [25, 31] # for file name
+        masks = ['VOT_L', 'OFG'] # make sure in same order as localizer loop
+        
+        for preprocessed_tag in ['space-T1w_desc-preproc_bold']:
+            
+            for t,task in enumerate(['letters', 'colors']): # make sure in same order as anatomical mask
+            
+                thresh = thresholds[t] # threshold for this localizer
+                
+                out_roi = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_roi-{}_{}.nii.gz'.format(self.subject, task, thresh_name[t]))
+                anat_mask = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_{}_in_bold.nii.gz'.format(self.subject, masks[t]))
+                stats_image = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_{}.feat'.format(self.subject, task, preprocessed_tag), 'stats', 'zstat1.nii.gz')
+                
+                cmd = 'fslmaths {} -mas {} -thr {} {}'.format(stats_image, anat_mask, thresh, out_roi)
+                print(cmd)
+                results = subprocess.call(cmd, shell=True, bufsize=0)
+                
+                # save ROI binarized '_mask'
+                out_roi_mask = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_roi-{}_{}_mask.nii.gz'.format(self.subject, task, thresh_name[t]))
+                
+                cmd = 'fslmaths {} -bin {}'.format(out_roi, out_roi_mask)
+                print(cmd)
+                results = subprocess.call(cmd, shell=True, bufsize=0)
+                
+        print('success: loc_extra_rois')
+        
+    
+    def count_roi_voxels(self,):
+        """Count the voxels in each ROI and any overlapping voxels.
+
+        Notes:
+            The output is saved in a single dataframe in derivatives/first_level.
+        
+        """       
+        # letter, colors
+        thresholds = [2.5, 3.1] # z-stat threshold for masking
+        thresh_name = [25, 31] # for file name
+        masks = ['VOT_L', 'OFG'] # make sure in same order as localizer loop
+        
+        for preprocessed_tag in ['space-T1w_desc-preproc_bold']:
+            
+            for t,task in enumerate(['letters', 'colors']): # make sure in same order as anatomical mask
+            
+                thresh = thresholds[t] # threshold for this localizer
+                
+                out_roi = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_roi-{}_{}.nii.gz'.format(self.subject, task, thresh_name[t]))
+                anat_mask = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_{}_in_bold.nii.gz'.format(self.subject, masks[t]))
+                stats_image = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_{}.feat'.format(self.subject, task, preprocessed_tag), 'stats', 'zstat1.nii.gz')
+                
+                cmd = 'fslmaths {} -mas {} -thr {} {}'.format(stats_image, anat_mask, thresh, out_roi)
+                print(cmd)
+                results = subprocess.call(cmd, shell=True, bufsize=0)
+                
+                # save ROI binarized '_mask'
+                out_roi_mask = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_roi-{}_{}_mask.nii.gz'.format(self.subject, task, thresh_name[t]))
+                
+                cmd = 'fslmaths {} -bin {}'.format(out_roi, out_roi_mask)
+                print(cmd)
+                results = subprocess.call(cmd, shell=True, bufsize=0)
+                
+        print('success: loc_extra_rois')
 
