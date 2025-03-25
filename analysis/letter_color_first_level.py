@@ -1258,7 +1258,7 @@ class first_level_class(object):
         print('success: transform_anatomical_masks')
     
     
-    def loc_extra_rois(self,):
+    def loc_extract_rois(self,):
         """Extract significant voxels for each localizer within the anatomical mask of interest.
 
         Notes:
@@ -1266,7 +1266,6 @@ class first_level_class(object):
             loc-colors: task-rsa/sub-xxx/sub-xxx_masks/sub-xxx_OFG_in_bold.nii.gz
             loc-letters: task-rsa/sub-xxx/sub-xxx_masks/sub-xxx_VOT_L_in_bold.nii.gz
             The output is saved in: task-rsa/sub-xxx/sub-xxx_masks/
-        
         """       
         # letter, colors
         thresholds = [2.5, 3.1] # z-stat threshold for masking
@@ -1294,7 +1293,7 @@ class first_level_class(object):
                 print(cmd)
                 results = subprocess.call(cmd, shell=True, bufsize=0)
                 
-        print('success: loc_extra_rois')
+        print('success: loc_extract_rois')
         
     
     def count_roi_voxels(self,):
@@ -1302,33 +1301,40 @@ class first_level_class(object):
 
         Notes:
             The output is saved in a single dataframe in derivatives/first_level.
-        
+            If you want to start over, delete the old file.
         """       
-        # letter, colors
+        # letter, colors (pay attention to order!)
         thresholds = [2.5, 3.1] # z-stat threshold for masking
         thresh_name = [25, 31] # for file name
         masks = ['VOT_L', 'OFG'] # make sure in same order as localizer loop
         
         for preprocessed_tag in ['space-T1w_desc-preproc_bold']:
+                            
+            path_df_counts = os.path.join(self.first_level_dir, 'all_subjects_voxel_counts.csv')
+            if not os.path.exists(path_df_counts):
+                df_counts = pd.DataFrame(columns=['subject', 'voxels_letters', 'voxels_colors',  'overlap', 'thresh_letters', 'thresh_colors' ])
+                df_counts.to_csv(path_df_counts)
+            else:
+                df_counts = pd.read_csv(path_df_counts)
+                df_counts = df_counts.loc[:, ~df_counts.columns.str.contains('^Unnamed')]
             
-            for t,task in enumerate(['letters', 'colors']): # make sure in same order as anatomical mask
+            letters_roi = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_roi-{}_{}_mask.nii.gz'.format(self.subject, 'letters', thresh_name[0]))
+            colors_roi = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_roi-{}_{}_mask.nii.gz'.format(self.subject, 'colors', thresh_name[1]))
             
-                thresh = thresholds[t] # threshold for this localizer
-                
-                out_roi = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_roi-{}_{}.nii.gz'.format(self.subject, task, thresh_name[t]))
-                anat_mask = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_{}_in_bold.nii.gz'.format(self.subject, masks[t]))
-                stats_image = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_{}.feat'.format(self.subject, task, preprocessed_tag), 'stats', 'zstat1.nii.gz')
-                
-                cmd = 'fslmaths {} -mas {} -thr {} {}'.format(stats_image, anat_mask, thresh, out_roi)
-                print(cmd)
-                results = subprocess.call(cmd, shell=True, bufsize=0)
-                
-                # save ROI binarized '_mask'
-                out_roi_mask = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_roi-{}_{}_mask.nii.gz'.format(self.subject, task, thresh_name[t]))
-                
-                cmd = 'fslmaths {} -bin {}'.format(out_roi, out_roi_mask)
-                print(cmd)
-                results = subprocess.call(cmd, shell=True, bufsize=0)
-                
+            # letters
+            nii_letters = nib.load(letters_roi).get_fdata() 
+            nletters = np.sum(nii_letters)
+            
+            # colors
+            nii_colors = nib.load(colors_roi).get_fdata() # only do once 
+            ncolors = np.sum(nii_colors)
+            
+            # overlap
+            noverlap = np.sum(nii_colors*nii_letters)
+            
+            new_row = {'subject': self.subject, 'voxels_letters': nletters, 'voxels_colors': ncolors, 'overlap': noverlap, 'thresh_letters': thresh_name[0], 'thresh_colors': thresh_name[1]}
+            df_counts.loc[len(df_counts)] = new_row
+            df_counts.to_csv(path_df_counts)
+            
         print('success: loc_extra_rois')
 
