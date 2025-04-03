@@ -119,9 +119,16 @@ if run_first_level:
         # first_level.loc_timing_files()                    # timing files for localizers GLM
         # first_level.loc_fsf()                             # generates the first level FSF for the localizers
         
+        # TRY ALTERNATIVE FIRST LEVEL FOR LOCALIZERS
+        # first_level.alt_loc_mask_epi()                        # apply brain mask to localizers
+        # first_level.alt_loc_nuisance_regressors()             # volume-based physiological components, motion parameters, cosine (low-fres), and run means
+        # first_level.alt_loc_timing_files()                    # timing files for localizers GLM
+        first_level.alt_loc_fsf()                             # generates the first level FSF for the localizers
+        
+        
         # first_level.transform_anatomical_masks()          # apply reverse transformations from MNI anatomical masks into native-space
         # first_level.loc_extract_rois()                    # after FEAT is finished, extract ROIs from stats within the anatomical mask of interest
-        first_level.count_roi_voxels()                      # counts voxels for each ROI and overlap, outputs in single dataframe in derivatives/first_level
+        # first_level.count_roi_voxels()                      # counts voxels for each ROI and overlap, outputs in single dataframe in derivatives/first_level
         
         # shell() # stop here or repeats ALL subjects!
         
