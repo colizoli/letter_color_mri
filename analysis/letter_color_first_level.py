@@ -1562,3 +1562,104 @@ class first_level_class(object):
                     print('success: alt_loc_fsf {}'.format(FSF_filename))
                 
                 
+    def alt_loc_fsl_reg_workaround(self,):
+        """Create a "fake" reg folder with identity matrix as example_func2standard.mat and standard image as the mean_func - localizers
+        
+        Notes:
+            Without the reg folder, the 2nd level analysis in FSL will not run.
+            For more information: https://mumfordbrainstats.tumblr.com/post/166054797696/feat-registration-workaround
+        """
+        localizers = ['letters', 'colors']
+        
+        for t,task in enumerate(localizers):
+            
+            # for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
+            for preprocessed_tag in ['space-T1w_desc-preproc_bold']:
+                
+                for session in ['ses-mri01','ses-mri02']:
+                    
+                    feat_dir = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_{}.feat'.format(self.subject, session, task, preprocessed_tag)) #
+
+                    # create the reg directory in feat folder
+                    reg_dir = os.path.join(feat_dir, 'reg')
+                    if not os.path.isdir(reg_dir):
+                        os.mkdir(reg_dir)
+                    
+                    identity_mat_source = os.path.join(self.analysis_dir, 'templates', 'ident.mat') # identity matrix copied from FSL directory
+                    identity_mat_dest = os.path.join(reg_dir, 'example_func2standard.mat')
+                    
+                    mean_func_source = os.path.join(feat_dir, 'mean_func.nii.gz') # source mean_func
+                    mean_func_dest = os.path.join(reg_dir, 'standard.nii.gz')    # destination mean_func
+
+                    # copy the identity matrix, send command to terminal
+                    cmd = 'cp {} {} '.format(identity_mat_source, identity_mat_dest)
+                    print(cmd)
+                    results = subprocess.call(cmd, shell=True, bufsize=0)
+                    
+                    # copy the mean_func, send command to terminal
+                    cmd = 'cp {} {} '.format(mean_func_source, mean_func_dest)
+                    print(cmd)
+                    results = subprocess.call(cmd, shell=True, bufsize=0)
+                   
+        print('success: alt_loc_fsl_reg_workaround')
+    
+
+    def alt_loc_second_level_fsf(self,):
+        """Create the FSF files for each subject's second level analysis (subject mean) - localizers
+        
+        Notes:
+            Run the actual FSF from the command line: feat task-colors_sub-01.fsf
+        """
+        localizers = ['letters', 'colors']
+        
+        for t,task in enumerate(localizers):
+            
+            # for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
+            for preprocessed_tag in ['space-T1w_desc-preproc_bold']:
+            
+                template_filename = os.path.join(self.analysis_dir, 'templates','task-localizers_alternative_second_level_template.fsf')
+
+                markers = [
+                    '[$OUTPUT_PATH]', 
+                    '[$INPUT_FILENAME1]', 
+                    '[$INPUT_FILENAME2]', 
+                ]
+    
+                FSF_filename = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_{}.fsf'.format(self.subject, task, preprocessed_tag)) # save fsf
+                output_path = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_{}'.format(self.subject, task, preprocessed_tag)) 
+                
+                feat1 = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_{}.feat'.format(self.subject, 'ses-mri01', task, preprocessed_tag)) #
+                feat2 = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_{}.feat'.format(self.subject, 'ses-mri02', task, preprocessed_tag)) #
+                
+                # replacements
+                replacements = [ # needs to match order of 'markers'
+                    output_path,
+                    feat1,
+                    feat2,
+                ]
+
+                # open the template file, load the text data
+                f = open(template_filename,'r')
+                filedata = f.read()
+                f.close()
+
+                # search and replace
+                for st,this_string in enumerate(markers):
+                    filedata = filedata.replace(this_string,replacements[st])
+
+                # write output file
+                f = open(FSF_filename,'w')
+                f.write(filedata)
+                f.close()
+
+                # open job and write command as new line
+                cmd = 'feat {}'.format(FSF_filename)
+                self.first_level_job = open(self.first_level_job_path, "a") # append is important, not write
+                self.first_level_job.write(cmd)   # feat command
+                self.first_level_job.write("\n\n")  # new line
+                self.first_level_job.close()
+                print('success: alt_loc_second_level_fsf {}'.format(FSF_filename))     
+                
+                
+                
+                           

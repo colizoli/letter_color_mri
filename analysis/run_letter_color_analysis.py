@@ -120,10 +120,12 @@ if run_first_level:
         # first_level.loc_fsf()                             # generates the first level FSF for the localizers
         
         # TRY ALTERNATIVE FIRST LEVEL FOR LOCALIZERS
-        # first_level.alt_loc_mask_epi()                        # apply brain mask to localizers
-        # first_level.alt_loc_nuisance_regressors()             # volume-based physiological components, motion parameters, cosine (low-fres), and run means
-        # first_level.alt_loc_timing_files()                    # timing files for localizers GLM
-        first_level.alt_loc_fsf()                             # generates the first level FSF for the localizers
+        # first_level.alt_loc_mask_epi()                    # apply brain mask to localizers
+        # first_level.alt_loc_nuisance_regressors()         # volume-based physiological components, motion parameters, cosine (low-fres), and run means
+        # first_level.alt_loc_timing_files()                # timing files for localizers GLM
+        # first_level.alt_loc_fsf()                         # generates the first level FSF for the localizers
+        first_level.alt_loc_fsl_reg_workaround()           # create a "fake" reg folder with identity matrix and standard image = mean_func
+        first_level.alt_loc_second_level_fsf()             # after first levels are finished, generates the second level FSF (subject mean) for the localizers
         
         
         # first_level.transform_anatomical_masks()          # apply reverse transformations from MNI anatomical masks into native-space
