@@ -61,8 +61,8 @@ run_higher_level    = False    # group-level analyses and statistics
 # -----------------------
 # Participants
 # -----------------------
-# participants    = pd.read_csv(os.path.join(home_dir, 'participants_full_mri.csv'), dtype=str) # open in textmate, not excel!
-participants    = pd.read_csv(os.path.join(home_dir, 'participants_process.csv'), dtype=str) # open in textmate, not excel!
+participants    = pd.read_csv(os.path.join(home_dir, 'participants_full_mri.csv'), dtype=str) # open in textmate, not excel!
+# participants    = pd.read_csv(os.path.join(home_dir, 'participants_process.csv'), dtype=str) # open in textmate, not excel!
 subjects  = participants['subjects']
 
 
@@ -112,25 +112,25 @@ if run_first_level:
         # first_level.rsa_2x2_fsf()                         # generates the first level FSF for the 2x2 design
         
         # first_level.loc_match_bold()                      # match loc1 and loc2 in nifti file to letters and colors in events files
-        # first_level.loc_combine_epi()                     # concantenate both runs of localizer to perform 1 GLM
+        first_level.loc_combine_epi()                     # concantenate both runs of localizer to perform 1 GLM
         # first_level.loc_mask_epi()                        # apply brain mask to localizers
         # first_level.loc_combine_events()                  # concatenate events for localizers GLM
         # first_level.loc_nuisance_regressors()             # volume-based physiological components, motion parameters, cosine (low-fres), and run means
         # first_level.loc_timing_files()                    # timing files for localizers GLM
         # first_level.loc_fsf()                             # generates the first level FSF for the localizers
         
-        # TRY ALTERNATIVE FIRST LEVEL FOR LOCALIZERS
+        # TRY ALTERNATIVE FIRST LEVEL FOR LOCALIZERS (Separate sessions then average in 2nd level)
         # first_level.alt_loc_mask_epi()                    # apply brain mask to localizers
         # first_level.alt_loc_nuisance_regressors()         # volume-based physiological components, motion parameters, cosine (low-fres), and run means
         # first_level.alt_loc_timing_files()                # timing files for localizers GLM
         # first_level.alt_loc_fsf()                         # generates the first level FSF for the localizers
-        first_level.alt_loc_fsl_reg_workaround()           # create a "fake" reg folder with identity matrix and standard image = mean_func
-        first_level.alt_loc_second_level_fsf()             # after first levels are finished, generates the second level FSF (subject mean) for the localizers
+        # first_level.alt_loc_fsl_reg_workaround()          # create a "fake" reg folder with identity matrix and standard image = mean_func
+        # first_level.alt_loc_second_level_fsf()            # after first levels are finished, generates the second level FSF (subject mean) for the localizers
         
         
         # first_level.transform_anatomical_masks()          # apply reverse transformations from MNI anatomical masks into native-space
         # first_level.loc_extract_rois()                    # after FEAT is finished, extract ROIs from stats within the anatomical mask of interest
-        # first_level.count_roi_voxels()                      # counts voxels for each ROI and overlap, outputs in single dataframe in derivatives/first_level
+        # first_level.count_roi_voxels()                    # counts voxels for each ROI and overlap, outputs in single dataframe in derivatives/first_level
         
         # shell() # stop here or repeats ALL subjects!
         

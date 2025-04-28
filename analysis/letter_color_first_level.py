@@ -38,8 +38,7 @@ class first_level_class(object):
         self.fmriprep_dir = os.path.join(self.deriv_dir, 'fmriprep')
         
         # make directories for first level output (FSL), each task       
-        # self.first_level_dir = os.path.join(self.deriv_dir, 'first_level')
-        self.first_level_dir = os.path.join(self.deriv_dir, 'oly_test') # REMEMBER TO CHANGE BACK!
+        self.first_level_dir = os.path.join(self.deriv_dir, 'first_level')
         
         if not os.path.isdir(self.first_level_dir):
             os.mkdir(self.first_level_dir)
@@ -774,6 +773,9 @@ class first_level_class(object):
         colors = []
         sessions = ['ses-mri01', 'ses-mri02']
         
+        if self.subject == 'sub-228': # no localizer scans in session 2
+            sessions = ['ses-mri01']
+            
         for session in sessions:
             ###################
             # check acquisition time in JSON files
@@ -808,20 +810,28 @@ class first_level_class(object):
 
             ### MATCHING ###
             letters_first = int(letters_acq) < int(colors_acq) # if letters are first, acquisition time is less
+
             loc1_first = datetime.strptime(loc1_acq, '%H:%M:%S') < datetime.strptime(loc2_acq, '%H:%M:%S') # if loc1 is first, acquisition time is less
-            
+        
             if letters_first:
-                if loc1_first:
+                if loc1_first: # then LOC1 is letters, LOC2 is colors
                     # letters == loc1
                     # colors = loc2
                     letters.append('LOC01')
-                    colors.append('LOC02')                    
-                else:
+                    colors.append('LOC02')
+                else: # LOC2 happened before LOC1 by accident
+                    letters.append('LOC02')
+                    colors.append('LOC01')                  
+            else: # colors first
+                if loc1_first: # then loc1 is colors, LOC2 is letters
                     # colors = loc1
                     # letters  = loc2
                     colors.append('LOC01')
                     letters.append('LOC02')
-        
+                else: # LOC2 happened before LOC1 by accident
+                    colors.append('LOC02')
+                    letters.append('LOC01')
+    
             print('{} {} loc1_first={} letters_first={}'.format(self.subject, session, letters_first, loc1_first))       
         
         # save matching in each of the two localizer folders
@@ -894,17 +904,26 @@ class first_level_class(object):
                 
                 bold = [] # to concatenate
                 # grap both sessions
-                for session in ['ses-mri01', 'ses-mri02']:
+                
+                if self.subject == 'sub-228': # no localizer scans in session 2
+                    sessions = ['ses-mri01']
+                else:
+                    sessions = ['ses-mri01', 'ses-mri02']
+                    
+                for session in sessions:
                     # grab correct localizer for current session for current task
                     this_loc = localizer_df[(localizer_df['session']==session)][task]
                     this_loc = str(np.array(this_loc)[0])
                     # get nifti and load 
                     nii_path = os.path.join(self.fmriprep_dir, self.subject, session, 'func', '{}_{}_task-cmrr2isomb4TR1500{}_dir-AP_{}.nii.gz'.format(self.subject, session, this_loc, preprocessed_tag))
-                    nii = nib.load(nii_path)
+                    proxy_img = nib.load(nii_path)
+                    nii_data = np.asarray(proxy_img.dataobj)
+                    # nii_data = proxy_img.get_fdata(caching='unchanged')
                     # count TRs
-                    df_trs[session] = [nii.get_fdata().shape[-1]] # 4th dimension
+                    df_trs[session] = [nii_data.shape[-1]] # 4th dimension
                     # append to concatenate later
-                    bold.append(nii.get_fdata())
+                    bold.append(nii_data)
+                    del nii_data
                     if '1' in session:
                         save_path = nii_path
                         
