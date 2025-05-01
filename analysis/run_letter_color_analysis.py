@@ -3,8 +3,8 @@
 
 """
 letter_color_housekeeping.py
-Created by O.Colizoli, June-2025
-Last update: 09-01-2025
+Created by O.Colizoli
+Last update: 09-05-2025
 Python version 3.9
 
 The following packages need to be installed because they are called from the command line, not imported:
@@ -13,6 +13,7 @@ fsl
 
 Notes:
 Need to use torque on mentat 1 with —mem=64gb to run first_level functions (otherwise get a numpy memory error)
+Slurm memory error OK with: sbash --time=08:00:00 —mem=64G
 
 """
 
@@ -61,8 +62,8 @@ run_higher_level    = False    # group-level analyses and statistics
 # -----------------------
 # Participants
 # -----------------------
-participants    = pd.read_csv(os.path.join(home_dir, 'participants_full_mri.csv'), dtype=str) # open in textmate, not excel!
-# participants    = pd.read_csv(os.path.join(home_dir, 'participants_process.csv'), dtype=str) # open in textmate, not excel!
+# participants    = pd.read_csv(os.path.join(home_dir, 'participants_full_mri.csv'), dtype=str) # open in textmate, not excel!
+participants    = pd.read_csv(os.path.join(home_dir, 'participants_process.csv'), dtype=str) # open in textmate, not excel!
 subjects  = participants['subjects']
 
 
@@ -112,12 +113,12 @@ if run_first_level:
         # first_level.rsa_2x2_fsf()                         # generates the first level FSF for the 2x2 design
         
         # first_level.loc_match_bold()                      # match loc1 and loc2 in nifti file to letters and colors in events files
-        first_level.loc_combine_epi()                     # concantenate both runs of localizer to perform 1 GLM
+        # first_level.loc_combine_epi()                     # concantenate both runs of localizer to perform 1 GLM
         # first_level.loc_mask_epi()                        # apply brain mask to localizers
-        # first_level.loc_combine_events()                  # concatenate events for localizers GLM
-        # first_level.loc_nuisance_regressors()             # volume-based physiological components, motion parameters, cosine (low-fres), and run means
-        # first_level.loc_timing_files()                    # timing files for localizers GLM
-        # first_level.loc_fsf()                             # generates the first level FSF for the localizers
+        first_level.loc_combine_events()                  # concatenate events for localizers GLM
+        first_level.loc_nuisance_regressors()             # volume-based physiological components, motion parameters, cosine (low-fres), and run means
+        first_level.loc_timing_files()                    # timing files for localizers GLM
+        first_level.loc_fsf()                             # generates the first level FSF for the localizers
         
         # TRY ALTERNATIVE FIRST LEVEL FOR LOCALIZERS (Separate sessions then average in 2nd level)
         # first_level.alt_loc_mask_epi()                    # apply brain mask to localizers

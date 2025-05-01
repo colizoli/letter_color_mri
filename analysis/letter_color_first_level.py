@@ -78,7 +78,7 @@ class first_level_class(object):
             os.mkdir(job_dir)
         
         # write subject-specific job in analysis/jobs for bash scripts (overwrites on each call to class)
-        self.first_level_job_path = os.path.join(self.analysis_dir, 'jobs', 'job_first_level_{}.txt'.format(self.subject))
+        self.first_level_job_path = os.path.join(self.analysis_dir, 'jobs', 'job_first_level_{}.sh'.format(self.subject))
         self.first_level_job = open(self.first_level_job_path, "w")
         self.first_level_job.write("#!/bin/bash\n")
         self.first_level_job.close()
@@ -149,11 +149,13 @@ class first_level_class(object):
                     for this_file in os.listdir(os.path.join(self.fmriprep_dir, self.subject, session, 'func')):
                         if (this_run in this_file) and (preprocessed_tag in this_file) and ('nii.gz' in this_file):
                             nii_path = os.path.join(self.fmriprep_dir, self.subject, session, 'func', '{}_{}_task-cmrr2isomb4TR1500RSA_dir-AP_{}_{}.nii.gz'.format(self.subject, session, this_run, preprocessed_tag))
-                            nii = nib.load(nii_path)
+                            proxy_img = nib.load(nii_path)
+                            nii_data = np.asarray(proxy_img.dataobj) # memory problems
                             # count TRs
-                            df_trs[this_run] = [nii.get_fdata().shape[-1]] # 4th dimension
+                            df_trs[this_run] = [nii_data.shape[-1]] # 4th dimension
                             # append to list
-                            bold.append(nii.get_fdata())
+                            bold.append(nii_data)
+                            del nii_data
                             if '1' in this_run:
                                 save_path = nii_path
                             
@@ -168,6 +170,7 @@ class first_level_class(object):
                 # save trs per session
                 df_trs.to_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_TRs.tsv'.format(self.subject, session, task)), sep='\t')
                 print(bold.shape)
+                del bold, n1, out_data
                     
         print('success: rsa_combine_epi')
     
@@ -917,8 +920,7 @@ class first_level_class(object):
                     # get nifti and load 
                     nii_path = os.path.join(self.fmriprep_dir, self.subject, session, 'func', '{}_{}_task-cmrr2isomb4TR1500{}_dir-AP_{}.nii.gz'.format(self.subject, session, this_loc, preprocessed_tag))
                     proxy_img = nib.load(nii_path)
-                    nii_data = np.asarray(proxy_img.dataobj)
-                    # nii_data = proxy_img.get_fdata(caching='unchanged')
+                    nii_data = np.asarray(proxy_img.dataobj) # memory problems
                     # count TRs
                     df_trs[session] = [nii_data.shape[-1]] # 4th dimension
                     # append to concatenate later
@@ -934,10 +936,11 @@ class first_level_class(object):
                 out_data = nib.Nifti1Image(bold, affine=n1.affine, header=n1.header) # pass affine and header from last MNI image
                 out_data.set_data_dtype(np.float32)
                 nib.save(out_data, out_file)
-        
+                
                 # save trs per session
                 df_trs.to_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_TRs.tsv'.format(self.subject, task)), sep='\t')
                 print(bold.shape)
+                del bold, n1, out_data
             
             print('success: loc_combine_epi {}'.format(self.subject))
     
@@ -1159,10 +1162,16 @@ class first_level_class(object):
                 BOLD = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_ses-concat_task-{}_{}_brain.nii.gz'.format(self.subject, task, preprocessed_tag))
                 
                 # calculate size of input data
-                nii = nib.load(BOLD).get_fdata() # only do once 
-                nr_trs = str(nii.shape[-1])
-                nr_voxels = str(nii.size)
-        
+                # nii = nib.load(BOLD).get_fdata() # only do once
+                # nr_trs = str(nii.shape[-1])
+                # nr_voxels = str(nii.size)
+                # better for memory?
+                proxy_img = nib.load(BOLD)
+                nii_data = np.asarray(proxy_img.dataobj) # memory problems
+                nr_trs = str(nii_data.shape[-1])
+                nr_voxels = str(nii_data.size)
+                del proxy_img, nii_data
+
                 # motion parameters and columns for each session's mean
                 nuisance_regressors = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_ses-concat_task-{}_nuisance_regressors.txt'.format(self.subject, task))
         
