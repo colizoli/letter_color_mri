@@ -63,7 +63,49 @@ class housekeeping_class(object):
                                         
         print('success: rename_behav_logfiles')
     
+    
+    def delete_rsa_files(self):
+        """Delete task-rsa files (memory)
+        """
+        
+        for session in ['ses-mri01', 'ses-mri02']:
+            ###################
+            # derivatives/first_level/task-rsa/sub-xxx/sub-xxx_ses-mri0x_task-rsa_run-concat_space-MNI152NLin6Asym_res-2_desc-preproc_bold.nii.gz
+            # rm file_path 
+            ###################
+            file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_run-concat_space-MNI152NLin6Asym_res-2_desc-preproc_bold.nii.gz'.format(self.subject, session))
+            # send command to terminal
+            cmd = 'rm {}'.format(file_path)
+            print(cmd)
+            results = subprocess.call(cmd, shell=True, bufsize=0)
+                                        
+        print('success: delete_rsa_files')
+        
+    
+    def delete_loc_files(self):
+        """Delete localizer files (memory)
+        """
 
+        for task in ['task-letters', 'task-colors']:
+            
+            files =[
+                '{}_ses-concat_{}_space-MNI152NLin6Asym_res-2_desc-preproc_bold.nii.gz'.format(self.subject, task),
+                '{}_ses-concat_{}_space-T1w_desc-preproc_bold_brain.nii.gz'.format(self.subject, task),
+                '{}_ses-concat_{}_space-T1w_desc-preproc_bold.nii.gz'.format(self.subject, task),
+            ]
+            
+            for f in files:
+
+                file_path = os.path.join(self.deriv_dir, 'first_level', task, self.subject, f)
+                ###################
+                # send command to terminal
+                # rm file_path 
+                cmd = 'rm {}'.format(file_path)
+                print(cmd)
+                results = subprocess.call(cmd, shell=True, bufsize=0)
+                                        
+        print('success: delete_loc_files')
+        
         
     #
     # def loc_rename_bold(self):

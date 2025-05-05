@@ -80,8 +80,10 @@ if run_housekeeping:
             deriv_dir       = deriv_dir,
             )            
         # housekeeping.rename_behav_logfiles()      # rename behavioral logfile names
-        shell()
+        # housekeeping.delete_rsa_files()      # delete task-rsa files
+        housekeeping.delete_loc_files()      # delete task-letters and/or task-colors files
         
+                
         # shell()
           
 # -----------------------
@@ -101,7 +103,7 @@ if run_first_level:
             TR              = TR, # repetition time in seconds
             )
         # first_level.rsa_combine_brain_masks()             # make a union of brain masks from RSA runs for all tasks (they are not the same for each run)
-        # first_level.rsa_combine_epi()                     # concatenate EPI data for the 4 runs of the RSA task
+        first_level.rsa_combine_epi()                     # concatenate EPI data for the 4 runs of the RSA task
         # first_level.rsa_mask_epi()                        # apply brain mask to RSA task
         # first_level.rsa_dcm_split_nifti()                 # for spm, split the four-run concatenated nifti into single volume images and unzip
         # first_level.rsa_combine_events()                  # concatenate events files for the 4 runs of the RSA task
@@ -115,10 +117,10 @@ if run_first_level:
         # first_level.loc_match_bold()                      # match loc1 and loc2 in nifti file to letters and colors in events files
         # first_level.loc_combine_epi()                     # concantenate both runs of localizer to perform 1 GLM
         # first_level.loc_mask_epi()                        # apply brain mask to localizers
-        first_level.loc_combine_events()                  # concatenate events for localizers GLM
-        first_level.loc_nuisance_regressors()             # volume-based physiological components, motion parameters, cosine (low-fres), and run means
-        first_level.loc_timing_files()                    # timing files for localizers GLM
-        first_level.loc_fsf()                             # generates the first level FSF for the localizers
+        # first_level.loc_combine_events()                  # concatenate events for localizers GLM
+        # first_level.loc_nuisance_regressors()             # volume-based physiological components, motion parameters, cosine (low-fres), and run means
+        # first_level.loc_timing_files()                    # timing files for localizers GLM
+        # first_level.loc_fsf()                             # generates the first level FSF for the localizers
         
         # TRY ALTERNATIVE FIRST LEVEL FOR LOCALIZERS (Separate sessions then average in 2nd level)
         # first_level.alt_loc_mask_epi()                    # apply brain mask to localizers

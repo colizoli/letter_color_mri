@@ -135,7 +135,8 @@ class first_level_class(object):
             TO DO: Equalize number of runs per session per participant (in case of missing runs).
         """
                 
-        for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
+        # for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
+        for preprocessed_tag in ['space-T1w_desc-preproc_bold']:
         
             for session in ['ses-mri01','ses-mri02']:
             
@@ -176,7 +177,7 @@ class first_level_class(object):
     
     
     def rsa_mask_epi(self, task='rsa'):
-        """Mask the combined EPI image with the brain mask made from the RSA task per localizer. 
+        """Mask the combined EPI image with the brain mask made from the RSA task per localizer and delete unmasked EPI (memory)
         
         Args:
             task (str): which task. Default 'rsa'
@@ -186,9 +187,13 @@ class first_level_class(object):
         """
         
         # make sure same order as preprocessed_tag
-        brain_mask_tags = ['space-MNI152NLin6Asym_res-2_desc-brain_mask', 'space-T1w_desc-brain_mask']
+        # brain_mask_tags = ['space-MNI152NLin6Asym_res-2_desc-brain_mask', 'space-T1w_desc-brain_mask']
+        #
+        # for tag, preprocessed_tag in enumerate(['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']):
         
-        for tag, preprocessed_tag in enumerate(['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']):
+        brain_mask_tags = ['space-T1w_desc-brain_mask']
+        
+        for tag, preprocessed_tag in enumerate(['space-T1w_desc-preproc_bold']):
         
             for session in ['ses-mri01','ses-mri02']:
                 
@@ -204,11 +209,18 @@ class first_level_class(object):
                 cmd = 'fslmaths {} -mas {} {}'.format(epi, brain_mask, out_file)
                 print(cmd)
                 results = subprocess.call(cmd, shell=True, bufsize=0)
+                
+                ###################
+                # Delete unmasked EPI to save memory
+                # rm file_path 
+                cmd = 'rm {}'.format(epi)
+                print(cmd)
+                results = subprocess.call(cmd, shell=True, bufsize=0)
         print('success: rsa_mask_epi')
 
 
     def rsa_dcm_split_nifti(self, task='rsa'):
-        """Split the concatenated four runs of the RSA task into single images for SPM (DCM analysis) and unzip compressed niftis.
+        """Split the concatenated four runs of the RSA task into single images for SPM (DCM analysis) and unzip compressed niftis then delete original EPI (memory).
         
         Args:
             task (str): which task. Default 'rsa'.
@@ -248,6 +260,13 @@ class first_level_class(object):
                 cmd = 'gzip -d {}'.format(file_path)
                 print(cmd)
                 results = subprocess.call(cmd, shell=True, bufsize=0)
+                
+            ###################
+            # Delete original EPI to save memory
+            # rm file_path 
+            cmd = 'rm {}'.format(nii_in)
+            print(cmd)
+            results = subprocess.call(cmd, shell=True, bufsize=0)
 
         print('success: rsa_dcm_split_nifti')    
         
@@ -894,8 +913,9 @@ class first_level_class(object):
             Also makes the session regressors as EV text files.
         """
         
-        for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
-            
+        # for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
+        for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold',]:
+        
             for task in ['letters', 'colors']:
                 # open matching file to grab correct NIFTI localizer file
                 localizer_df = pd.read_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_localizer_matching.tsv'.format(self.subject, task)), sep='\t')
@@ -953,10 +973,14 @@ class first_level_class(object):
         """
         
         # make sure same order as preprocessed_tag
-        brain_mask_tags = ['space-MNI152NLin6Asym_res-2_desc-brain_mask', 'space-T1w_desc-brain_mask']
+        # brain_mask_tags = ['space-MNI152NLin6Asym_res-2_desc-brain_mask', 'space-T1w_desc-brain_mask']
+        #
+        # for tag, preprocessed_tag in enumerate(['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']):
         
-        for tag, preprocessed_tag in enumerate(['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']):
+        brain_mask_tags = ['space-MNI152NLin6Asym_res-2_desc-brain_mask',]
         
+        for tag, preprocessed_tag in enumerate(['space-MNI152NLin6Asym_res-2_desc-preproc_bold',]):
+            
             for task in ['letters', 'colors']:
                 
                 # path to masked EPI from localizers
@@ -1142,8 +1166,9 @@ class first_level_class(object):
         
         for t,task in enumerate(localizers):
             
-            for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
-                
+            # for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
+            for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', ]:
+            
                 template_filename = os.path.join(self.analysis_dir, 'templates','task-{}_first_level_template.fsf'.format(task))
     
                 markers = [
