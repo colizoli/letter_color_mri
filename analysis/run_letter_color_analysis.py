@@ -37,8 +37,8 @@ import letter_color_first_level
 # Paths
 # ----------------------- 
 ##########################
-home_dir = os.path.dirname(os.getcwd()) # one level up from analysis folder
-# home_dir = '/project/3018051.01/'
+# home_dir = os.path.dirname(os.getcwd()) # one level up from analysis folder
+home_dir = '/project/3018051.01/ruggero/'
 ##########################
 analysis_dir    = os.path.join(home_dir, 'analysis')        # scripts + configuration files for BIDS
 # source_dir      = os.path.join(home_dir, 'raw')             # DICOMS DCCN project storage folder 'raw', directly imported from scanner (don't change!)
@@ -62,8 +62,8 @@ run_higher_level    = False    # group-level analyses and statistics
 # -----------------------
 # Participants
 # -----------------------
-# participants    = pd.read_csv(os.path.join(home_dir, 'participants_full_mri.csv'), dtype=str) # open in textmate, not excel!
-participants    = pd.read_csv(os.path.join(home_dir, 'participants_process.csv'), dtype=str) # open in textmate, not excel!
+participants    = pd.read_csv(os.path.join(home_dir, 'participants_full_mri.csv'), dtype=str) # open in textmate, not excel!
+# participants    = pd.read_csv(os.path.join(home_dir, 'participants_process.csv'), dtype=str) # open in textmate, not excel!
 subjects  = participants['subjects']
 
 
@@ -103,7 +103,7 @@ if run_first_level:
             TR              = TR, # repetition time in seconds
             )
         # first_level.rsa_combine_brain_masks()             # make a union of brain masks from RSA runs for all tasks (they are not the same for each run)
-        first_level.rsa_combine_epi()                     # concatenate EPI data for the 4 runs of the RSA task
+        # first_level.rsa_combine_epi()                     # concatenate EPI data for the 4 runs of the RSA task
         # first_level.rsa_mask_epi()                        # apply brain mask to RSA task
         # first_level.rsa_dcm_split_nifti()                 # for spm, split the four-run concatenated nifti into single volume images and unzip
         # first_level.rsa_combine_events()                  # concatenate events files for the 4 runs of the RSA task
@@ -121,13 +121,14 @@ if run_first_level:
         # first_level.loc_nuisance_regressors()             # volume-based physiological components, motion parameters, cosine (low-fres), and run means
         # first_level.loc_timing_files()                    # timing files for localizers GLM
         # first_level.loc_fsf()                             # generates the first level FSF for the localizers
+        first_level.loc_fsl_reg_workaround()                # create a "fake" reg folder with identity matrix and standard image = mean_func
+        
         
         # TRY ALTERNATIVE FIRST LEVEL FOR LOCALIZERS (Separate sessions then average in 2nd level)
         # first_level.alt_loc_mask_epi()                    # apply brain mask to localizers
         # first_level.alt_loc_nuisance_regressors()         # volume-based physiological components, motion parameters, cosine (low-fres), and run means
         # first_level.alt_loc_timing_files()                # timing files for localizers GLM
         # first_level.alt_loc_fsf()                         # generates the first level FSF for the localizers
-        # first_level.alt_loc_fsl_reg_workaround()          # create a "fake" reg folder with identity matrix and standard image = mean_func
         # first_level.alt_loc_second_level_fsf()            # after first levels are finished, generates the second level FSF (subject mean) for the localizers
         
         

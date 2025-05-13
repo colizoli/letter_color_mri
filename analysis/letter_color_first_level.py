@@ -156,7 +156,7 @@ class first_level_class(object):
                             df_trs[this_run] = [nii_data.shape[-1]] # 4th dimension
                             # append to list
                             bold.append(nii_data)
-                            del nii_data
+                            del nii_data, proxy_img
                             if '1' in this_run:
                                 save_path = nii_path
                             
@@ -170,7 +170,12 @@ class first_level_class(object):
             
                 # save trs per session
                 df_trs.to_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_TRs.tsv'.format(self.subject, session, task)), sep='\t')
-                print(bold.shape)
+                try:
+                    print(self.subject + ' ' + session + ' ' +  bold.shape)
+                except:
+                    print(self.subject)
+                    print(session)
+                    print(bold.shape)
                 del bold, n1, out_data
                     
         print('success: rsa_combine_epi')
@@ -945,7 +950,7 @@ class first_level_class(object):
                     df_trs[session] = [nii_data.shape[-1]] # 4th dimension
                     # append to concatenate later
                     bold.append(nii_data)
-                    del nii_data
+                    del nii_data, proxy_img
                     if '1' in session:
                         save_path = nii_path
                         
@@ -1239,6 +1244,46 @@ class first_level_class(object):
                 print('success: loc_fsf {}'.format(FSF_filename))
     
     
+    def loc_fsl_reg_workaround(self,):
+        """Create a "fake" reg folder with identity matrix as example_func2standard.mat and standard image as the mean_func - localizers
+        
+        Notes:
+            Without the reg folder, the 2nd level analysis in FSL will not run.
+            For more information: https://mumfordbrainstats.tumblr.com/post/166054797696/feat-registration-workaround
+        """
+        localizers = ['letters', 'colors']
+        
+        for t,task in enumerate(localizers):
+            
+            # for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
+            for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold']:
+                                    
+                feat_dir = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_{}.feat'.format(self.subject, task, preprocessed_tag)) #
+
+                # create the reg directory in feat folder
+                reg_dir = os.path.join(feat_dir, 'reg')
+                if not os.path.isdir(reg_dir):
+                    os.mkdir(reg_dir)
+                
+                identity_mat_source = os.path.join(self.analysis_dir, 'templates', 'ident.mat') # identity matrix copied from FSL directory
+                identity_mat_dest = os.path.join(reg_dir, 'example_func2standard.mat')
+                
+                mean_func_source = os.path.join(feat_dir, 'mean_func.nii.gz') # source mean_func
+                mean_func_dest = os.path.join(reg_dir, 'standard.nii.gz')    # destination mean_func
+
+                # copy the identity matrix, send command to terminal
+                cmd = 'cp {} {} '.format(identity_mat_source, identity_mat_dest)
+                print(cmd)
+                results = subprocess.call(cmd, shell=True, bufsize=0)
+                
+                # copy the mean_func, send command to terminal
+                cmd = 'cp {} {} '.format(mean_func_source, mean_func_dest)
+                print(cmd)
+                results = subprocess.call(cmd, shell=True, bufsize=0)
+                   
+        print('success: loc_fsl_reg_workaround')
+        
+        
     def transform_anatomical_masks(self,):
         """Apply the reverse transformation from MNI space to anat T1 space on the anatomical masks. 
 
@@ -1614,47 +1659,6 @@ class first_level_class(object):
                     self.first_level_job.close()
                     print('success: alt_loc_fsf {}'.format(FSF_filename))
                 
-                
-    def alt_loc_fsl_reg_workaround(self,):
-        """Create a "fake" reg folder with identity matrix as example_func2standard.mat and standard image as the mean_func - localizers
-        
-        Notes:
-            Without the reg folder, the 2nd level analysis in FSL will not run.
-            For more information: https://mumfordbrainstats.tumblr.com/post/166054797696/feat-registration-workaround
-        """
-        localizers = ['letters', 'colors']
-        
-        for t,task in enumerate(localizers):
-            
-            # for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
-            for preprocessed_tag in ['space-T1w_desc-preproc_bold']:
-                
-                for session in ['ses-mri01','ses-mri02']:
-                    
-                    feat_dir = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_{}.feat'.format(self.subject, session, task, preprocessed_tag)) #
-
-                    # create the reg directory in feat folder
-                    reg_dir = os.path.join(feat_dir, 'reg')
-                    if not os.path.isdir(reg_dir):
-                        os.mkdir(reg_dir)
-                    
-                    identity_mat_source = os.path.join(self.analysis_dir, 'templates', 'ident.mat') # identity matrix copied from FSL directory
-                    identity_mat_dest = os.path.join(reg_dir, 'example_func2standard.mat')
-                    
-                    mean_func_source = os.path.join(feat_dir, 'mean_func.nii.gz') # source mean_func
-                    mean_func_dest = os.path.join(reg_dir, 'standard.nii.gz')    # destination mean_func
-
-                    # copy the identity matrix, send command to terminal
-                    cmd = 'cp {} {} '.format(identity_mat_source, identity_mat_dest)
-                    print(cmd)
-                    results = subprocess.call(cmd, shell=True, bufsize=0)
-                    
-                    # copy the mean_func, send command to terminal
-                    cmd = 'cp {} {} '.format(mean_func_source, mean_func_dest)
-                    print(cmd)
-                    results = subprocess.call(cmd, shell=True, bufsize=0)
-                   
-        print('success: alt_loc_fsl_reg_workaround')
     
 
     def alt_loc_second_level_fsf(self,):
