@@ -105,7 +105,28 @@ class housekeeping_class(object):
                 results = subprocess.call(cmd, shell=True, bufsize=0)
                                         
         print('success: delete_loc_files')
-        
+    
+    def delete_loc_directory(self):
+        """Delete localizer feat or gfeat directories
+        """
+
+        for task in ['task-letters', 'task-colors']:
+            
+            folders =[
+                '{}_{}_space-T1w_desc-preproc_bold.gfeat'.format(self.subject, task)
+            ]
+            
+            for f in folders:
+
+                file_path = os.path.join(self.deriv_dir, 'first_level', task, self.subject, f)
+                ###################
+                # send command to terminal
+                # rm file_path 
+                cmd = 'rm -r {}'.format(file_path)
+                print(cmd)
+                results = subprocess.call(cmd, shell=True, bufsize=0)
+                                        
+        print('success: delete_loc_directory')
         
     #
     # def loc_rename_bold(self):

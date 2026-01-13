@@ -3,8 +3,8 @@
 
 """
 first_level.py
-Created by O.Colizoli, June-2019
-Last update: 14-01-2025
+Created by O.Colizoli
+Last update: 12-01-2026
 Python version 3.9
 
 The following packages need to be installed because they are called from the command line, but not imported:
@@ -192,13 +192,9 @@ class first_level_class(object):
         """
         
         # make sure same order as preprocessed_tag
-        # brain_mask_tags = ['space-MNI152NLin6Asym_res-2_desc-brain_mask', 'space-T1w_desc-brain_mask']
-        #
-        # for tag, preprocessed_tag in enumerate(['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']):
-        
-        brain_mask_tags = ['space-T1w_desc-brain_mask']
-        
-        for tag, preprocessed_tag in enumerate(['space-T1w_desc-preproc_bold']):
+        brain_mask_tags = ['space-MNI152NLin6Asym_res-2_desc-brain_mask', 'space-T1w_desc-brain_mask']
+
+        for tag, preprocessed_tag in enumerate(['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']):
         
             for session in ['ses-mri01','ses-mri02']:
                 
@@ -524,7 +520,7 @@ class first_level_class(object):
                         output = np.array(np.vstack((first, second, third)).T) # 1 x 3
                         np.savetxt(out_file, output, delimiter='/t', fmt='%.2f %.2f %i') #3rd column has to be an integer for FSL!
                         print(out_file)
-        print('success: rsa_timing_files_letters')    
+        print('success: rsa_timing_files_letters')   
         
     
     def rsa_timing_files_2x2(self, task='rsa'):
@@ -873,105 +869,10 @@ class first_level_class(object):
         localizer_df['colors'] = colors
         localizer_df.to_csv(os.path.join(self.first_level_dir, 'task-colors', self.subject, '{}_task-colors_localizer_matching.tsv'.format(self.subject)), sep='\t')
         print('success: loc_match_bold')
+
         
-    
-    # def loc_combine_brain_masks(self,):
-    #     """Make a union of the brain masks across both sessions per localizer.
-    #
-    #     Notes:
-    #         Save combined mask in first level directory.
-    #         Note that the brain masks are slighly different per session.
-    #         Taking the union results in including all voxels in both masks.
-    #     """
-    #
-    #     for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-brain_mask', 'space-T1w_desc-brain_mask']:
-    #
-    #         for task in ['letters', 'colors']:
-    #
-    #             # path to combined mask
-    #             out_file = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_ses-concat_task-{}_{}.nii.gz'.format(self.subject, task, preprocessed_tag))
-    #
-    #             # open matching file to grab correct NIFTI localizer file
-    #             localizer_df = pd.read_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_localizer_matching.tsv'.format(self.subject, task)), sep='\t')
-    #
-    #             brain_masks = []
-    #             for session in ['ses-mri01', 'ses-mri02']:
-    #                 # grab correct localizer for current session for current task
-    #                 this_loc = localizer_df[(localizer_df['session']==session)][task]
-    #                 this_loc = str(np.array(this_loc)[0])
-    #                 # path to brainmask
-    #                 nii_path = os.path.join(self.fmriprep_dir, self.subject, session, 'func', '{}_{}_task-cmrr2isomb4TR1500{}_dir-AP_{}.nii.gz'.format(self.subject, session, this_loc, preprocessed_tag))
-    #                 brain_masks.append(nii_path)
-    #
-    #             # send command to terminal
-    #             cmd = 'fslmaths {} -add {} -bin {}'.format(brain_masks[0], brain_masks[1], out_file)
-    #             print(cmd)
-    #             results = subprocess.call(cmd, shell=True, bufsize=0)
-    #     print('success: loc_combine_brain_masks')
-        
-        
-    def loc_combine_epi(self, ):
-        """Concatenate the 2 sessions of EPI data to perform a single GLM on localizers.
-        
-        Notes:
-            The output is the concantenated bold of both sessions (input to first level).
-            Also makes the session regressors as EV text files.
-        """
-        
-        # for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
-        for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold',]:
-        
-            for task in ['letters', 'colors']:
-                # open matching file to grab correct NIFTI localizer file
-                localizer_df = pd.read_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_localizer_matching.tsv'.format(self.subject, task)), sep='\t')
-                
-                df_trs = pd.DataFrame() # save number of TRs for events file concatenation
-        
-                # output is the concantenated bold of all runs per session (input to first level)
-                out_file = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_ses-concat_task-{}_{}.nii.gz'.format(self.subject, task, preprocessed_tag))
-                
-                bold = [] # to concatenate
-                # grap both sessions
-                
-                if self.subject == 'sub-228': # no localizer scans in session 2
-                    sessions = ['ses-mri01']
-                else:
-                    sessions = ['ses-mri01', 'ses-mri02']
-                    
-                for session in sessions:
-                    # grab correct localizer for current session for current task
-                    this_loc = localizer_df[(localizer_df['session']==session)][task]
-                    this_loc = str(np.array(this_loc)[0])
-                    # get nifti and load 
-                    nii_path = os.path.join(self.fmriprep_dir, self.subject, session, 'func', '{}_{}_task-cmrr2isomb4TR1500{}_dir-AP_{}.nii.gz'.format(self.subject, session, this_loc, preprocessed_tag))
-                    proxy_img = nib.load(nii_path)
-                    nii_data = np.asarray(proxy_img.dataobj) # memory problems
-                    # count TRs
-                    df_trs[session] = [nii_data.shape[-1]] # 4th dimension
-                    # append to concatenate later
-                    bold.append(nii_data)
-                    del nii_data, proxy_img
-                    if '1' in session:
-                        save_path = nii_path
-                        
-                bold = np.concatenate(bold, axis=-1) # concatenate list to one long ndarray
-        
-                # get nifti header from first run
-                n1 = nib.load(save_path)
-                out_data = nib.Nifti1Image(bold, affine=n1.affine, header=n1.header) # pass affine and header from last MNI image
-                out_data.set_data_dtype(np.float32)
-                nib.save(out_data, out_file)
-                
-                # save trs per session
-                df_trs.to_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_TRs.tsv'.format(self.subject, task)), sep='\t')
-                print(bold.shape)
-                del bold, n1, out_data
-            
-            print('success: loc_combine_epi {}'.format(self.subject))
-    
-    
     def loc_mask_epi(self,):
-        """Mask the combined EPI image with the brain mask made from the RSA task per localizer. 
+        """Mask the EPI image with the brain mask made from the RSA task per localizer and save in first_level. 
         
         Notes:
             Save the masked EPI in first level directory.
@@ -979,85 +880,47 @@ class first_level_class(object):
         
         # make sure same order as preprocessed_tag
         # brain_mask_tags = ['space-MNI152NLin6Asym_res-2_desc-brain_mask', 'space-T1w_desc-brain_mask']
-        #
+        brain_mask_tags = ['space-T1w_desc-brain_mask']
+        
         # for tag, preprocessed_tag in enumerate(['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']):
+        for tag, preprocessed_tag in enumerate([ 'space-T1w_desc-preproc_bold']):
         
-        brain_mask_tags = ['space-MNI152NLin6Asym_res-2_desc-brain_mask',]
-        
-        for tag, preprocessed_tag in enumerate(['space-MNI152NLin6Asym_res-2_desc-preproc_bold',]):
-            
             for task in ['letters', 'colors']:
                 
-                # path to masked EPI from localizers
-                out_file = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_ses-concat_task-{}_{}_brain.nii.gz'.format(self.subject, task, preprocessed_tag))
-                # path to EPI from localizers
-                epi = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_ses-concat_task-{}_{}.nii.gz'.format(self.subject, task, preprocessed_tag))
+                localizer_df = pd.read_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_localizer_matching.tsv'.format(self.subject, task)), sep='\t')
                 
-                # path to combined mask from RSA task 
-                brain_mask = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_ses-concat_task-rsa_run-concat_{}.nii.gz'.format(self.subject, brain_mask_tags[tag]))
-                
-                # send command to terminal
-                cmd = 'fslmaths {} -mas {} {}'.format(epi, brain_mask, out_file)
-                print(cmd)
-                results = subprocess.call(cmd, shell=True, bufsize=0)
-        print('success: loc_mask_epi')
-    
-    
-    def loc_combine_events(self, ):
-        """For the each localizer task, concantenate the events files of both sessions and output in first_level directory.
-        
-        Notes:
-            To DO Equalize number of sessions per session per participant (in case of missing session data).
-        """
-        
-        for task in ['letters', 'colors']:
-            
-            # open tr count from loc_combine_epi()
-            df_trs = pd.read_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_TRs.tsv'.format(self.subject, task)), sep='\t')
-            df_trs = df_trs.loc[:, ~df_trs.columns.str.contains('^Unnamed')]
+                for session in ['ses-mri01','ses-mri02']:
+                    # grab correct localizer for current session for current task
+                    this_loc = localizer_df[(localizer_df['session']==session)][task]
+                    try:
+                        this_loc = str(np.array(this_loc)[0])
+                    except: # one subject is missing localizers from a session
+                        break
                     
-            loc_runs = df_trs.columns.values
-            nruns = len(df_trs.columns.values)
-        
-            time2add = [0] # don't add anytime to run 1
-        
-            # check how long each run was and calculate seconds
-            for session in loc_runs:
-                ntrs = df_trs[session][0]  # number of TRs
-                time2add.append(ntrs*float(self.TR)) # time to add in seconds to next run's onsets
-                print('Time to add to {}: {}'.format(session, ntrs*float(self.TR)))
-            
-            time2add = np.cumsum(time2add) # cummulative sum per run
-        
-            # open events files and add times
-            all_events = pd.DataFrame()
-            for r, session in enumerate(loc_runs):
-                for this_file in os.listdir(os.path.join(self.bids_dir, self.subject, session, 'func')):
-                    if ('task-{}loc'.format(task) in this_file) and ('events' in this_file):
-                        print(this_file)
-                        print(session)
-                        print(time2add[r])
-
-                        events = pd.read_csv(os.path.join(self.bids_dir, self.subject, session, 'func', this_file), sep='\t')
-                        events['onset'] =  events['onset'] + time2add[r]
-                        all_events = pd.concat([all_events, events], axis=0)
-                print(all_events.shape)
+                    # path to EPI from localizers
+                    epi = os.path.join(self.fmriprep_dir, self.subject, session, 'func', '{}_{}_task-cmrr2isomb4TR1500{}_dir-AP_{}.nii.gz'.format(self.subject, session, this_loc, preprocessed_tag))
+                    
+                    # path to masked EPI from localizers
+                    out_file = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_{}_brain.nii.gz'.format(self.subject, session, task, preprocessed_tag))
                 
-            # save concantenated events file
-            all_events.to_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_ses-concat_task-{}_events.tsv'.format(self.subject, task)), sep='\t') 
+                    # path to combined mask from RSA task 
+                    brain_mask = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_ses-concat_task-rsa_run-concat_{}.nii.gz'.format(self.subject, brain_mask_tags[tag]))
+                
+                    # send command to terminal
+                    cmd = 'fslmaths {} -mas {} {}'.format(epi, brain_mask, out_file)
+                    print(cmd)
+                    results = subprocess.call(cmd, shell=True, bufsize=0)
+        print('success: loc_mask_epi')
 
-        print('success: loc_combine_events')    
-    
-    
+
     def loc_nuisance_regressors(self, ):
-        """Combine all TR-based nuisance regressors for both sessions into a single file (localizers).
+        """Combine all nuisance regressors into a single file (localizers).
         
         Notes:
             Includes the following nuisance regressors:
             1. first 5 principle components of the compcor output of fmriprep (white matter and csf).
             2. 6 motion parameters from fmriprep.
             3. cosine regressors for low-frequency drift.
-            4. the 2 session regressors (for concantenations).
                     
             confounds file name: derivatives/fmriprep/sub-xxx/ses-mri-xx/func/sub-xxx_ses-mrixx_task-cmrr2isomb4TR1500LOCXX_dir-AP_run-x_desc-confounds_timeseries.tsv
             anatomical compcor column names in confounds file: a_comp_cor_00, a_comp_cor_01, a_comp_cor_02, a_comp_cor_03, a_comp_cor_04
@@ -1066,60 +929,52 @@ class first_level_class(object):
         
         for task in ['letters', 'colors']:
             
-            save_regressors = pd.DataFrame() # output file
-            
             # open matching localizer dataframe
             localizer_df = pd.read_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_localizer_matching.tsv'.format(self.subject, task)), sep='\t')
-            
-            # open tr count from loc_combine_epi()
-            df_trs = pd.read_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_TRs.tsv'.format(self.subject, task)), sep='\t')
-            df_trs = df_trs.loc[:, ~df_trs.columns.str.contains('^Unnamed')]
                         
-            loc_runs = df_trs.columns.values # use these runs
-            nruns = len(df_trs.columns.values) # number of trs per run
-            
-            for session in loc_runs:
-                # grab correct localizer for current session for current task from matching file
+            for session in ['ses-mri01','ses-mri02']:
+                
+                save_regressors = pd.DataFrame() # output file
+                
+                # grab correct localizer for current session for current task
                 this_loc = localizer_df[(localizer_df['session']==session)][task]
-                this_loc = str(np.array(this_loc)[0])
+                try:
+                    this_loc = str(np.array(this_loc)[0])
+                except: # one subject is missing localizers from one session
+                    break
                     
-                this_run_regressors = pd.DataFrame()
                 # output of fmriprep per subject, per session, per run
                 confounds = pd.read_csv(os.path.join(self.fmriprep_dir, self.subject, session, 'func', '{}_{}_task-cmrr2isomb4TR1500{}_dir-AP_desc-confounds_timeseries.tsv'.format(self.subject, session, this_loc)), sep='\t', float_precision='high')
                 # compcor
-                this_run_regressors['a_comp_cor_00'] = np.array(confounds['a_comp_cor_00'])
-                this_run_regressors['a_comp_cor_01'] = np.array(confounds['a_comp_cor_01'])
-                this_run_regressors['a_comp_cor_02'] = np.array(confounds['a_comp_cor_02'])
-                this_run_regressors['a_comp_cor_03'] = np.array(confounds['a_comp_cor_03'])
-                this_run_regressors['a_comp_cor_04'] = np.array(confounds['a_comp_cor_04'])
+                save_regressors['a_comp_cor_00'] = np.array(confounds['a_comp_cor_00'])
+                save_regressors['a_comp_cor_01'] = np.array(confounds['a_comp_cor_01'])
+                save_regressors['a_comp_cor_02'] = np.array(confounds['a_comp_cor_02'])
+                save_regressors['a_comp_cor_03'] = np.array(confounds['a_comp_cor_03'])
+                save_regressors['a_comp_cor_04'] = np.array(confounds['a_comp_cor_04'])
                 # motion
-                this_run_regressors['trans_x'] = np.array(confounds['trans_x'])
-                this_run_regressors['trans_y'] = np.array(confounds['trans_y'])
-                this_run_regressors['trans_z'] = np.array(confounds['trans_z'])
-                this_run_regressors['rot_x'] = np.array(confounds['rot_x'])
-                this_run_regressors['rot_y'] = np.array(confounds['rot_y'])
-                this_run_regressors['rot_z'] = np.array(confounds['rot_z'])
+                save_regressors['trans_x'] = np.array(confounds['trans_x'])
+                save_regressors['trans_y'] = np.array(confounds['trans_y'])
+                save_regressors['trans_z'] = np.array(confounds['trans_z'])
+                save_regressors['rot_x'] = np.array(confounds['rot_x'])
+                save_regressors['rot_y'] = np.array(confounds['rot_y'])
+                save_regressors['rot_z'] = np.array(confounds['rot_z'])
                 # cosine (low-frequency drift)
-                this_run_regressors['cosine00'] = np.array(confounds['cosine00'])
-                this_run_regressors['cosine01'] = np.array(confounds['cosine01'])
-                this_run_regressors['cosine02'] = np.array(confounds['cosine02'])
-                this_run_regressors['cosine03'] = np.array(confounds['cosine03'])
-                # runs
-                this_run_regressors[session] = np.repeat(1, confounds.shape[0])
-                
-                save_regressors = pd.concat([save_regressors, this_run_regressors], axis=0)
-            
-            save_regressors = save_regressors.fillna(0)   
-            # save without headers and without index, tab separated
-            save_regressors.to_csv(
-                os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_ses-concat_task-{}_nuisance_regressors.txt'.format(self.subject, task)),
-                sep='\t', float_format='%.16f', header=None, index_label=False, index=False)
+                save_regressors['cosine00'] = np.array(confounds['cosine00'])
+                save_regressors['cosine01'] = np.array(confounds['cosine01'])
+                save_regressors['cosine02'] = np.array(confounds['cosine02'])
+                save_regressors['cosine03'] = np.array(confounds['cosine03'])
+                             
+                save_regressors = save_regressors.fillna(0)   
+                # save without headers and without index, tab separated
+                save_regressors.to_csv(
+                    os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_nuisance_regressors.txt'.format(self.subject, session, task)),
+                    sep='\t', float_format='%.16f', header=None, index_label=False, index=False)
             
         print('success: loc_nuisance_regressors {}'.format(self.subject))
-        
-        
+
+
     def loc_timing_files(self, ):
-        """Create the timing files to perform a single GLM on each localizer.
+        """Create the timing files to perform a GLM on each localizer run.
         
         Notes:
             GLM timing files for ABAB blocked design (localizers)
@@ -1137,25 +992,28 @@ class first_level_class(object):
             # timing files directory
             timing_files_dir = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_timing_files'.format(self.subject, task))
             
-            # get combined events file
-            events = pd.read_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_ses-concat_task-{}_events.tsv'.format(self.subject, task)), sep='\t') 
-        
-            # generate 3 column files for each of the conditions of interest
-            for cond in conditions[t]: # contrast conditions
+            for session in ['ses-mri01', 'ses-mri02']:
+                for this_file in os.listdir(os.path.join(self.bids_dir, self.subject, session, 'func')):
+                    if ('task-{}loc'.format(task) in this_file) and ('events' in this_file):
+                        print(this_file)
+                        print(session)
+                        events = pd.read_csv(os.path.join(self.bids_dir, self.subject, session, 'func', this_file), sep='\t')
+                            
+                # generate 3 column files for each of the conditions of interest
+                for cond in conditions[t]: # contrast conditions
                 
-                # save timing file per condition
-                out_file = os.path.join(timing_files_dir, '{}_task-{}_{}.txt'.format(self.subject, task, cond))
+                    # save timing file per condition
+                    out_file = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, cond))
                 
-                # main regressors
-                first = np.array(events[events['trial_type']==cond]['onset']) # onset in s
-                second = np.array(events[events['trial_type']==cond]['duration']) # duration in s
-                third = np.array(np.repeat(1, len(first)), dtype=int) # amplitude
-                output = np.array(np.vstack((first, second, third)).T) # 1 x 3
-                np.savetxt(out_file, output, delimiter='/t', fmt='%.2f %.2f %i') #3rd column has to be an integer for FSL!
-                print(out_file)
+                    # main regressors
+                    first = np.array(events[events['trial_type']==cond]['onset']) # onset in s
+                    second = np.array(events[events['trial_type']==cond]['duration']) # duration in s
+                    third = np.array(np.repeat(1, len(first)), dtype=int) # amplitude
+                    output = np.array(np.vstack((first, second, third)).T) # 1 x 3
+                    np.savetxt(out_file, output, delimiter='/t', fmt='%.2f %.2f %i') #3rd column has to be an integer for FSL!
+                    print(out_file)
         print('success: loc_timing_files {}'.format(self.subject))
-    
-    
+
 
     def loc_fsf(self,):
         """Creates the FSF files for each subject's first level analysis - localizers
@@ -1165,60 +1023,161 @@ class first_level_class(object):
         """
         localizers = ['letters', 'colors']
         # contrast conditions
-        letters = ['Letter', 'Symbol']
+        letters = ['Symbol', 'Letter'] # contrast flipped around because Letter>Symbol did not yield good ROIs
         colors = ['Color', 'Black']
         conditions = [letters, colors]
         
         for t,task in enumerate(localizers):
             
-            # for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
-            for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', ]:
+            for session in ['ses-mri01','ses-mri02']:
             
-                template_filename = os.path.join(self.analysis_dir, 'templates','task-{}_first_level_template.fsf'.format(task))
+                # for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
+                for preprocessed_tag in ['space-T1w_desc-preproc_bold']:
+                
+                    template_filename = os.path.join(self.analysis_dir, 'templates', 'task-{}_first_level_template.fsf'.format(task))
     
+                    markers = [
+                        '[$OUTPUT_PATH]', 
+                        '[$NR_TRS]', 
+                        '[$INPUT_FILENAME]', 
+                        '[$NUISANCE]', 
+                        '[$EV1_FILENAME]',
+                        '[$EV2_FILENAME]', 
+                        '[$NR_VOXELS]'
+                    ]
+        
+                    FSF_filename = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_{}.fsf'.format(self.subject, session, task, preprocessed_tag)) # save fsf
+                    output_path = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_{}'.format(self.subject, session, task, preprocessed_tag)) 
+        
+                    BOLD = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_{}_brain.nii.gz'.format(self.subject, session, task, preprocessed_tag))
+                
+                    # calculate size of input data
+                    try:
+                        nii = nib.load(BOLD).get_fdata() # only do once 
+                        nr_trs = str(nii.shape[-1])
+                        nr_voxels = str(nii.size)
+                    except: # skip subject who is missing localizers in one session
+                        break
+        
+                    # motion parameters and columns for each session's mean
+                    nuisance_regressors = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_nuisance_regressors.txt'.format(self.subject, session, task))
+        
+                    # timing files for each EV
+                    timing_files_dir = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_timing_files'.format(self.subject, task))
+                    EV1_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, conditions[t][0]))
+                    EV2_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, conditions[t][1]))
+                
+                    # replacements
+                    replacements = [ # needs to match order of 'markers'
+                        output_path,
+                        nr_trs,
+                        BOLD,
+                        nuisance_regressors,
+                        EV1_path,
+                        EV2_path,
+                        nr_voxels,
+                    ]
+
+                    # open the template file, load the text data
+                    f = open(template_filename,'r')
+                    filedata = f.read()
+                    f.close()
+
+                    # search and replace
+                    for st,this_string in enumerate(markers):
+                        filedata = filedata.replace(this_string,replacements[st])
+
+                    # write output file
+                    f = open(FSF_filename,'w')
+                    f.write(filedata)
+                    f.close()
+    
+                    # open job and write command as new line
+                    cmd = 'feat {}'.format(FSF_filename)
+                    self.first_level_job = open(self.first_level_job_path, "a") # append is important, not write
+                    self.first_level_job.write(cmd)   # feat command
+                    self.first_level_job.write("\n\n")  # new line
+                    self.first_level_job.close()
+                    print('success: loc_fsf {}'.format(FSF_filename))
+                
+    
+    def loc_fsl_reg_workaround(self,):
+        """Create a "fake" reg folder with identity matrix as example_func2standard.mat and standard image as the mean_func - localizers
+        
+        Notes:
+            Without the reg folder, the 2nd level analysis in FSL will not run.
+            For more information: https://mumfordbrainstats.tumblr.com/post/166054797696/feat-registration-workaround
+        """
+        localizers = ['letters', 'colors']
+        
+        for t,task in enumerate(localizers):
+            
+            for session in ['ses-mri01','ses-mri02']:
+            
+                # for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
+                for preprocessed_tag in ['space-T1w_desc-preproc_bold']:
+                                    
+                    feat_dir = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_{}.feat'.format(self.subject, session, task, preprocessed_tag)) #
+
+                    # create the reg directory in feat folder
+                    reg_dir = os.path.join(feat_dir, 'reg')
+                    if not os.path.isdir(reg_dir):
+                        try:
+                            os.mkdir(reg_dir)
+                        except: # skip subject missing a session
+                            break
+                
+                    identity_mat_source = os.path.join(self.analysis_dir, 'templates', 'ident.mat') # identity matrix copied from FSL directory
+                    identity_mat_dest = os.path.join(reg_dir, 'example_func2standard.mat')
+                
+                    mean_func_source = os.path.join(feat_dir, 'mean_func.nii.gz') # source mean_func
+                    mean_func_dest = os.path.join(reg_dir, 'standard.nii.gz')    # destination mean_func
+
+                    # copy the identity matrix, send command to terminal
+                    cmd = 'cp {} {} '.format(identity_mat_source, identity_mat_dest)
+                    print(cmd)
+                    results = subprocess.call(cmd, shell=True, bufsize=0)
+                
+                    # copy the mean_func, send command to terminal
+                    cmd = 'cp {} {} '.format(mean_func_source, mean_func_dest)
+                    print(cmd)
+                    results = subprocess.call(cmd, shell=True, bufsize=0)
+                   
+        print('success: loc_fsl_reg_workaround')
+        
+        
+    def loc_second_level_fsf(self,):
+        """Create the FSF files for each subject's second level analysis (subject mean) - localizers
+        
+        Notes:
+            Run the actual FSF from the command line: feat task-colors_sub-01.fsf
+        """
+        localizers = ['letters', 'colors']
+        
+        for t,task in enumerate(localizers):
+            
+            # for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
+            for preprocessed_tag in ['space-T1w_desc-preproc_bold']:
+            
+                template_filename = os.path.join(self.analysis_dir, 'templates', 'task-localizers_second_level_template.fsf')
+
                 markers = [
                     '[$OUTPUT_PATH]', 
-                    '[$NR_TRS]', 
-                    '[$INPUT_FILENAME]', 
-                    '[$NUISANCE]', 
-                    '[$EV1_FILENAME]',
-                    '[$EV2_FILENAME]', 
-                    '[$NR_VOXELS]'
+                    '[$INPUT_FILENAME1]', 
+                    '[$INPUT_FILENAME2]', 
                 ]
-        
+    
                 FSF_filename = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_{}.fsf'.format(self.subject, task, preprocessed_tag)) # save fsf
                 output_path = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_{}'.format(self.subject, task, preprocessed_tag)) 
-        
-                BOLD = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_ses-concat_task-{}_{}_brain.nii.gz'.format(self.subject, task, preprocessed_tag))
                 
-                # calculate size of input data
-                # nii = nib.load(BOLD).get_fdata() # only do once
-                # nr_trs = str(nii.shape[-1])
-                # nr_voxels = str(nii.size)
-                # better for memory?
-                proxy_img = nib.load(BOLD)
-                nii_data = np.asarray(proxy_img.dataobj) # memory problems
-                nr_trs = str(nii_data.shape[-1])
-                nr_voxels = str(nii_data.size)
-                del proxy_img, nii_data
-
-                # motion parameters and columns for each session's mean
-                nuisance_regressors = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_ses-concat_task-{}_nuisance_regressors.txt'.format(self.subject, task))
-        
-                # timing files for each EV
-                timing_files_dir = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_timing_files'.format(self.subject, task))
-                EV1_path = os.path.join(timing_files_dir, '{}_task-{}_{}.txt'.format(self.subject, task, conditions[t][0]))
-                EV2_path = os.path.join(timing_files_dir, '{}_task-{}_{}.txt'.format(self.subject, task, conditions[t][1]))
+                feat1 = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_{}.feat'.format(self.subject, 'ses-mri01', task, preprocessed_tag)) #
+                feat2 = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_{}.feat'.format(self.subject, 'ses-mri02', task, preprocessed_tag)) #
                 
                 # replacements
                 replacements = [ # needs to match order of 'markers'
                     output_path,
-                    nr_trs,
-                    BOLD,
-                    nuisance_regressors,
-                    EV1_path,
-                    EV2_path,
-                    nr_voxels,
+                    feat1,
+                    feat2,
                 ]
 
                 # open the template file, load the text data
@@ -1234,58 +1193,18 @@ class first_level_class(object):
                 f = open(FSF_filename,'w')
                 f.write(filedata)
                 f.close()
-    
+
                 # open job and write command as new line
                 cmd = 'feat {}'.format(FSF_filename)
                 self.first_level_job = open(self.first_level_job_path, "a") # append is important, not write
                 self.first_level_job.write(cmd)   # feat command
                 self.first_level_job.write("\n\n")  # new line
                 self.first_level_job.close()
-                print('success: loc_fsf {}'.format(FSF_filename))
-    
-    
-    def loc_fsl_reg_workaround(self,):
-        """Create a "fake" reg folder with identity matrix as example_func2standard.mat and standard image as the mean_func - localizers
-        
-        Notes:
-            Without the reg folder, the 2nd level analysis in FSL will not run.
-            For more information: https://mumfordbrainstats.tumblr.com/post/166054797696/feat-registration-workaround
-        """
-        localizers = ['letters', 'colors']
-        
-        for t,task in enumerate(localizers):
-            
-            # for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
-            for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold']:
-                                    
-                feat_dir = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_{}.feat'.format(self.subject, task, preprocessed_tag)) #
+                print('success: loc_second_level_fsf {}'.format(FSF_filename))     
+                      
 
-                # create the reg directory in feat folder
-                reg_dir = os.path.join(feat_dir, 'reg')
-                if not os.path.isdir(reg_dir):
-                    os.mkdir(reg_dir)
-                
-                identity_mat_source = os.path.join(self.analysis_dir, 'templates', 'ident.mat') # identity matrix copied from FSL directory
-                identity_mat_dest = os.path.join(reg_dir, 'example_func2standard.mat')
-                
-                mean_func_source = os.path.join(feat_dir, 'mean_func.nii.gz') # source mean_func
-                mean_func_dest = os.path.join(reg_dir, 'standard.nii.gz')    # destination mean_func
-
-                # copy the identity matrix, send command to terminal
-                cmd = 'cp {} {} '.format(identity_mat_source, identity_mat_dest)
-                print(cmd)
-                results = subprocess.call(cmd, shell=True, bufsize=0)
-                
-                # copy the mean_func, send command to terminal
-                cmd = 'cp {} {} '.format(mean_func_source, mean_func_dest)
-                print(cmd)
-                results = subprocess.call(cmd, shell=True, bufsize=0)
-                   
-        print('success: loc_fsl_reg_workaround')
-        
-        
     def transform_anatomical_masks(self,):
-        """Apply the reverse transformation from MNI space to anat T1 space on the anatomical masks. 
+        """Apply the transformation from MNI space to T1w-BOLD-2mm space via the T1-weighted anatomical image on the anatomical masks (MNI atlas). 
 
         Notes:
             The output is saved in the first level directory sub-xxx_masks.
@@ -1436,287 +1355,6 @@ class first_level_class(object):
             df_counts.loc[len(df_counts)] = new_row
             df_counts.to_csv(path_df_counts)
             
-        print('success: loc_extra_rois')
-
-
-### ALTERNATIVE TESTING
-
-    def alt_loc_mask_epi(self,):
-        """Mask the combined EPI image with the brain mask made from the RSA task per localizer and save in first_level. 
+        print('success: count_roi_voxels')
         
-        Notes:
-            Save the masked EPI in first level directory.
-        """
-        
-        # make sure same order as preprocessed_tag
-        # brain_mask_tags = ['space-MNI152NLin6Asym_res-2_desc-brain_mask', 'space-T1w_desc-brain_mask']
-        brain_mask_tags = ['space-T1w_desc-brain_mask']
-        
-        # for tag, preprocessed_tag in enumerate(['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']):
-        for tag, preprocessed_tag in enumerate([ 'space-T1w_desc-preproc_bold']):
-        
-            for task in ['letters', 'colors']:
-                
-                localizer_df = pd.read_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_localizer_matching.tsv'.format(self.subject, task)), sep='\t')
-                
-                for session in ['ses-mri01','ses-mri02']:
-                    # grab correct localizer for current session for current task
-                    this_loc = localizer_df[(localizer_df['session']==session)][task]
-                    this_loc = str(np.array(this_loc)[0])
-                    
-                    # path to EPI from localizers
-                    epi = os.path.join(self.fmriprep_dir, self.subject, session, 'func', '{}_{}_task-cmrr2isomb4TR1500{}_dir-AP_{}.nii.gz'.format(self.subject, session, this_loc, preprocessed_tag))
-                    
-                    # path to masked EPI from localizers
-                    out_file = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_{}_brain.nii.gz'.format(self.subject, session, task, preprocessed_tag))
-                
-                    # path to combined mask from RSA task 
-                    brain_mask = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_ses-concat_task-rsa_run-concat_{}.nii.gz'.format(self.subject, brain_mask_tags[tag]))
-                
-                    # send command to terminal
-                    cmd = 'fslmaths {} -mas {} {}'.format(epi, brain_mask, out_file)
-                    print(cmd)
-                    results = subprocess.call(cmd, shell=True, bufsize=0)
-        print('success: alt_loc_mask_epi')
-
-    def alt_loc_nuisance_regressors(self, ):
-        """Combine all nuisance regressors into a single file (localizers).
-        
-        Notes:
-            Includes the following nuisance regressors:
-            1. first 5 principle components of the compcor output of fmriprep (white matter and csf).
-            2. 6 motion parameters from fmriprep.
-            3. cosine regressors for low-frequency drift.
-                    
-            confounds file name: derivatives/fmriprep/sub-xxx/ses-mri-xx/func/sub-xxx_ses-mrixx_task-cmrr2isomb4TR1500LOCXX_dir-AP_run-x_desc-confounds_timeseries.tsv
-            anatomical compcor column names in confounds file: a_comp_cor_00, a_comp_cor_01, a_comp_cor_02, a_comp_cor_03, a_comp_cor_04
-            motion column names in confounds file: trans_x, trans_y, trans_z, rot_x, rot_y, rot_z
-        """
-        
-        for task in ['letters', 'colors']:
-            
-            save_regressors = pd.DataFrame() # output file
-            
-            # open matching localizer dataframe
-            localizer_df = pd.read_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_localizer_matching.tsv'.format(self.subject, task)), sep='\t')
-                        
-            for session in ['ses-mri01','ses-mri02']:
-                # grab correct localizer for current session for current task
-                this_loc = localizer_df[(localizer_df['session']==session)][task]
-                this_loc = str(np.array(this_loc)[0])
-                    
-                # output of fmriprep per subject, per session, per run
-                confounds = pd.read_csv(os.path.join(self.fmriprep_dir, self.subject, session, 'func', '{}_{}_task-cmrr2isomb4TR1500{}_dir-AP_desc-confounds_timeseries.tsv'.format(self.subject, session, this_loc)), sep='\t', float_precision='high')
-                # compcor
-                save_regressors['a_comp_cor_00'] = np.array(confounds['a_comp_cor_00'])
-                save_regressors['a_comp_cor_01'] = np.array(confounds['a_comp_cor_01'])
-                save_regressors['a_comp_cor_02'] = np.array(confounds['a_comp_cor_02'])
-                save_regressors['a_comp_cor_03'] = np.array(confounds['a_comp_cor_03'])
-                save_regressors['a_comp_cor_04'] = np.array(confounds['a_comp_cor_04'])
-                # motion
-                save_regressors['trans_x'] = np.array(confounds['trans_x'])
-                save_regressors['trans_y'] = np.array(confounds['trans_y'])
-                save_regressors['trans_z'] = np.array(confounds['trans_z'])
-                save_regressors['rot_x'] = np.array(confounds['rot_x'])
-                save_regressors['rot_y'] = np.array(confounds['rot_y'])
-                save_regressors['rot_z'] = np.array(confounds['rot_z'])
-                # cosine (low-frequency drift)
-                save_regressors['cosine00'] = np.array(confounds['cosine00'])
-                save_regressors['cosine01'] = np.array(confounds['cosine01'])
-                save_regressors['cosine02'] = np.array(confounds['cosine02'])
-                save_regressors['cosine03'] = np.array(confounds['cosine03'])
-                             
-                save_regressors = save_regressors.fillna(0)   
-                # save without headers and without index, tab separated
-                save_regressors.to_csv(
-                    os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_nuisance_regressors.txt'.format(self.subject, session, task)),
-                    sep='\t', float_format='%.16f', header=None, index_label=False, index=False)
-            
-        print('success: alt_loc_nuisance_regressors {}'.format(self.subject))
-
-
-    def alt_loc_timing_files(self, ):
-        """Create the timing files to perform a single GLM on each localizer.
-        
-        Notes:
-            GLM timing files for ABAB blocked design (localizers)
-        """
-        STIM_DUR = 0.75 # stimulus duration seconds
-        
-        localizers = ['letters', 'colors']
-        # contrast conditions
-        letters = ['Letter', 'Symbol']
-        colors = ['Color', 'Black']
-        conditions = [letters, colors]
-        
-        for t,task in enumerate(localizers):
-            
-            # timing files directory
-            timing_files_dir = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_timing_files'.format(self.subject, task))
-            
-            for session in ['ses-mri01','ses-mri02']:
-                for this_file in os.listdir(os.path.join(self.bids_dir, self.subject, session, 'func')):
-                    if ('task-{}loc'.format(task) in this_file) and ('events' in this_file):
-                        print(this_file)
-                        print(session)
-                        events = pd.read_csv(os.path.join(self.bids_dir, self.subject, session, 'func', this_file), sep='\t')
-                            
-                # generate 3 column files for each of the conditions of interest
-                for cond in conditions[t]: # contrast conditions
-                
-                    # save timing file per condition
-                    out_file = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, cond))
-                
-                    # main regressors
-                    first = np.array(events[events['trial_type']==cond]['onset']) # onset in s
-                    second = np.array(events[events['trial_type']==cond]['duration']) # duration in s
-                    third = np.array(np.repeat(1, len(first)), dtype=int) # amplitude
-                    output = np.array(np.vstack((first, second, third)).T) # 1 x 3
-                    np.savetxt(out_file, output, delimiter='/t', fmt='%.2f %.2f %i') #3rd column has to be an integer for FSL!
-                    print(out_file)
-        print('success: alt_loc_timing_files {}'.format(self.subject))
-
-
-    def alt_loc_fsf(self,):
-        """Creates the FSF files for each subject's first level analysis - localizers
-        
-        Notes:
-            Run the actual FSF from the command line: feat task-colors_sub-01_ses-01.fsf
-        """
-        localizers = ['letters', 'colors']
-        # contrast conditions
-        letters = ['Letter', 'Symbol']
-        colors = ['Color', 'Black']
-        conditions = [letters, colors]
-        
-        for t,task in enumerate(localizers):
-            
-            for session in ['ses-mri01','ses-mri02']:
-            
-                # for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
-                for preprocessed_tag in ['space-T1w_desc-preproc_bold']:
-                
-                    template_filename = os.path.join(self.analysis_dir, 'templates','task-{}_first_level_template.fsf'.format(task))
-    
-                    markers = [
-                        '[$OUTPUT_PATH]', 
-                        '[$NR_TRS]', 
-                        '[$INPUT_FILENAME]', 
-                        '[$NUISANCE]', 
-                        '[$EV1_FILENAME]',
-                        '[$EV2_FILENAME]', 
-                        '[$NR_VOXELS]'
-                    ]
-        
-                    FSF_filename = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_{}.fsf'.format(self.subject, session, task, preprocessed_tag)) # save fsf
-                    output_path = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_{}'.format(self.subject, session, task, preprocessed_tag)) 
-        
-                    BOLD = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_{}_brain.nii.gz'.format(self.subject, session, task, preprocessed_tag))
-                
-                    # calculate size of input data
-                    nii = nib.load(BOLD).get_fdata() # only do once 
-                    nr_trs = str(nii.shape[-1])
-                    nr_voxels = str(nii.size)
-        
-                    # motion parameters and columns for each session's mean
-                    nuisance_regressors = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_nuisance_regressors.txt'.format(self.subject, session, task))
-        
-                    # timing files for each EV
-                    timing_files_dir = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_timing_files'.format(self.subject, task))
-                    EV1_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, conditions[t][0]))
-                    EV2_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, conditions[t][1]))
-                
-                    # replacements
-                    replacements = [ # needs to match order of 'markers'
-                        output_path,
-                        nr_trs,
-                        BOLD,
-                        nuisance_regressors,
-                        EV1_path,
-                        EV2_path,
-                        nr_voxels,
-                    ]
-
-                    # open the template file, load the text data
-                    f = open(template_filename,'r')
-                    filedata = f.read()
-                    f.close()
-
-                    # search and replace
-                    for st,this_string in enumerate(markers):
-                        filedata = filedata.replace(this_string,replacements[st])
-
-                    # write output file
-                    f = open(FSF_filename,'w')
-                    f.write(filedata)
-                    f.close()
-    
-                    # open job and write command as new line
-                    cmd = 'feat {}'.format(FSF_filename)
-                    self.first_level_job = open(self.first_level_job_path, "a") # append is important, not write
-                    self.first_level_job.write(cmd)   # feat command
-                    self.first_level_job.write("\n\n")  # new line
-                    self.first_level_job.close()
-                    print('success: alt_loc_fsf {}'.format(FSF_filename))
-                
-    
-
-    def alt_loc_second_level_fsf(self,):
-        """Create the FSF files for each subject's second level analysis (subject mean) - localizers
-        
-        Notes:
-            Run the actual FSF from the command line: feat task-colors_sub-01.fsf
-        """
-        localizers = ['letters', 'colors']
-        
-        for t,task in enumerate(localizers):
-            
-            # for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
-            for preprocessed_tag in ['space-T1w_desc-preproc_bold']:
-            
-                template_filename = os.path.join(self.analysis_dir, 'templates','task-localizers_alternative_second_level_template.fsf')
-
-                markers = [
-                    '[$OUTPUT_PATH]', 
-                    '[$INPUT_FILENAME1]', 
-                    '[$INPUT_FILENAME2]', 
-                ]
-    
-                FSF_filename = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_{}.fsf'.format(self.subject, task, preprocessed_tag)) # save fsf
-                output_path = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_{}'.format(self.subject, task, preprocessed_tag)) 
-                
-                feat1 = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_{}.feat'.format(self.subject, 'ses-mri01', task, preprocessed_tag)) #
-                feat2 = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_{}.feat'.format(self.subject, 'ses-mri02', task, preprocessed_tag)) #
-                
-                # replacements
-                replacements = [ # needs to match order of 'markers'
-                    output_path,
-                    feat1,
-                    feat2,
-                ]
-
-                # open the template file, load the text data
-                f = open(template_filename,'r')
-                filedata = f.read()
-                f.close()
-
-                # search and replace
-                for st,this_string in enumerate(markers):
-                    filedata = filedata.replace(this_string,replacements[st])
-
-                # write output file
-                f = open(FSF_filename,'w')
-                f.write(filedata)
-                f.close()
-
-                # open job and write command as new line
-                cmd = 'feat {}'.format(FSF_filename)
-                self.first_level_job = open(self.first_level_job_path, "a") # append is important, not write
-                self.first_level_job.write(cmd)   # feat command
-                self.first_level_job.write("\n\n")  # new line
-                self.first_level_job.close()
-                print('success: alt_loc_second_level_fsf {}'.format(FSF_filename))     
-                
-                
-                
                            

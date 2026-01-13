@@ -4,7 +4,7 @@
 """
 letter_color_housekeeping.py
 Created by O.Colizoli
-Last update: 09-05-2025
+Last update: 12-01-2026
 Python version 3.9
 
 The following packages need to be installed because they are called from the command line, not imported:
@@ -81,8 +81,8 @@ if run_housekeeping:
             )            
         # housekeeping.rename_behav_logfiles()      # rename behavioral logfile names
         # housekeeping.delete_rsa_files()      # delete task-rsa files
-        housekeeping.delete_loc_files()      # delete task-letters and/or task-colors files
-        
+        # housekeeping.delete_loc_files()      # delete task-letters and/or task-colors files
+        housekeeping.delete_loc_directory()   # delete directory (gfeat or feat)
                 
         # shell()
           
@@ -99,14 +99,13 @@ if run_first_level:
             deriv_dir       = deriv_dir,
             mask_dir        = mask_dir,
             template_dir    = template_dir,
-            # timing_files_dir = timing_files_dir,
             TR              = TR, # repetition time in seconds
             )
         # first_level.rsa_combine_brain_masks()             # make a union of brain masks from RSA runs for all tasks (they are not the same for each run)
-        # first_level.rsa_combine_epi()                     # concatenate EPI data for the 4 runs of the RSA task
+        first_level.rsa_combine_epi()                      # concatenate the 4 runs per session of EPI data to perform a single GLM (RSA task).
         # first_level.rsa_mask_epi()                        # apply brain mask to RSA task
         # first_level.rsa_dcm_split_nifti()                 # for spm, split the four-run concatenated nifti into single volume images and unzip
-        # first_level.rsa_combine_events()                  # concatenate events files for the 4 runs of the RSA task
+        # first_level.rsa_combine_events()                  # concantenate the events files of all runs and output in first_level directory and add unique identifiers for each color
         # first_level.rsa_nuisance_regressors()             # volume-based physiological components, motion parameters, cosine (low-fres), and run means
         # first_level.rsa_timing_files_oddballs()           # create timing files for oddball stimuli
         # first_level.rsa_timing_files_letters()            # each letter in it's color and black: trained/untrained vs. color/black
@@ -114,24 +113,17 @@ if run_first_level:
         # first_level.rsa_letters_fsf()                     # generates the first level FSF for the RSA design
         # first_level.rsa_2x2_fsf()                         # generates the first level FSF for the 2x2 design
         
+        # FIRST LEVEL FOR LOCALIZERS (Separate sessions then average in 2nd level)
         # first_level.loc_match_bold()                      # match loc1 and loc2 in nifti file to letters and colors in events files
-        # first_level.loc_combine_epi()                     # concantenate both runs of localizer to perform 1 GLM
         # first_level.loc_mask_epi()                        # apply brain mask to localizers
-        # first_level.loc_combine_events()                  # concatenate events for localizers GLM
         # first_level.loc_nuisance_regressors()             # volume-based physiological components, motion parameters, cosine (low-fres), and run means
         # first_level.loc_timing_files()                    # timing files for localizers GLM
-        # first_level.loc_fsf()                             # generates the first level FSF for the localizers
-        first_level.loc_fsl_reg_workaround()                # create a "fake" reg folder with identity matrix and standard image = mean_func
-        
-        
-        # TRY ALTERNATIVE FIRST LEVEL FOR LOCALIZERS (Separate sessions then average in 2nd level)
-        # first_level.alt_loc_mask_epi()                    # apply brain mask to localizers
-        # first_level.alt_loc_nuisance_regressors()         # volume-based physiological components, motion parameters, cosine (low-fres), and run means
-        # first_level.alt_loc_timing_files()                # timing files for localizers GLM
-        # first_level.alt_loc_fsf()                         # generates the first level FSF for the localizers
-        # first_level.alt_loc_second_level_fsf()            # after first levels are finished, generates the second level FSF (subject mean) for the localizers
-        
-        
+        # first_level.loc_fsf()                               # generates the first level FSF for the localizers
+        ### RUN FIRST LEVEL FEATS (AS JOBS) ###
+        # first_level.loc_fsl_reg_workaround()              # create a "fake" reg folder with identity matrix and standard image = mean_func
+        # first_level.loc_second_level_fsf()                # after first levels are finished, generates the second level FSF (subject mean) for the localizers
+        ### RUN SECOND LEVEL FEATS (AS JOBS) ###
+            
         # first_level.transform_anatomical_masks()          # apply reverse transformations from MNI anatomical masks into native-space
         # first_level.loc_extract_rois()                    # after FEAT is finished, extract ROIs from stats within the anatomical mask of interest
         # first_level.count_roi_voxels()                    # counts voxels for each ROI and overlap, outputs in single dataframe in derivatives/first_level
