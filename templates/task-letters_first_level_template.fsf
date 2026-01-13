@@ -109,7 +109,7 @@ set fmri(st_file) ""
 set fmri(bet_yn) 0
 
 # Spatial smoothing FWHM (mm)
-set fmri(smooth) 10
+set fmri(smooth) 5
 
 # Intensity normalization
 set fmri(norm_yn) 0
@@ -291,7 +291,7 @@ set unwarp_files_mag(1) ""
 set highres_files(1) ""
 
 # EV 1 title
-set fmri(evtitle1) "Letter"
+set fmri(evtitle1) "Symbol"
 
 # Basic waveform shape (EV 1)
 # 0 : Square
@@ -335,7 +335,7 @@ set fmri(ortho1.1) 0
 set fmri(ortho1.2) 0
 
 # EV 2 title
-set fmri(evtitle2) "Symbol"
+set fmri(evtitle2) "Letter"
 
 # Basic waveform shape (EV 2)
 # 0 : Square
@@ -388,7 +388,7 @@ set fmri(con_mode) orig
 set fmri(conpic_real.1) 1
 
 # Title for contrast_real 1
-set fmri(conname_real.1) "Letter>Symbol"
+set fmri(conname_real.1) "Symbol>Letter"
 
 # Real contrast_real vector 1 element 1
 set fmri(con_real1.1) 1
@@ -400,7 +400,7 @@ set fmri(con_real1.2) -1.0
 set fmri(conpic_orig.1) 1
 
 # Title for contrast_orig 1
-set fmri(conname_orig.1) "Letter>Symbol"
+set fmri(conname_orig.1) "Symbol>Letter"
 
 # Real contrast_orig vector 1 element 1
 set fmri(con_orig1.1) 1
