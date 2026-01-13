@@ -291,7 +291,7 @@ set unwarp_files_mag(1) ""
 set highres_files(1) ""
 
 # EV 1 title
-set fmri(evtitle1) "Symbol"
+set fmri(evtitle1) "Letter"
 
 # Basic waveform shape (EV 1)
 # 0 : Square
@@ -335,7 +335,7 @@ set fmri(ortho1.1) 0
 set fmri(ortho1.2) 0
 
 # EV 2 title
-set fmri(evtitle2) "Letter"
+set fmri(evtitle2) "Symbol"
 
 # Basic waveform shape (EV 2)
 # 0 : Square
@@ -384,11 +384,12 @@ set fmri(ortho2.2) 0
 set fmri(con_mode_old) orig
 set fmri(con_mode) orig
 
+
 # Display images for contrast_real 1
 set fmri(conpic_real.1) 1
 
 # Title for contrast_real 1
-set fmri(conname_real.1) "Symbol>Letter"
+set fmri(conname_real.1) "Letter>Symbol"
 
 # Real contrast_real vector 1 element 1
 set fmri(con_real1.1) 1
@@ -396,17 +397,53 @@ set fmri(con_real1.1) 1
 # Real contrast_real vector 1 element 2
 set fmri(con_real1.2) -1.0
 
+# Display images for contrast_real 2
+set fmri(conpic_real.2) 1
+
+# Title for contrast_real 2
+set fmri(conname_real.2) "Symbol>Letter"
+
+# Real contrast_real vector 2 element 1
+set fmri(con_real2.1) -1.0
+
+# Real contrast_real vector 2 element 2
+set fmri(con_real2.2) 1.0
+
 # Display images for contrast_orig 1
 set fmri(conpic_orig.1) 1
 
 # Title for contrast_orig 1
-set fmri(conname_orig.1) "Symbol>Letter"
+set fmri(conname_orig.1) "Letter>Symbol"
 
 # Real contrast_orig vector 1 element 1
 set fmri(con_orig1.1) 1
 
 # Real contrast_orig vector 1 element 2
 set fmri(con_orig1.2) -1.0
+
+# Display images for contrast_orig 2
+set fmri(conpic_orig.2) 1
+
+# Title for contrast_orig 2
+set fmri(conname_orig.2) "Symbol>Letter"
+
+# Real contrast_orig vector 2 element 1
+set fmri(con_orig2.1) -1.0
+
+# Real contrast_orig vector 2 element 2
+set fmri(con_orig2.2) 1.0
+
+# Contrast masking - use >0 instead of thresholding?
+set fmri(conmask_zerothresh_yn) 0
+
+# Mask real contrast/F-test 1 with real contrast/F-test 2?
+set fmri(conmask1_2) 0
+
+# Mask real contrast/F-test 2 with real contrast/F-test 1?
+set fmri(conmask2_1) 0
+
+# Do contrast masking at all?
+set fmri(conmask1_1) 0
 
 # Contrast masking - use >0 instead of thresholding?
 set fmri(conmask_zerothresh_yn) 0
