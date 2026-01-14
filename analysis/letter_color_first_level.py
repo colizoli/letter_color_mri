@@ -135,8 +135,7 @@ class first_level_class(object):
             TO DO: Equalize number of runs per session per participant (in case of missing runs).
         """
                 
-        # for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
-        for preprocessed_tag in ['space-T1w_desc-preproc_bold']:
+        for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
         
             for session in ['ses-mri01','ses-mri02']:
             

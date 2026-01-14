@@ -86,12 +86,14 @@ class housekeeping_class(object):
         """Delete localizer files (memory)
         """
 
-        for task in ['task-letters', 'task-colors']:
-            
+        # for task in ['task-letters', 'task-colors']:
+        for task in ['task-rsa']:
+        
             files =[
-                '{}_ses-concat_{}_space-MNI152NLin6Asym_res-2_desc-preproc_bold.nii.gz'.format(self.subject, task),
-                '{}_ses-concat_{}_space-T1w_desc-preproc_bold_brain.nii.gz'.format(self.subject, task),
-                '{}_ses-concat_{}_space-T1w_desc-preproc_bold.nii.gz'.format(self.subject, task),
+                # '{}_ses-concat_task-rsa_run-concat_space-MNI152NLin6Asym_res-2_desc-brain_mask'.format(self.subject),
+                # '{}_ses-concat_{}_space-MNI152NLin6Asym_res-2_desc-preproc_bold.nii.gz'.format(self.subject, task),
+                # '{}_ses-concat_{}_space-T1w_desc-preproc_bold_brain.nii.gz'.format(self.subject, task),
+                # '{}_ses-concat_{}_space-T1w_desc-preproc_bold.nii.gz'.format(self.subject, task),
             ]
             
             for f in files:
@@ -106,14 +108,19 @@ class housekeeping_class(object):
                                         
         print('success: delete_loc_files')
     
+    
     def delete_loc_directory(self):
         """Delete localizer feat or gfeat directories
         """
 
         for task in ['task-letters', 'task-colors']:
-            
+        
             folders =[
-                '{}_{}_space-T1w_desc-preproc_bold.gfeat'.format(self.subject, task)
+                # '{}_{}_space-T1w_desc-preproc_bold.gfeat'.format(self.subject, task),
+                # '{}_ses-mri02_{}_space-T1w_desc-preproc_bold.feat'.format(self.subject, task),
+                # '{}_ses-mri01_{}_space-T1w_desc-preproc_bold.feat'.format(self.subject, task),
+                # '{}_ses-mri02_{}_space-T1w_desc-preproc_bold+.feat'.format(self.subject, task),
+                # '{}_ses-mri01_{}_space-T1w_desc-preproc_bold+.feat'.format(self.subject, task)
             ]
             
             for f in folders:
