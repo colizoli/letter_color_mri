@@ -158,8 +158,8 @@ set fmri(evs_real) 2
 set fmri(evs_vox) 0
 
 # Number of contrasts
-set fmri(ncon_orig) 1
-set fmri(ncon_real) 1
+set fmri(ncon_orig) 2
+set fmri(ncon_real) 2
 
 # Number of F-tests
 set fmri(nftests_orig) 0
@@ -384,7 +384,6 @@ set fmri(ortho2.2) 0
 set fmri(con_mode_old) orig
 set fmri(con_mode) orig
 
-
 # Display images for contrast_real 1
 set fmri(conpic_real.1) 1
 
@@ -441,12 +440,6 @@ set fmri(conmask1_2) 0
 
 # Mask real contrast/F-test 2 with real contrast/F-test 1?
 set fmri(conmask2_1) 0
-
-# Do contrast masking at all?
-set fmri(conmask1_1) 0
-
-# Contrast masking - use >0 instead of thresholding?
-set fmri(conmask_zerothresh_yn) 0
 
 # Do contrast masking at all?
 set fmri(conmask1_1) 0
