@@ -1158,7 +1158,7 @@ class first_level_class(object):
             # for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
             for preprocessed_tag in ['space-T1w_desc-preproc_bold']:
             
-                template_filename = os.path.join(self.analysis_dir, 'templates', 'task-localizers_second_level_template.fsf')
+                template_filename = os.path.join(self.analysis_dir, 'templates', 'task-{}_second_level_template.fsf'.format(task))
 
                 markers = [
                     '[$OUTPUT_PATH]', 
