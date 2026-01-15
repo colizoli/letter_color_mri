@@ -1022,10 +1022,10 @@ class first_level_class(object):
         """
         localizers = ['letters', 'colors']
         # contrast conditions
-        letters = ['Symbol', 'Letter'] # contrast flipped around because Letter>Symbol did not yield good ROIs
+        letters = ['Letter', 'Symbol']
         colors = ['Color', 'Black']
         conditions = [letters, colors]
-        
+
         for t,task in enumerate(localizers):
             
             for session in ['ses-mri01','ses-mri02']:
