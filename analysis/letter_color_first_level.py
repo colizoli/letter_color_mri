@@ -17,11 +17,12 @@ ANTS
 
 import os, subprocess, sys, glob
 import shutil as sh
-import nibabel as nib
 import pandas as pd
 import numpy as np
 import json
 from datetime import datetime
+import nibabel as nib
+import ants
 from IPython import embed as shell # for Oly's debugging only
 
 class first_level_class(object):
@@ -1152,6 +1153,8 @@ class first_level_class(object):
             Run the actual FSF from the command line: feat task-colors_sub-01.fsf
         """
         localizers = ['letters', 'colors']
+        localizers = ['letters', ]
+        
         
         for t,task in enumerate(localizers):
             
@@ -1232,7 +1235,7 @@ class first_level_class(object):
         """       
         
         # load ANTS module 
-        cmd = "module load ants"
+        cmd = "module load ANTs"
         print(cmd)
         results = subprocess.call(cmd, shell=True, bufsize=0)
         
@@ -1284,11 +1287,16 @@ class first_level_class(object):
             loc-colors: task-rsa/sub-xxx/sub-xxx_masks/sub-xxx_OFG_in_bold.nii.gz
             loc-letters: task-rsa/sub-xxx/sub-xxx_masks/sub-xxx_VOT_L_in_bold.nii.gz
             The output is saved in: task-rsa/sub-xxx/sub-xxx_masks/
+        
+            Stats are coming from the second level analysis (average across sessions)
         """       
         # letter, colors
         thresholds = [2.5, 3.1] # z-stat threshold for masking
         thresh_name = [25, 31] # for file name
         masks = ['VOT_L', 'OFG'] # make sure in same order as localizer loop
+        
+        # which contrast to choose for letters and colors:
+        contrasts = ['cope1', 'cope1']
         
         for preprocessed_tag in ['space-T1w_desc-preproc_bold']:
             
@@ -1298,7 +1306,7 @@ class first_level_class(object):
                 
                 out_roi = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_roi-{}_{}.nii.gz'.format(self.subject, task, thresh_name[t]))
                 anat_mask = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_{}_in_bold.nii.gz'.format(self.subject, masks[t]))
-                stats_image = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_{}.feat'.format(self.subject, task, preprocessed_tag), 'stats', 'zstat1.nii.gz')
+                stats_image = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_{}.gfeat'.format(self.subject, task, preprocessed_tag), '{}.feat'.format(contrasts[t]), 'stats', 'zstat1.nii.gz')
                 
                 cmd = 'fslmaths {} -mas {} -thr {} {}'.format(stats_image, anat_mask, thresh, out_roi)
                 print(cmd)
