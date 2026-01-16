@@ -34,38 +34,38 @@ session = int(g.data[1])
 # subject_ID = 1
 # session = 1
 
-## see general_parameters.py
-cue             = gp.cue
-pos_pol         = gp.pos_pol
+# ICONIC MEMORY TASK PARAMETERS
+cue             = '*' # red asterisk, should it be uncolored?
+pos_pol         = [0,45,90,135,180,225,270,315] # positions in degrees
 
 #Sizes
-letter_size     = gp.letter_size
-eccen           = gp.eccen 
-cue_size        = gp.cue_size 
-text_size       = gp.text_size
-fixcross_size   = gp.fixcross_size
-y_shift_up      = gp.y_shift_up
+letter_size     = 1.75# 1.75 degrees in code correspond to 1.15-1.17cm on the screen which are real 1.2 degrees (like paper)
+eccen           = 5.2 # 5.2 degrees in code correspond to 5 cm on the screen which are real 5.2 degrees (like paper)
+cue_size        = 0.6 # 0.6 degrees in code correspond to 0.18-0.2 cm on the screen which are real 0.2 degrees (like paper 0.1 x2 cause too small)
+text_size       = 28 # in pix
+fixcross_size   = 2.1 # 2.1 degrees in code correspond to 0.97 cm on the screen which are real 1 degrees
+y_shift_up      = 2
 
 # INTEGRATE DISTANCE WITH THE MONITOR SOMWHERE: 73 cm according to paper
 #Other colors:
-cue_target_color    = gp.cue_target_color
-cue_holder_color    = gp.cue_holder_color
-background_color    = gp.background_color
-instructions_color  = gp.instructions_color
-letters_color       = gp.letters_color
+cue_target_color    = gp.black  #'black' # target cue in red, holder cue in black
+cue_holder_color    = [200,200,200] #gp.grey #'grey'
+background_color    = gp.white #'white' # code??
+instructions_color  = gp.black #'grey'
+letters_color       = gp.black # all black
 
 # Timing
-read_time             = gp.read_time
-fix_time              = gp.fix_time
-letters_time          = gp.letters_time
-cue_time              = gp.cue_time
-max_response_duration = gp.max_response_duration
-endtrial_time         = gp.endtrial_time
+read_time             = 3
+fix_time              = 1 #1000ms
+letters_time          = 0.1# 0.1#0.500#0.100 #100ms, presentation of the letters array
+cue_time              = 1.5 #Cues remain 
+max_response_duration = 4 #they click on the letter they think it was cued
+endtrial_time         = 1.5 #0.05 #50ms, fix cross disappears here. This is the ITI that was 0.8 and from piloting we want to make slower. Try 1.5 s?
 
-# Response buttons values
-square_fillcolor = gp.square_fillcolor
-square_vertices  = gp.square_vertices
-square_positions = gp.square_positions
+square_fillcolor    = cue_holder_color
+square_vertices     = ((-30, -30), (30, -30), (30, 30),(-30,30))
+square_positions    = [(-150,-350), (-50,-350), (50,-350), (150,-350),
+                    (-150,-450),(-50,-450),(50,-450),(150,-450)]
 
 ######################################################
 ###################### TEXTS ########################
