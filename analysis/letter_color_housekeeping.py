@@ -114,13 +114,19 @@ class housekeeping_class(object):
         """
 
         for task in ['task-letters', 'task-colors']:
-        
+
             folders =[
+                # 2nd level
                 # '{}_{}_space-T1w_desc-preproc_bold.gfeat'.format(self.subject, task),
+                # '{}_{}_space-T1w_desc-preproc_bold+.gfeat'.format(self.subject, task),
+                # first level
                 # '{}_ses-mri02_{}_space-T1w_desc-preproc_bold.feat'.format(self.subject, task),
                 # '{}_ses-mri01_{}_space-T1w_desc-preproc_bold.feat'.format(self.subject, task),
                 # '{}_ses-mri02_{}_space-T1w_desc-preproc_bold+.feat'.format(self.subject, task),
                 # '{}_ses-mri01_{}_space-T1w_desc-preproc_bold+.feat'.format(self.subject, task)
+                '{}_ses-mri01_{}_space-MNI152NLin6Asym_res-2_desc-preproc_bold.feat'.format(self.subject, task),
+                
+                '{}_ses-mri02_{}_space-MNI152NLin6Asym_res-2_desc-preproc_bold.feat'.format(self.subject, task)
             ]
             
             for f in folders:

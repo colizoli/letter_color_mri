@@ -317,23 +317,23 @@ class first_level_class(object):
             # shell()
             # add unique identifiers for each color
             rgb_codes = [
-                (all_events['r'] == 188) & (all_events['g'] == 188) & (all_events['b'] == 188), # grey (oddballs)
-                (all_events['r'] == 117) & (all_events['g'] == 117) & (all_events['b'] == 117), # grey (oddballs)
-                (all_events['r'] == 128) & (all_events['g'] == 128) & (all_events['b'] == 128), # grey (oddballs)
-                (all_events['r'] == 0) & (all_events['g'] == 0) & (all_events['b'] == 0), # black
-                (all_events['r'] == 0) & (all_events['g'] == 163) & (all_events['b'] == 228), # light_blue
-                (all_events['r'] == 161) & (all_events['g'] == 199) & (all_events['b'] == 70), # lime_green
-                (all_events['r'] == 183) & (all_events['g'] == 61) & (all_events['b'] == 160), # magenta
-                (all_events['r'] == 181) & (all_events['g'] == 44) & (all_events['b'] == 67), # dark_red
-                (all_events['r'] == 16) & (all_events['g'] == 114) & (all_events['b'] == 86), # dark_green
-                (all_events['r'] == 237) & (all_events['g'] == 114) & (all_events['b'] == 162), # pink
-                (all_events['r'] == 58) & (all_events['g'] == 175) & (all_events['b'] == 75), # green
-                (all_events['r'] == 248) & (all_events['g'] == 154) & (all_events['b'] == 28), # light_orange
-                (all_events['r'] == 109) & (all_events['g'] == 57) & (all_events['b'] == 142), # purple
-                (all_events['r'] == 239) & (all_events['g'] == 79) & (all_events['b'] == 41), # orange
-                (all_events['r'] == 49) & (all_events['g'] == 60) & (all_events['b'] == 163), # blue
-                (all_events['r'] == 255) & (all_events['g'] == 211) & (all_events['b'] == 0), # yellow
-                (all_events['r'] == 9) & (all_events['g'] == 181) & (all_events['b'] == 172) # teal
+                ((all_events['r'] == 188) & (all_events['g'] == 188) & (all_events['b'] == 188)).values, # grey (oddballs)
+                ((all_events['r'] == 117) & (all_events['g'] == 117) & (all_events['b'] == 117)).values, # grey (oddballs)
+                ((all_events['r'] == 128) & (all_events['g'] == 128) & (all_events['b'] == 128)).values, # grey (oddballs)
+                ((all_events['r'] == 0) & (all_events['g'] == 0) & (all_events['b'] == 0)).values, # black
+                ((all_events['r'] == 0) & (all_events['g'] == 163) & (all_events['b'] == 228)).values, # light_blue
+                ((all_events['r'] == 161) & (all_events['g'] == 199) & (all_events['b'] == 70)).values, # lime_green
+                ((all_events['r'] == 183) & (all_events['g'] == 61) & (all_events['b'] == 160)).values, # magenta
+                ((all_events['r'] == 181) & (all_events['g'] == 44) & (all_events['b'] == 67)).values, # dark_red
+                ((all_events['r'] == 16) & (all_events['g'] == 114) & (all_events['b'] == 86)).values, # dark_green
+                ((all_events['r'] == 237) & (all_events['g'] == 114) & (all_events['b'] == 162)).values, # pink
+                ((all_events['r'] == 58) & (all_events['g'] == 175) & (all_events['b'] == 75)).values, # green
+                ((all_events['r'] == 248) & (all_events['g'] == 154) & (all_events['b'] == 28)).values, # light_orange
+                ((all_events['r'] == 109) & (all_events['g'] == 57) & (all_events['b'] == 142)).values, # purple
+                ((all_events['r'] == 239) & (all_events['g'] == 79) & (all_events['b'] == 41)).values, # orange
+                ((all_events['r'] == 49) & (all_events['g'] == 60) & (all_events['b'] == 163)).values, # blue
+                ((all_events['r'] == 255) & (all_events['g'] == 211) & (all_events['b'] == 0)).values, # yellow
+                ((all_events['r'] == 9) & (all_events['g'] == 181) & (all_events['b'] == 172)).values # teal
             ]
             
             color_names = [
@@ -355,7 +355,8 @@ class first_level_class(object):
                 'yellow',
                 'teal'
             ]
-            all_events['color_name'] = np.select(rgb_codes, color_names)
+            # shell()
+            all_events['color_name'] = np.select(rgb_codes, color_names, default='unknown')
                     
             # save concantenated events file
             all_events.to_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_run-concat_events.tsv'.format(self.subject, session, task)), sep='\t') 
@@ -502,8 +503,7 @@ class first_level_class(object):
         
         for session in ['ses-mri01','ses-mri02']: # load session data with onsets
             events = pd.read_csv(os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_run-concat_events.tsv'.format(self.subject, session, task)), sep='\t') # save concantenated events file
-
-
+        
             # generate 3 column files for each of the conditions
             for l,lcond in enumerate(np.unique(events['letter'])): # letters
                 for c,ccond in enumerate(color_name): # 13 trained colors
@@ -880,10 +880,13 @@ class first_level_class(object):
         
         # make sure same order as preprocessed_tag
         # brain_mask_tags = ['space-MNI152NLin6Asym_res-2_desc-brain_mask', 'space-T1w_desc-brain_mask']
-        brain_mask_tags = ['space-T1w_desc-brain_mask']
-        
         # for tag, preprocessed_tag in enumerate(['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']):
-        for tag, preprocessed_tag in enumerate([ 'space-T1w_desc-preproc_bold']):
+        
+        # brain_mask_tags = ['space-T1w_desc-brain_mask']
+        # for tag, preprocessed_tag in enumerate([ 'space-T1w_desc-preproc_bold']):
+            
+        brain_mask_tags = ['space-MNI152NLin6Asym_res-2_desc-brain_mask']
+        for tag, preprocessed_tag in enumerate([ 'space-MNI152NLin6Asym_res-2_desc-preproc_bold']):
         
             for task in ['letters', 'colors']:
                 
@@ -1032,7 +1035,8 @@ class first_level_class(object):
             for session in ['ses-mri01','ses-mri02']:
             
                 # for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
-                for preprocessed_tag in ['space-T1w_desc-preproc_bold']:
+                # for preprocessed_tag in ['space-T1w_desc-preproc_bold']:
+                for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold']:
                 
                     template_filename = os.path.join(self.analysis_dir, 'templates', 'task-{}_first_level_template.fsf'.format(task))
     
@@ -1115,7 +1119,8 @@ class first_level_class(object):
             for session in ['ses-mri01','ses-mri02']:
             
                 # for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
-                for preprocessed_tag in ['space-T1w_desc-preproc_bold']:
+                # for preprocessed_tag in ['space-T1w_desc-preproc_bold']:
+                for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold']:
                                     
                     feat_dir = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_{}.feat'.format(self.subject, session, task, preprocessed_tag)) #
 
@@ -1152,14 +1157,13 @@ class first_level_class(object):
         Notes:
             Run the actual FSF from the command line: feat task-colors_sub-01.fsf
         """
-        localizers = ['letters', 'colors']
-        localizers = ['letters', ]
-        
+        localizers = ['letters', 'colors']        
         
         for t,task in enumerate(localizers):
             
             # for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
-            for preprocessed_tag in ['space-T1w_desc-preproc_bold']:
+            # for preprocessed_tag in ['space-T1w_desc-preproc_bold']:
+            for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold']:
             
                 template_filename = os.path.join(self.analysis_dir, 'templates', 'task-{}_second_level_template.fsf'.format(task))
 
@@ -1210,72 +1214,71 @@ class first_level_class(object):
 
         Notes:
             The output is saved in the first level directory sub-xxx_masks.
-        
+    
             Two-step transformation:
-            
-            Step 1:
-                antsApplyTransforms \
-                -v 1 \
-                -d 3 \
-                -i /project/3018051.01/ruggero/derivatives/masks/anatomical/OFG.nii.gz \
-                -r /project/3018051.01/ruggero/derivatives/fmriprep/sub-201/anat/sub-201_acq-t1mpragesagp2iso10_desc-preproc_T1w.nii.gz \
-                -o /project/3018051.01/ruggero/derivatives/first_level/task-rsa/sub-201/sub-201_masks/sub-201_OFG-in-T1w.nii.gz \
-                -n NearestNeighbor \
-                -t /project/3018051.01/ruggero/derivatives/fmriprep/sub-201/anat/sub-201_acq-t1mpragesagp2iso10_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5
         
-            Step 2:
-                antsApplyTransforms \
-                -v 1 \
-                -d 3 \
-                -i OFG_in_T1w.nii.gz \
-                -r /project/3018051.01/ruggero/derivatives/fmriprep/sub-201/ses-mri01/func/sub-201_ses-mri01_task-cmrr2isomb4TR1500LOC01_dir-AP_space-T1w_boldref.nii.gz \
-                -o /project/3018051.01/ruggero/derivatives/first_level/task-rsa/sub-201/sub-201_masks/OFG_in_bold.nii.gz \
-                -t [/project/3018051.01/ruggero/derivatives/fmriprep/sub-201/ses-mri01/func/sub-201_ses-mri01_task-cmrr2isomb4TR1500LOC01_dir-AP_from-boldref_to-T1w_mode-image_desc-coreg_xfm.txt, 1] \
-                -n NearestNeighbor
+            Step 1: MNI to T1w space
+            Step 2: T1w to BOLD space
         """       
-        
-        # load ANTS module 
-        cmd = "module load ANTs"
-        print(cmd)
-        results = subprocess.call(cmd, shell=True, bufsize=0)
-        
+    
+        import ants
+    
         for mask in ['OFG', 'IPLD', 'VOT_L']:
-            
-            ### STEP 1 ###
-            anat_mask = os.path.join(self.mask_dir, 'anatomical', '{}.nii.gz'.format(mask) )
+        
+            ### STEP 1: MNI to T1w ###
+            anat_mask = os.path.join(self.mask_dir, 'anatomical', '{}.nii.gz'.format(mask))
             ref_image = os.path.join(self.fmriprep_dir, self.subject, 'anat', '{}_acq-t1mpragesagp2iso10_desc-preproc_T1w.nii.gz'.format(self.subject))
             out_image = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_{}_in_T1w.nii.gz'.format(self.subject, mask))
             transform = os.path.join(self.fmriprep_dir, self.subject, 'anat', '{}_acq-t1mpragesagp2iso10_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5'.format(self.subject))
 
-            cmd1 = "antsApplyTransforms \
-            -v 1 \
-            -d 3 \
-            -i {} \
-            -r {} \
-            -o {} \
-            -n NearestNeighbor \
-            -t {}".format(anat_mask, ref_image, out_image, transform)
-            print(cmd1)
-            results = subprocess.call(cmd1, shell=True, bufsize=0)
-            
-            ### STEP 2 ###
-            #
+            print(f"Step 1: Transforming {mask} from MNI to T1w space")
+        
+            # Load images
+            moving = ants.image_read(anat_mask)
+            fixed = ants.image_read(ref_image)
+        
+            # Apply transform
+            result = ants.apply_transforms(
+                fixed=fixed,
+                moving=moving,
+                transformlist=[transform],
+                interpolator='nearestNeighbor'
+            )
+        
+            # Save result
+            ants.image_write(result, out_image)
+            print(f"Saved: {out_image}")
+        
+            ### STEP 2: T1w to BOLD space ###
             in_image = out_image
             ref_image = os.path.join(self.fmriprep_dir, self.subject, 'ses-mri01', 'func', '{}_ses-mri01_task-cmrr2isomb4TR1500RSA_dir-AP_run-1_space-T1w_boldref.nii.gz'.format(self.subject))
             out_image = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_{}_in_bold.nii.gz'.format(self.subject, mask))
             transform = os.path.join(self.fmriprep_dir, self.subject, 'ses-mri01', 'func', '{}_ses-mri01_task-cmrr2isomb4TR1500RSA_dir-AP_run-1_from-boldref_to-T1w_mode-image_desc-coreg_xfm.txt'.format(self.subject))
 
-            cmd2 = "antsApplyTransforms \
-            -v 1 \
-            -d 3 \
-            -i {} \
-            -r {} \
-            -o {} \
-            -t [{}, 1] \
-            -n NearestNeighbor".format(in_image, ref_image, out_image, transform)
-            print(cmd2)
-            results = subprocess.call(cmd2, shell=True, bufsize=0)
-            
+            print(f"Step 2: Transforming {mask} from T1w to BOLD space")
+        
+            # Load images
+            moving = ants.image_read(in_image)
+            fixed = ants.image_read(ref_image)
+        
+            # Read the transform to check its type
+            tx = ants.read_transform(transform)
+        
+            # Invert the transform
+            tx_inv = tx.invert()
+        
+            # Apply the inverted transform
+            result = ants.apply_ants_transform_to_image(
+                transform=tx_inv,
+                image=moving,
+                reference=fixed,
+                interpolation='nearestNeighbor'
+            )
+        
+            # Save result
+            ants.image_write(result, out_image)
+            print(f"Saved: {out_image}")
+        
         print('success: transform_anatomical_masks')
     
     
@@ -1296,7 +1299,7 @@ class first_level_class(object):
         masks = ['VOT_L', 'OFG'] # make sure in same order as localizer loop
         
         # which contrast to choose for letters and colors:
-        contrasts = ['cope1', 'cope1']
+        contrasts = ['1', '1']
         
         for preprocessed_tag in ['space-T1w_desc-preproc_bold']:
             
@@ -1306,7 +1309,11 @@ class first_level_class(object):
                 
                 out_roi = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_roi-{}_{}.nii.gz'.format(self.subject, task, thresh_name[t]))
                 anat_mask = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_{}_in_bold.nii.gz'.format(self.subject, masks[t]))
-                stats_image = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_{}.gfeat'.format(self.subject, task, preprocessed_tag), '{}.feat'.format(contrasts[t]), 'stats', 'zstat1.nii.gz')
+                try:
+                    # in higherlevel, always zstat1 but cope directory changes per contrast
+                    stats_image = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_{}.gfeat'.format(self.subject, task, preprocessed_tag), 'cope{}.feat'.format(contrasts[t]), 'stats', 'zstat1.nii.gz')
+                except: # one subject only had one run of localizers
+                    stats_image = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_{}.feat'.format(self.subject, task, preprocessed_tag), 'stats', 'zstat{}.nii.gz'.format(contrasts[t]))
                 
                 cmd = 'fslmaths {} -mas {} -thr {} {}'.format(stats_image, anat_mask, thresh, out_roi)
                 print(cmd)
@@ -1347,21 +1354,24 @@ class first_level_class(object):
             letters_roi = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_roi-{}_{}_mask.nii.gz'.format(self.subject, 'letters', thresh_name[0]))
             colors_roi = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_roi-{}_{}_mask.nii.gz'.format(self.subject, 'colors', thresh_name[1]))
             
-            # letters
-            nii_letters = nib.load(letters_roi).get_fdata() 
-            nletters = np.sum(nii_letters)
+            try: 
+                # letters
+                nii_letters = nib.load(letters_roi).get_fdata() 
+                nletters = np.sum(nii_letters)
             
-            # colors
-            nii_colors = nib.load(colors_roi).get_fdata() # only do once 
-            ncolors = np.sum(nii_colors)
+                # colors
+                nii_colors = nib.load(colors_roi).get_fdata() # only do once 
+                ncolors = np.sum(nii_colors)
             
-            # overlap
-            noverlap = np.sum(nii_colors*nii_letters)
+                # overlap
+                noverlap = np.sum(nii_colors*nii_letters)
             
-            new_row = {'subject': self.subject, 'voxels_letters': nletters, 'voxels_colors': ncolors, 'overlap': noverlap, 'thresh_letters': thresh_name[0], 'thresh_colors': thresh_name[1]}
-            df_counts.loc[len(df_counts)] = new_row
-            df_counts.to_csv(path_df_counts)
+                new_row = {'subject': self.subject, 'voxels_letters': nletters, 'voxels_colors': ncolors, 'overlap': noverlap, 'thresh_letters': thresh_name[0], 'thresh_colors': thresh_name[1]}
+                df_counts.loc[len(df_counts)] = new_row
+                df_counts.to_csv(path_df_counts)
+            except:
+                break
             
-        print('success: count_roi_voxels')
+        print('success: count_roi_voxels {}'.format(self.subject))
         
                            
