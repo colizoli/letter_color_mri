@@ -452,7 +452,7 @@ set feat_files(59) "/project/3018051.01/ruggero/derivatives/first_level/task-let
 set feat_files(60) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-227/sub-227_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (61)
-set feat_files(61) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-228/sub-228_ses-mri01_task-letters_space-T1w_desc-preproc_bold.feat/stats/cope1.nii.gz"
+set feat_files(61) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-228/sub-228_ses-mri01_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (62)
 set feat_files(62) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-229/sub-229_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope1.feat/stats/cope1.nii.gz"
