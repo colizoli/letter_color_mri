@@ -36,7 +36,7 @@ set fmri(outputdir) "/project/3018051.01/ruggero/derivatives/higher_level/task-c
 set fmri(tr) 3
 
 # Total volumes
-set fmri(npts) 68
+set fmri(npts) 67
 
 # Delete volumes
 set fmri(ndelete) 0
@@ -45,7 +45,7 @@ set fmri(ndelete) 0
 set fmri(tagfirst) 1
 
 # Number of first-level analyses
-set fmri(multiple) 68
+set fmri(multiple) 67
 
 # Higher-level input type
 # 1 : Inputs are lower-level FEAT directories
@@ -452,29 +452,25 @@ set feat_files(59) "/project/3018051.01/ruggero/derivatives/first_level/task-col
 set feat_files(60) "/project/3018051.01/ruggero/derivatives/first_level/task-colors/sub-227/sub-227_task-colors_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (61)
-set feat_files(61) 
-"/project/3018051.01/ruggero/derivatives/first_level/task-colors/sub-228/sub-228_task-colors_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope1.feat/stats/cope1.nii.gz"
+set feat_files(61) "/project/3018051.01/ruggero/derivatives/first_level/task-colors/sub-229/sub-229_task-colors_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (62)
-set feat_files(62) "/project/3018051.01/ruggero/derivatives/first_level/task-colors/sub-229/sub-229_task-colors_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope1.feat/stats/cope1.nii.gz"
+set feat_files(62) "/project/3018051.01/ruggero/derivatives/first_level/task-colors/sub-230/sub-230_task-colors_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (63)
-set feat_files(63) "/project/3018051.01/ruggero/derivatives/first_level/task-colors/sub-230/sub-230_task-colors_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope1.feat/stats/cope1.nii.gz"
+set feat_files(63) "/project/3018051.01/ruggero/derivatives/first_level/task-colors/sub-231/sub-231_task-colors_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (64)
-set feat_files(64) "/project/3018051.01/ruggero/derivatives/first_level/task-colors/sub-231/sub-231_task-colors_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope1.feat/stats/cope1.nii.gz"
+set feat_files(64) "/project/3018051.01/ruggero/derivatives/first_level/task-colors/sub-232/sub-232_task-colors_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (65)
-set feat_files(65) "/project/3018051.01/ruggero/derivatives/first_level/task-colors/sub-232/sub-232_task-colors_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope1.feat/stats/cope1.nii.gz"
+set feat_files(65) "/project/3018051.01/ruggero/derivatives/first_level/task-colors/sub-233/sub-233_task-colors_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (66)
-set feat_files(66) "/project/3018051.01/ruggero/derivatives/first_level/task-colors/sub-233/sub-233_task-colors_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope1.feat/stats/cope1.nii.gz"
+set feat_files(66) "/project/3018051.01/ruggero/derivatives/first_level/task-colors/sub-234/sub-234_task-colors_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (67)
-set feat_files(67) "/project/3018051.01/ruggero/derivatives/first_level/task-colors/sub-234/sub-234_task-colors_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope1.feat/stats/cope1.nii.gz"
-
-# 4D AVW data or FEAT directory (68)
-set feat_files(68) "/project/3018051.01/ruggero/derivatives/first_level/task-colors/sub-235/sub-235_task-colors_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope1.feat/stats/cope1.nii.gz"
+set feat_files(67) "/project/3018051.01/ruggero/derivatives/first_level/task-colors/sub-235/sub-235_task-colors_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope1.feat/stats/cope1.nii.gz"
 
 # Add confound EVs text file
 set fmri(confoundevs) 0
@@ -721,9 +717,6 @@ set fmri(evg66.1) 1.0
 # Higher-level EV value for EV 1 and input 67
 set fmri(evg67.1) 1.0
 
-# Higher-level EV value for EV 1 and input 68
-set fmri(evg68.1) 1.0
-
 # Group membership for input 1
 set fmri(groupmem.1) 1
 
@@ -924,9 +917,6 @@ set fmri(groupmem.66) 1
 
 # Group membership for input 67
 set fmri(groupmem.67) 1
-
-# Group membership for input 68
-set fmri(groupmem.68) 1
 
 # Contrast & F-tests mode
 # real : control real EVs
