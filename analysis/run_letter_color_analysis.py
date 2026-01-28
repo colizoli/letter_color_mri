@@ -62,8 +62,8 @@ run_higher_level    = False    # group-level analyses and statistics
 # -----------------------
 # Participants
 # -----------------------
-participants    = pd.read_csv(os.path.join(home_dir, 'participants_full_mri.csv'), dtype=str) # open in textmate, not excel!
-# participants    = pd.read_csv(os.path.join(home_dir, 'participants_process.csv'), dtype=str) # open in textmate, not excel!
+# participants    = pd.read_csv(os.path.join(home_dir, 'participants_full_mri.csv'), dtype=str) # open in textmate, not excel!
+participants    = pd.read_csv(os.path.join(home_dir, 'participants_process.csv'), dtype=str) # open in textmate, not excel!
 subjects  = participants['subjects']
 
 # -----------------------
@@ -80,8 +80,9 @@ if run_housekeeping:
             )            
         # housekeeping.rename_behav_logfiles()      # rename behavioral logfile names
         # housekeeping.delete_rsa_files()      # delete task-rsa files
+        # housekeeping.delete_rsa_directory()     # delete task-rsa folders
         # housekeeping.delete_loc_files()      # delete task-letters and/or task-colors files
-        housekeeping.delete_loc_directory()   # delete directory (gfeat or feat)
+        # housekeeping.delete_loc_directory()   # delete directory (gfeat or feat)
                 
         # shell()
           
@@ -110,8 +111,9 @@ if run_first_level:
         # first_level.rsa_timing_files_letters()            # each letter in it's color and black: trained/untrained vs. color/black
         # first_level.rsa_timing_files_2x2()                # simple 2x2 design: trained/untrained vs. color/black
         # first_level.rsa_letters_fsf()                     # generates the first level FSF for the RSA design
-        first_level.rsa_2x2_fsf()                         # generates the first level FSF for the 2x2 design
         ### RUN FIRST LEVEL FEATS (AS JOBS) ###
+        # first_level.rsa_2x2_fsf()                         # generates the first level FSF for the 2x2 design
+        ### RUN FIRST LEVEL FEATS (AS JOBS ~14 hours per subject) ###
         
         ### FIRST LEVEL FOR LOCALIZERS (separate sessions then average in 2nd level)
         # first_level.loc_match_bold()                      # match loc1 and loc2 in nifti file to letters and colors in events files
@@ -120,12 +122,13 @@ if run_first_level:
         # first_level.loc_timing_files()                    # timing files for localizers GLM
         # first_level.loc_fsf()                               # generates the first level FSF for the localizers
         ### RUN FIRST LEVEL FEATS (AS JOBS) ###
-        # first_level.loc_fsl_reg_workaround()              # create a "fake" reg folder with identity matrix and standard image = mean_func
-        # first_level.loc_second_level_fsf()                # after first levels are finished, generates the second level FSF (subject mean) for the localizers
+        first_level.loc_fsl_reg_workaround()              # create a "fake" reg folder with identity matrix and standard image = mean_func
+        first_level.loc_second_level_fsf()                # after first levels are finished, generates the second level FSF (subject mean) for the localizers
         ### RUN SECOND LEVEL FEATS (AS JOBS) ###
             
         # first_level.transform_anatomical_masks()          # apply reverse transformations from MNI anatomical masks into native-space
-        # first_level.loc_extract_rois()                    # after FEAT is finished, extract ROIs from stats within the anatomical mask of interest
+        # first_level.loc_rois_extract_sig_voxels()           # after FEAT is finished, extract ROIs from stats within the anatomical mask of interest
+        # first_level.loc_rois_extract_n_voxels()           # after FEAT is finished, extract ROIs from stats within the anatomical mask of interest
         # first_level.count_roi_voxels()                    # counts voxels for each ROI and overlap, outputs in single dataframe in derivatives/first_level
         
         # shell() # stop here or repeats ALL subjects!

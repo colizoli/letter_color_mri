@@ -80,7 +80,29 @@ class housekeeping_class(object):
             results = subprocess.call(cmd, shell=True, bufsize=0)
                                         
         print('success: delete_rsa_files')
+    
+    
+    def delete_rsa_directory(self):
+        """Delete RSA feat or gfeat directories
+        """
+
+        folders =[
+            '{}_ses-mri01_task-rsa_2x2.feat'.format(self.subject),
+            '{}_ses-mri02_task-rsa_2x2.feat'.format(self.subject)
+        ]
         
+        for f in folders:
+
+            file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, f)
+            ###################
+            # send command to terminal
+            # rm file_path 
+            cmd = 'rm -r {}'.format(file_path)
+            print(cmd)
+            results = subprocess.call(cmd, shell=True, bufsize=0)
+                                        
+        print('success: delete_loc_directory')
+    
     
     def delete_loc_files(self):
         """Delete localizer files (memory)
@@ -114,11 +136,14 @@ class housekeeping_class(object):
         """
 
         for task in ['task-letters', 'task-colors']:
-
+        # for task in [ 'task-colors']:
+        
             folders =[
                 # 2nd level
-                # '{}_{}_space-T1w_desc-preproc_bold.gfeat'.format(self.subject, task),
-                # '{}_{}_space-T1w_desc-preproc_bold+.gfeat'.format(self.subject, task),
+                '{}_{}_space-T1w_desc-preproc_bold.gfeat'.format(self.subject, task),
+                '{}_{}_space-T1w_desc-preproc_bold+.gfeat'.format(self.subject, task),
+                '{}_{}_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat'.format(self.subject, task),
+                '{}_{}_space-MNI152NLin6Asym_res-2_desc-preproc_bold+.gfeat'.format(self.subject, task),
                 # first level
                 # '{}_ses-mri02_{}_space-T1w_desc-preproc_bold.feat'.format(self.subject, task),
                 # '{}_ses-mri01_{}_space-T1w_desc-preproc_bold.feat'.format(self.subject, task),

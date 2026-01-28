@@ -1024,19 +1024,20 @@ class first_level_class(object):
         Notes:
             Run the actual FSF from the command line: feat task-colors_sub-01_ses-01.fsf
         """
-        localizers = ['letters', 'colors']
-        # contrast conditions
+        # # contrast conditions
         letters = ['Letter', 'Symbol']
         colors = ['Color', 'Black']
+        
+        localizers = ['letters', 'colors']
         conditions = [letters, colors]
 
         for t,task in enumerate(localizers):
             
             for session in ['ses-mri01','ses-mri02']:
             
-                # for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
+                for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
                 # for preprocessed_tag in ['space-T1w_desc-preproc_bold']:
-                for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold']:
+                # for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold']:
                 
                     template_filename = os.path.join(self.analysis_dir, 'templates', 'task-{}_first_level_template.fsf'.format(task))
     
@@ -1118,9 +1119,9 @@ class first_level_class(object):
             
             for session in ['ses-mri01','ses-mri02']:
             
-                # for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
+                for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
                 # for preprocessed_tag in ['space-T1w_desc-preproc_bold']:
-                for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold']:
+                # for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold']:
                                     
                     feat_dir = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_{}.feat'.format(self.subject, session, task, preprocessed_tag)) #
 
@@ -1157,13 +1158,13 @@ class first_level_class(object):
         Notes:
             Run the actual FSF from the command line: feat task-colors_sub-01.fsf
         """
-        localizers = ['letters', 'colors']        
+        localizers = ['letters', 'colors']
         
         for t,task in enumerate(localizers):
             
-            # for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
+            for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold', 'space-T1w_desc-preproc_bold']:
             # for preprocessed_tag in ['space-T1w_desc-preproc_bold']:
-            for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold']:
+            # for preprocessed_tag in ['space-MNI152NLin6Asym_res-2_desc-preproc_bold']:
             
                 template_filename = os.path.join(self.analysis_dir, 'templates', 'task-{}_second_level_template.fsf'.format(task))
 
@@ -1282,7 +1283,7 @@ class first_level_class(object):
         print('success: transform_anatomical_masks')
     
     
-    def loc_extract_rois(self,):
+    def loc_rois_extract_sig_voxels(self,):
         """Extract significant voxels for each localizer within the anatomical mask of interest.
 
         Notes:
@@ -1296,7 +1297,7 @@ class first_level_class(object):
         # letter, colors
         thresholds = [2.5, 3.1] # z-stat threshold for masking
         thresh_name = [25, 31] # for file name
-        masks = ['VOT_L', 'OFG'] # make sure in same order as localizer loop
+        masks = ['VOT_L', 'OFG_R'] # make sure in same order as localizer loop
         
         # which contrast to choose for letters and colors:
         contrasts = ['1', '1']
@@ -1326,9 +1327,94 @@ class first_level_class(object):
                 print(cmd)
                 results = subprocess.call(cmd, shell=True, bufsize=0)
                 
-        print('success: loc_extract_rois')
+        print('success: loc_rois_extract_sig_voxels')
         
     
+    def loc_rois_extract_n_voxels(self, N):
+        """Extract the top N significant voxels for each localizer within the anatomical mask of interest.
+        
+        Args:
+            N: integer 
+        
+        Notes:
+            The first-level analyses need to be finished already!
+            loc-colors: task-rsa/sub-xxx/sub-xxx_masks/sub-xxx_OFG_in_bold.nii.gz
+            loc-letters: task-rsa/sub-xxx/sub-xxx_masks/sub-xxx_VOT_L_in_bold.nii.gz
+            The output is saved in: task-rsa/sub-xxx/sub-xxx_masks/
+        
+            Stats are coming from the second level analysis (average across sessions)
+        """       
+        N = 100
+        # # letter, colors
+        # thresholds = [2.5, 3.1] # z-stat threshold for masking
+        # thresh_name = [25, 31] # for file name
+        # masks = ['VOT_L', 'OFG'] # make sure in same order as localizer loop
+        #
+        # # which contrast to choose for letters and colors:
+        # contrasts = ['1', '1']
+        
+        # colors
+        thresholds = [3.1] # z-stat threshold for masking
+        thresh_name = [31] # for file name
+        masks = ['OFG_R'] # make sure in same order as localizer loop
+        
+        # which contrast to choose for letters and colors:
+        contrasts = ['1']
+        
+        for preprocessed_tag in ['space-T1w_desc-preproc_bold']:
+            
+            # for t,task in enumerate(['letters', 'colors']): # make sure in same order as anatomical mask
+            for t,task in enumerate(['colors']): # make sure in same order as anatomical mask
+            
+                thresh = thresholds[t] # threshold for this localizer
+                
+                out_roi = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_roi-{}_{}.nii.gz'.format(self.subject, task, thresh_name[t]))
+                anat_mask = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_{}_in_bold.nii.gz'.format(self.subject, masks[t]))
+                try:
+                    # in higherlevel, always zstat1 but cope directory changes per contrast
+                    stats_image = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_{}.gfeat'.format(self.subject, task, preprocessed_tag), 'cope{}.feat'.format(contrasts[t]), 'stats', 'zstat1.nii.gz')
+                except: # one subject only had one run of localizers
+                    stats_image = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_{}.feat'.format(self.subject, task, preprocessed_tag), 'stats', 'zstat{}.nii.gz'.format(contrasts[t]))
+                
+                # Load data
+                stat_img = nib.load('stat_map.nii.gz')
+                mask_img = nib.load('your_mask.nii.gz')
+
+                stat_data = stat_img.get_fdata()
+                mask_data = mask_img.get_fdata()
+
+                # Get masked indices and values
+                mask_indices = np.where(mask_data > 0)
+                masked_values = stat_data[mask_indices]
+
+                # Find top N
+                N = 100
+                top_n_idx = np.argpartition(masked_values, -N)[-N:]
+                top_n_idx = top_n_idx[np.argsort(masked_values[top_n_idx])[::-1]]
+
+                # Get coordinates and values
+                top_voxels = pd.DataFrame({
+                    'x': mask_indices[0][top_n_idx],
+                    'y': mask_indices[1][top_n_idx],
+                    'z': mask_indices[2][top_n_idx],
+                    'value': masked_values[top_n_idx]
+                })
+
+                print(top_voxels)
+
+                # Create binary mask
+                topN_mask = np.zeros_like(stat_data)
+                topN_mask[mask_indices[0][top_n_idx], 
+                          mask_indices[1][top_n_idx], 
+                          mask_indices[2][top_n_idx]] = 1
+
+                # Save
+                topN_img = nib.Nifti1Image(topN_mask, stat_img.affine, stat_img.header)
+                nib.save(topN_img, 'topN_mask.nii.gz')
+                
+        print('success: loc_rois_extract_n_voxels')
+        
+        
     def count_roi_voxels(self,):
         """Count the voxels in each ROI and any overlapping voxels.
 
