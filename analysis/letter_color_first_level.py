@@ -15,7 +15,7 @@ ANTS
 
 # TO DO:
 
-import os, subprocess, sys, glob
+import os, subprocess, sys, glob, re
 import shutil as sh
 import pandas as pd
 import numpy as np
@@ -605,57 +605,57 @@ class first_level_class(object):
             # black
             EV1_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'a_black'))
             EV2_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'b_black'))
-            EV3_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'c_black'))
-            EV4_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'d_black'))
-            EV5_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'e_black'))
-            EV6_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'f_black'))
-            EV7_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'g_black'))
-            EV8_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'h_black'))
-            EV9_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'i_black'))
-            EV10_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'j_black'))
-            EV11_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'k_black'))
-            EV12_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'l_black'))
-            EV13_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'m_black'))
-            EV14_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'n_black'))
-            EV15_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'o_black'))
-            EV16_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'p_black'))
-            EV17_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'q_black'))
-            EV18_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'r_black'))
-            EV19_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'s_black'))
-            EV20_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'t_black'))
-            EV21_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'u_black'))
-            EV22_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'v_black'))
-            EV23_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'w_black'))
-            EV24_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'x_black'))
-            EV25_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'y_black'))
-            EV26_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'z_black'))
+            EV3_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'c_black'))
+            EV4_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'd_black'))
+            EV5_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'e_black'))
+            EV6_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'f_black'))
+            EV7_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'g_black'))
+            EV8_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'h_black'))
+            EV9_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'i_black'))
+            EV10_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'j_black'))
+            EV11_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'k_black'))
+            EV12_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'l_black'))
+            EV13_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'm_black'))
+            EV14_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'n_black'))
+            EV15_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'o_black'))
+            EV16_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'p_black'))
+            EV17_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'q_black'))
+            EV18_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'r_black'))
+            EV19_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 's_black'))
+            EV20_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 't_black'))
+            EV21_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'u_black'))
+            EV22_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'v_black'))
+            EV23_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'w_black'))
+            EV24_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'x_black'))
+            EV25_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'y_black'))
+            EV26_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'z_black'))
             # color
-            EV27_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'a_color'))
-            EV28_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'b_color'))
-            EV29_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'c_color'))
-            EV30_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'d_color'))
-            EV31_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'e_color'))
-            EV32_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'f_color'))
-            EV33_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'g_color'))
-            EV34_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'h_color'))
-            EV35_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'i_color'))
-            EV36_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'j_color'))
-            EV37_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'k_color'))
-            EV38_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'l_color'))
-            EV39_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'m_color'))
-            EV40_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'n_color'))
-            EV41_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'o_color'))
-            EV42_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'p_color'))
-            EV43_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'q_color'))
-            EV44_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'r_color'))
-            EV45_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'s_color'))
-            EV46_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'t_color'))
-            EV47_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'u_color'))
-            EV48_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'v_color'))
-            EV49_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'w_color'))
-            EV50_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'x_color'))
-            EV51_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'y_color'))
-            EV52_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task,'z_color'))
+            EV27_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'a_color'))
+            EV28_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'b_color'))
+            EV29_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'c_color'))
+            EV30_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'd_color'))
+            EV31_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'e_color'))
+            EV32_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'f_color'))
+            EV33_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'g_color'))
+            EV34_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'h_color'))
+            EV35_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'i_color'))
+            EV36_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'j_color'))
+            EV37_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'k_color'))
+            EV38_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'l_color'))
+            EV39_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'm_color'))
+            EV40_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'n_color'))
+            EV41_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'o_color'))
+            EV42_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'p_color'))
+            EV43_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'q_color'))
+            EV44_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'r_color'))
+            EV45_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 's_color'))
+            EV46_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 't_color'))
+            EV47_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'u_color'))
+            EV48_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'v_color'))
+            EV49_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'w_color'))
+            EV50_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'x_color'))
+            EV51_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'y_color'))
+            EV52_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'z_color'))
             # oddballs last
             EV53_path = os.path.join(timing_files_dir, '{}_{}_task-{}_{}.txt'.format(self.subject, session, task, 'oddballs'))
 
@@ -1207,8 +1207,8 @@ class first_level_class(object):
                 self.first_level_job.write(cmd)   # feat command
                 self.first_level_job.write("\n\n")  # new line
                 self.first_level_job.close()
-                print('success: loc_second_level_fsf {}'.format(FSF_filename))     
-                      
+                print('success: loc_second_level_fsf {}'.format(FSF_filename))          
+        
 
     def transform_anatomical_masks(self,):
         """Apply the transformation from MNI space to T1w-BOLD-2mm space via the T1-weighted anatomical image on the anatomical masks (MNI atlas). 
@@ -1224,7 +1224,8 @@ class first_level_class(object):
     
         import ants
     
-        for mask in ['OFG', 'IPLD', 'VOT_L']:
+        # for mask in ['OFG', 'OFG_R', 'OFG_L', 'IPLD', 'VOT_L']:
+        for mask in [ 'OFG_R', 'OFG_L', ]:
         
             ### STEP 1: MNI to T1w ###
             anat_mask = os.path.join(self.mask_dir, 'anatomical', '{}.nii.gz'.format(mask))
@@ -1330,7 +1331,7 @@ class first_level_class(object):
         print('success: loc_rois_extract_sig_voxels')
         
     
-    def loc_rois_extract_n_voxels(self, N):
+    def loc_rois_extract_n_voxels(self, ):
         """Extract the top N significant voxels for each localizer within the anatomical mask of interest.
         
         Args:
@@ -1344,7 +1345,7 @@ class first_level_class(object):
         
             Stats are coming from the second level analysis (average across sessions)
         """       
-        N = 100
+        N = 200
         # # letter, colors
         # thresholds = [2.5, 3.1] # z-stat threshold for masking
         # thresh_name = [25, 31] # for file name
@@ -1354,8 +1355,6 @@ class first_level_class(object):
         # contrasts = ['1', '1']
         
         # colors
-        thresholds = [3.1] # z-stat threshold for masking
-        thresh_name = [31] # for file name
         masks = ['OFG_R'] # make sure in same order as localizer loop
         
         # which contrast to choose for letters and colors:
@@ -1365,20 +1364,17 @@ class first_level_class(object):
             
             # for t,task in enumerate(['letters', 'colors']): # make sure in same order as anatomical mask
             for t,task in enumerate(['colors']): # make sure in same order as anatomical mask
-            
-                thresh = thresholds[t] # threshold for this localizer
+                            
+                out_roi = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_roi-{}_top{}voxels.nii.gz'.format(self.subject, task, N))
+                out_roi_data = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_roi-{}_top{}voxels.csv'.format(self.subject, task, N))
+                anat_mask_path = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_{}_in_bold.nii.gz'.format(self.subject, masks[t]))
                 
-                out_roi = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_roi-{}_{}.nii.gz'.format(self.subject, task, thresh_name[t]))
-                anat_mask = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_{}_in_bold.nii.gz'.format(self.subject, masks[t]))
-                try:
-                    # in higherlevel, always zstat1 but cope directory changes per contrast
-                    stats_image = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_{}.gfeat'.format(self.subject, task, preprocessed_tag), 'cope{}.feat'.format(contrasts[t]), 'stats', 'zstat1.nii.gz')
-                except: # one subject only had one run of localizers
-                    stats_image = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_{}.feat'.format(self.subject, task, preprocessed_tag), 'stats', 'zstat{}.nii.gz'.format(contrasts[t]))
-                
+                # in higherlevel, always zstat1 but cope directory changes per contrast
+                stat_img_path = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_task-{}_{}.gfeat'.format(self.subject, task, preprocessed_tag), 'cope{}.feat'.format(contrasts[t]), 'stats', 'zstat1.nii.gz')
+                    
                 # Load data
-                stat_img = nib.load('stat_map.nii.gz')
-                mask_img = nib.load('your_mask.nii.gz')
+                stat_img = nib.load(stat_img_path)
+                mask_img = nib.load(anat_mask_path)
 
                 stat_data = stat_img.get_fdata()
                 mask_data = mask_img.get_fdata()
@@ -1388,7 +1384,6 @@ class first_level_class(object):
                 masked_values = stat_data[mask_indices]
 
                 # Find top N
-                N = 100
                 top_n_idx = np.argpartition(masked_values, -N)[-N:]
                 top_n_idx = top_n_idx[np.argsort(masked_values[top_n_idx])[::-1]]
 
@@ -1399,9 +1394,7 @@ class first_level_class(object):
                     'z': mask_indices[2][top_n_idx],
                     'value': masked_values[top_n_idx]
                 })
-
-                print(top_voxels)
-
+                
                 # Create binary mask
                 topN_mask = np.zeros_like(stat_data)
                 topN_mask[mask_indices[0][top_n_idx], 
@@ -1410,8 +1403,12 @@ class first_level_class(object):
 
                 # Save
                 topN_img = nib.Nifti1Image(topN_mask, stat_img.affine, stat_img.header)
-                nib.save(topN_img, 'topN_mask.nii.gz')
+                nib.save(topN_img, out_roi)
                 
+                # save data frame per roi
+                print(top_voxels)
+                top_voxels.to_csv(out_roi_data)
+                                
         print('success: loc_rois_extract_n_voxels')
         
         

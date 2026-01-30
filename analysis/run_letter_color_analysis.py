@@ -31,7 +31,7 @@ from IPython import embed as shell # for Oly's debugging only
 # custom analysis scripts
 import letter_color_housekeeping
 import letter_color_first_level
-# import letter_color_higher_level
+import letter_color_higher_level
 
 # -----------------------
 # Paths
@@ -56,14 +56,14 @@ TR = 1.5 # seconds
 # Levels (switch ON/OFF)
 # ----------------------- 
 run_housekeeping    = False    # change file names, move files, etc.
-run_first_level     = True     # concatenate runs, timing files, 1st level GLMs
-run_higher_level    = False    # group-level analyses and statistics
+run_first_level     = False     # concatenate runs, timing files, 1st level GLMs
+run_higher_level    = True    # group-level analyses and statistics
 
 # -----------------------
 # Participants
 # -----------------------
-# participants    = pd.read_csv(os.path.join(home_dir, 'participants_full_mri.csv'), dtype=str) # open in textmate, not excel!
-participants    = pd.read_csv(os.path.join(home_dir, 'participants_process.csv'), dtype=str) # open in textmate, not excel!
+participants    = pd.read_csv(os.path.join(home_dir, 'participants_full_mri.csv'), dtype=str) # open in textmate, not excel!
+# participants    = pd.read_csv(os.path.join(home_dir, 'participants_process.csv'), dtype=str) # open in textmate, not excel!
 subjects  = participants['subjects']
 
 # -----------------------
@@ -122,12 +122,13 @@ if run_first_level:
         # first_level.loc_timing_files()                    # timing files for localizers GLM
         # first_level.loc_fsf()                               # generates the first level FSF for the localizers
         ### RUN FIRST LEVEL FEATS (AS JOBS) ###
-        first_level.loc_fsl_reg_workaround()              # create a "fake" reg folder with identity matrix and standard image = mean_func
-        first_level.loc_second_level_fsf()                # after first levels are finished, generates the second level FSF (subject mean) for the localizers
+        # first_level.loc_fsl_reg_workaround()              # create a "fake" reg folder with identity matrix and standard image = mean_func
+        # first_level.loc_second_level_fsf()                # after first levels are finished, generates the second level FSF (subject mean) for the localizers
         ### RUN SECOND LEVEL FEATS (AS JOBS) ###
-            
+        ## note: reorganize sub-228 to gfeat to match folder structure
+        
         # first_level.transform_anatomical_masks()          # apply reverse transformations from MNI anatomical masks into native-space
-        # first_level.loc_rois_extract_sig_voxels()           # after FEAT is finished, extract ROIs from stats within the anatomical mask of interest
+        # first_level.loc_rois_extract_sig_voxels()         # after FEAT is finished, extract ROIs from stats within the anatomical mask of interest
         # first_level.loc_rois_extract_n_voxels()           # after FEAT is finished, extract ROIs from stats within the anatomical mask of interest
         # first_level.count_roi_voxels()                    # counts voxels for each ROI and overlap, outputs in single dataframe in derivatives/first_level
         
@@ -137,20 +138,16 @@ if run_first_level:
 # Run higher-level class
 # -----------------------
 if run_higher_level:
-    ### PARTICIPANT LIST FOR BEHAVIOR ONLY
-    participants = pd.read_csv(os.path.join(analysis_dir,'participants_full_behav.csv'), dtype=str) # open in textmate, not excel!
     higher_level = letter_color_higher_level.higher_level_class(
-            subjects     = subjects_group,
-            sessions     = sessions,
+            subjects     = subjects,
             analysis_dir = analysis_dir,
             deriv_dir    = deriv_dir,
             mask_dir     = mask_dir,
             template_dir = template_dir,
             TR           = TR, # repitition time in seconds
-            participants = participants
             )
         
-    higher_level.dataframe_trained_letters()                # all subjects letter conditions and colors 
+    # higher_level.dataframe_trained_letters()                # all subjects letter conditions and colors
     
     # higher_level.dataframe_qualia()                       # calculates the PA score from the questionnaire
     # higher_level.plot_qualia()                            # plots histograms and means of the PA scores
@@ -175,3 +172,5 @@ if run_higher_level:
     # higher_level.rsa_letters_ev_conditions()      # outputs a DF with the letter and color conditions (general)
     # higher_level.rsa_letters_conditions()         # concatenates all subjects events files for letter-color conditions
     # higher_level.rsa_letters_combine_events()     # concatenates all subjects events files trial-wise
+    
+    higher_level.extract_voxels_rsa_letters()

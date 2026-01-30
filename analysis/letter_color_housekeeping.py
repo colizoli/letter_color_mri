@@ -135,34 +135,35 @@ class housekeeping_class(object):
         """Delete localizer feat or gfeat directories
         """
 
-        for task in ['task-letters', 'task-colors']:
-        # for task in [ 'task-colors']:
-        
-            folders =[
-                # 2nd level
-                '{}_{}_space-T1w_desc-preproc_bold.gfeat'.format(self.subject, task),
-                '{}_{}_space-T1w_desc-preproc_bold+.gfeat'.format(self.subject, task),
-                '{}_{}_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat'.format(self.subject, task),
-                '{}_{}_space-MNI152NLin6Asym_res-2_desc-preproc_bold+.gfeat'.format(self.subject, task),
-                # first level
-                # '{}_ses-mri02_{}_space-T1w_desc-preproc_bold.feat'.format(self.subject, task),
-                # '{}_ses-mri01_{}_space-T1w_desc-preproc_bold.feat'.format(self.subject, task),
-                # '{}_ses-mri02_{}_space-T1w_desc-preproc_bold+.feat'.format(self.subject, task),
-                # '{}_ses-mri01_{}_space-T1w_desc-preproc_bold+.feat'.format(self.subject, task)
-                '{}_ses-mri01_{}_space-MNI152NLin6Asym_res-2_desc-preproc_bold.feat'.format(self.subject, task),
-                
-                '{}_ses-mri02_{}_space-MNI152NLin6Asym_res-2_desc-preproc_bold.feat'.format(self.subject, task)
-            ]
+        if self.subject == 'sub-228':
+            pass
+        else:
             
-            for f in folders:
+            for task in ['task-letters', 'task-colors']:
+            # for task in [ 'task-colors']:
+        
+                folders =[
+                    # 2nd level
+                    # '{}_{}_space-T1w_desc-preproc_bold.gfeat'.format(self.subject, task),
+                    # '{}_{}_space-T1w_desc-preproc_bold+.gfeat'.format(self.subject, task),
+                    # '{}_{}_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat'.format(self.subject, task),
+                    # '{}_{}_space-MNI152NLin6Asym_res-2_desc-preproc_bold+.gfeat'.format(self.subject, task),
+                    # first level
+                    '{}_ses-mri02_{}_space-T1w_desc-preproc_bold.feat'.format(self.subject, task),
+                    '{}_ses-mri01_{}_space-T1w_desc-preproc_bold.feat'.format(self.subject, task),
+                    '{}_ses-mri01_{}_space-MNI152NLin6Asym_res-2_desc-preproc_bold.feat'.format(self.subject, task),
+                    '{}_ses-mri02_{}_space-MNI152NLin6Asym_res-2_desc-preproc_bold.feat'.format(self.subject, task)
+                ]
+            
+                for f in folders:
 
-                file_path = os.path.join(self.deriv_dir, 'first_level', task, self.subject, f)
-                ###################
-                # send command to terminal
-                # rm file_path 
-                cmd = 'rm -r {}'.format(file_path)
-                print(cmd)
-                results = subprocess.call(cmd, shell=True, bufsize=0)
+                    file_path = os.path.join(self.deriv_dir, 'first_level', task, self.subject, f)
+                    ###################
+                    # send command to terminal
+                    # rm file_path 
+                    cmd = 'rm -r {}'.format(file_path)
+                    print(cmd)
+                    results = subprocess.call(cmd, shell=True, bufsize=0)
                                         
         print('success: delete_loc_directory')
         
