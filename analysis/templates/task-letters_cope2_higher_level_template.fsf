@@ -30,7 +30,7 @@ set fmri(featwatcher_yn) 1
 set fmri(sscleanup_yn) 0
 
 # Output directory
-set fmri(outputdir) "/project/3018051.01/ruggero/derivatives/higher_level/task-letters.gfeat"
+set fmri(outputdir) "/project/3018051.01/ruggero/derivatives/higher_level/task-letters_symbols-letters.gfeat"
 
 # TR(s)
 set fmri(tr) 3
