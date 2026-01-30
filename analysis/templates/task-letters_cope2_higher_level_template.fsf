@@ -269,208 +269,208 @@ set fmri(fnirt_config) "T1_2_MNI152_2mm"
 
 
 # Number of lower-level copes feeding into higher-level analysis
-set fmri(ncopeinputs) 0
+set fmri(ncopeinputs) 2
 
 # 4D AVW data or FEAT directory (1)
-set feat_files(1) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-102/sub-102_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(1) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-102/sub-102_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (2)
-set feat_files(2) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-103/sub-103_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(2) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-103/sub-103_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (3)
-set feat_files(3) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-104/sub-104_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(3) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-104/sub-104_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (4)
-set feat_files(4) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-105/sub-105_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(4) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-105/sub-105_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (5)
-set feat_files(5) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-106/sub-106_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(5) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-106/sub-106_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (6)
-set feat_files(6) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-107/sub-107_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(6) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-107/sub-107_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (7)
-set feat_files(7) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-108/sub-108_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(7) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-108/sub-108_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (8)
-set feat_files(8) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-109/sub-109_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(8) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-109/sub-109_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (9)
-set feat_files(9) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-110/sub-110_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(9) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-110/sub-110_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (10)
-set feat_files(10) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-111/sub-111_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(10) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-111/sub-111_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (11)
-set feat_files(11) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-112/sub-112_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(11) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-112/sub-112_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (12)
-set feat_files(12) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-113/sub-113_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(12) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-113/sub-113_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (13)
-set feat_files(13) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-114/sub-114_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(13) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-114/sub-114_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (14)
-set feat_files(14) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-115/sub-115_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(14) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-115/sub-115_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (15)
-set feat_files(15) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-116/sub-116_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(15) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-116/sub-116_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (16)
-set feat_files(16) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-118/sub-118_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(16) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-118/sub-118_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (17)
-set feat_files(17) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-119/sub-119_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(17) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-119/sub-119_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (18)
-set feat_files(18) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-120/sub-120_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(18) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-120/sub-120_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (19)
-set feat_files(19) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-121/sub-121_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(19) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-121/sub-121_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (20)
-set feat_files(20) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-122/sub-122_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(20) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-122/sub-122_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (21)
-set feat_files(21) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-123/sub-123_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(21) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-123/sub-123_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (22)
-set feat_files(22) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-124/sub-124_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(22) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-124/sub-124_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (23)
-set feat_files(23) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-125/sub-125_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(23) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-125/sub-125_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (24)
-set feat_files(24) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-126/sub-126_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(24) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-126/sub-126_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (25)
-set feat_files(25) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-127/sub-127_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(25) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-127/sub-127_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (26)
-set feat_files(26) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-128/sub-128_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(26) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-128/sub-128_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (27)
-set feat_files(27) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-129/sub-129_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(27) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-129/sub-129_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (28)
-set feat_files(28) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-130/sub-130_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(28) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-130/sub-130_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (29)
-set feat_files(29) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-131/sub-131_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(29) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-131/sub-131_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (30)
-set feat_files(30) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-132/sub-132_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(30) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-132/sub-132_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (31)
-set feat_files(31) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-133/sub-133_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(31) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-133/sub-133_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (32)
-set feat_files(32) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-134/sub-134_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(32) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-134/sub-134_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (33)
-set feat_files(33) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-135/sub-135_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(33) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-135/sub-135_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (34)
-set feat_files(34) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-136/sub-136_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(34) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-136/sub-136_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (35)
-set feat_files(35) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-201/sub-201_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(35) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-201/sub-201_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (36)
-set feat_files(36) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-202/sub-202_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(36) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-202/sub-202_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (37)
-set feat_files(37) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-203/sub-203_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(37) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-203/sub-203_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (38)
-set feat_files(38) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-204/sub-204_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(38) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-204/sub-204_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (39)
-set feat_files(39) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-205/sub-205_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(39) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-205/sub-205_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (40)
-set feat_files(40) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-206/sub-206_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(40) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-206/sub-206_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (41)
-set feat_files(41) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-207/sub-207_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(41) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-207/sub-207_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (42)
-set feat_files(42) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-208/sub-208_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(42) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-208/sub-208_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (43)
-set feat_files(43) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-209/sub-209_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(43) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-209/sub-209_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (44)
-set feat_files(44) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-210/sub-210_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(44) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-210/sub-210_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (45)
-set feat_files(45) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-211/sub-211_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(45) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-211/sub-211_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (46)
-set feat_files(46) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-212/sub-212_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(46) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-212/sub-212_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (47)
-set feat_files(47) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-213/sub-213_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(47) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-213/sub-213_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (48)
-set feat_files(48) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-214/sub-214_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(48) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-214/sub-214_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (49)
-set feat_files(49) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-215/sub-215_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(49) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-215/sub-215_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (50)
-set feat_files(50) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-216/sub-216_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(50) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-216/sub-216_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (51)
-set feat_files(51) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-218/sub-218_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(51) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-218/sub-218_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (52)
-set feat_files(52) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-219/sub-219_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(52) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-219/sub-219_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (53)
-set feat_files(53) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-220/sub-220_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(53) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-220/sub-220_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (54)
-set feat_files(54) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-221/sub-221_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(54) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-221/sub-221_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (55)
-set feat_files(55) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-222/sub-222_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(55) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-222/sub-222_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (56)
-set feat_files(56) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-223/sub-223_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(56) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-223/sub-223_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (57)
-set feat_files(57) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-224/sub-224_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(57) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-224/sub-224_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (58)
-set feat_files(58) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-225/sub-225_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(58) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-225/sub-225_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (59)
-set feat_files(59) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-226/sub-226_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(59) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-226/sub-226_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (60)
-set feat_files(60) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-227/sub-227_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(60) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-227/sub-227_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (61)
-set feat_files(61) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-229/sub-229_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(61) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-229/sub-229_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (62)
-set feat_files(62) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-230/sub-230_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(62) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-230/sub-230_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (63)
-set feat_files(63) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-231/sub-231_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(63) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-231/sub-231_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (64)
-set feat_files(64) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-232/sub-232_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(64) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-232/sub-232_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (65)
-set feat_files(65) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-233/sub-233_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(65) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-233/sub-233_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (66)
-set feat_files(66) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-234/sub-234_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(66) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-234/sub-234_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (67)
-set feat_files(67) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-235/sub-235_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope2.nii.gz"
+set feat_files(67) "/project/3018051.01/ruggero/derivatives/first_level/task-letters/sub-235/sub-235_task-letters_space-MNI152NLin6Asym_res-2_desc-preproc_bold.gfeat/cope2.feat/stats/cope1.nii.gz"
 
 # Add confound EVs text file
 set fmri(confoundevs) 0
