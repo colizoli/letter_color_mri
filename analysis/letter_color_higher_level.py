@@ -972,34 +972,37 @@ class higher_level_class(object):
         stat = 'zstat'
         
         df_out = pd.DataFrame() # output tstat dataframe for all subjects
-        for s,subject in enumerate(self.subjects):
-            
-            mask_path = os.path.join(self.first_level_dir, 'task-rsa', subject, '{}_masks'.format(subject), '{}_{}.nii.gz'.format(subject, roi))
-            mask_data = np.array(nib.load(mask_path).get_fdata(),dtype=bool) # boolean mask
-            
-            for session in ['ses-mri01', 'ses-mri02']:
-                
+        for session in ['ses-mri01', 'ses-mri02']:
+            for s,subject in enumerate(self.subjects):
+                # where is the mask?
+                mask_path = os.path.join(self.first_level_dir, 'task-rsa', subject, '{}_masks'.format(subject), '{}_{}.nii.gz'.format(subject, roi))
+                mask_data = np.array(nib.load(mask_path).get_fdata(),dtype=bool) # boolean mask
                 # path to first level feat directory
                 this_path = os.path.join(self.first_level_dir, 'task-rsa', subject, '{}_{}_task-rsa_letters.feat'.format(subject, session), 'stats')
-                
+            
                 # 52 EVs alphabet in black, then alphabet in color
                 for ev in np.arange(1,53):
-                    this_df = pd.DataFrame() # temporary DF for concatenation
                     bold = os.path.join(this_path, '{}{}.nii.gz'.format(stat, ev)) 
                     # statistic
                     nii = nib.load(bold).get_fdata()[mask_data] # flattens
+                    # temporary DF for concatenation
+                    columns1 = ['subject', 'session', 'ev', 'condition', 'stat']
+                    columns2 = [f'voxel_{i}' for i in range(len(nii))]
+                    columns1.extend(columns2) # extends in place
+                    
+                    this_df = pd.DataFrame(columns = columns1)
+                    
                     # columns
-                    this_df['subject']      = np.repeat(subject, len(nii))
-                    this_df['session']      = np.repeat(session, len(nii))
-                    this_df['ev']           = np.repeat(ev, len(nii))
-                    this_df[stat]           = nii
-                    # this_df['brain_labels'] = labels[mask_data] # flatten
-                    this_df['mask_idx']     = np.arange(len(nii))
+                    this_df.loc[0, 'subject']   = subject
+                    this_df.loc[0, 'session']   = session
+                    this_df.loc[0, 'ev']        = ev
+                    this_df.loc[0, 'condition'] = self.ev_labels[ev-1]
+                    this_df.loc[0, 'stat']      = stat
+                    this_df.loc[0, columns2]    = nii
 
                     # concat data frames
                     df_out = pd.concat([df_out,this_df],axis=0)
-        
-        df_out.to_csv(os.path.join(self.higher_level_dir, 'extract_voxels_rsa_letters_{}_{}.csv'.format(mask, stats)))
-        shell()
+                            
+        df_out.to_csv(os.path.join(self.higher_level_dir, 'extract_voxels_rsa_letters_{}_{}.csv'.format(roi, stat)))
         print('success: extract_voxels_rsa_letters')
         
