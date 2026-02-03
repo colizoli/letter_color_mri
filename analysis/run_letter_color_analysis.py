@@ -56,14 +56,14 @@ TR = 1.5 # seconds
 # Levels (switch ON/OFF)
 # ----------------------- 
 run_housekeeping    = False    # change file names, move files, etc.
-run_first_level     = False     # concatenate runs, timing files, 1st level GLMs
-run_higher_level    = True    # group-level analyses and statistics
+run_first_level     = True     # concatenate runs, timing files, 1st level GLMs
+run_higher_level    = False    # group-level analyses and statistics
 
 # -----------------------
 # Participants
 # -----------------------
-participants    = pd.read_csv(os.path.join(home_dir, 'participants_full_mri.csv'), dtype=str) # open in textmate, not excel!
-# participants    = pd.read_csv(os.path.join(home_dir, 'participants_process.csv'), dtype=str) # open in textmate, not excel!
+# participants    = pd.read_csv(os.path.join(home_dir, 'participants_full_mri.csv'), dtype=str) # open in textmate, not excel!
+participants    = pd.read_csv(os.path.join(home_dir, 'participants_process.csv'), dtype=str) # open in textmate, not excel!
 subjects  = participants['subjects']
 
 # -----------------------
@@ -104,16 +104,16 @@ if run_first_level:
         # first_level.rsa_combine_brain_masks()             # make a union of brain masks from RSA runs for all tasks (they are not the same for each run)
         # first_level.rsa_combine_epi()                     # concatenate the 4 runs per session of EPI data to perform a single GLM (RSA task).
         # first_level.rsa_mask_epi()                        # apply brain mask to RSA task
-        # first_level.rsa_dcm_split_nifti()                 # for spm, split the four-run concatenated nifti into single volume images and unzip
-        # first_level.rsa_combine_events()                  # concantenate the events files of all runs and output in first_level directory and add unique identifiers for each color
-        # first_level.rsa_nuisance_regressors()             # volume-based physiological components, motion parameters, cosine (low-fres), and run means
-        # first_level.rsa_timing_files_oddballs()           # create timing files for oddball stimuli
-        # first_level.rsa_timing_files_letters()            # each letter in it's color and black: trained/untrained vs. color/black
-        # first_level.rsa_timing_files_2x2()                # simple 2x2 design: trained/untrained vs. color/black
-        # first_level.rsa_letters_fsf()                     # generates the first level FSF for the RSA design
+        first_level.rsa_combine_events()                  # concantenate the events files of all runs and output in first_level directory and add unique identifiers for each color
+        first_level.rsa_nuisance_regressors()             # volume-based physiological components, motion parameters, cosine (low-fres), and run means
+        first_level.rsa_timing_files_oddballs()           # create timing files for oddball stimuli
+        first_level.rsa_timing_files_letters()            # each letter in it's color and black: trained/untrained vs. color/black
+        first_level.rsa_timing_files_2x2()                # simple 2x2 design: trained/untrained vs. color/black
+        first_level.rsa_letters_fsf()                     # generates the first level FSF for the RSA design
         ### RUN FIRST LEVEL FEATS (AS JOBS) ###
         # first_level.rsa_2x2_fsf()                         # generates the first level FSF for the 2x2 design
         ### RUN FIRST LEVEL FEATS (AS JOBS ~14 hours per subject) ###
+        # first_level.rsa_dcm_split_nifti()                 # for spm, split the four-run concatenated nifti into single volume images and unzip
         
         ### FIRST LEVEL FOR LOCALIZERS (separate sessions then average in 2nd level)
         # first_level.loc_match_bold()                      # match loc1 and loc2 in nifti file to letters and colors in events files
