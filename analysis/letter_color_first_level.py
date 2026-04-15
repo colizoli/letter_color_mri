@@ -115,10 +115,9 @@ class first_level_class(object):
                             brain_masks.append(nii_path)
 
             # send command to terminal
-            if len(brain_masks) == 4: # at least one subject had only 3 runs
+            if len(brain_masks) == 4: # one subject had only 3 runs
                 cmd = 'fslmaths {} -add {} -add {} -add {} -add {} -add {} -add {} -add {} -bin {}'.format(brain_masks[0], brain_masks[1], brain_masks[2], brain_masks[3], brain_masks[4], brain_masks[5], brain_masks[6], brain_masks[7],out_file)
             else:
-                
                 cmd = 'fslmaths {} -add {} -add {} -add {} -add {} -add {} -bin {}'.format(brain_masks[0], brain_masks[1], brain_masks[2], brain_masks[3], brain_masks[4], brain_masks[5],out_file)
             print(cmd)
             results = subprocess.call(cmd, shell=True, bufsize=0)
@@ -218,58 +217,6 @@ class first_level_class(object):
                 print(cmd)
                 results = subprocess.call(cmd, shell=True, bufsize=0)
         print('success: rsa_mask_epi')
-
-
-    def rsa_dcm_split_nifti(self, task='rsa'):
-        """Split the concatenated four runs of the RSA task into single images for SPM (DCM analysis) and unzip compressed niftis then delete original EPI (memory).
-        
-        Args:
-            task (str): which task. Default 'rsa'.
-        
-        Notes:
-            See rsa_combine_epi()
-        """
-        
-        preprocessed_tag = 'space-T1w_desc-preproc_bold'
-        
-        for session in ['ses-mri01','ses-mri02']:            
-        
-            # input is the concantenated bold of all runs per session (input to first level)
-            nii_in = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_run-concat_{}_brain.nii.gz'.format(self.subject, session, task, preprocessed_tag))
-            
-            # directory for DCM files using SPM
-            spm_dir = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_SPM'.format(self.subject))
-            
-            # make input_spm/session folders inside SPM directory they don't exist
-            path_subj = os.path.join(spm_dir, '{}_input_spm'.format(self.subject))
-            if not os.path.isdir(path_subj):
-                os.mkdir(path_subj)
-            path_subj_sess = os.path.join(path_subj, session)
-            if not os.path.isdir(path_subj_sess):
-                os.mkdir(path_subj_sess)    
-            
-            nii_out_base = os.path.join(path_subj_sess, '{}_{}_task-{}_run-concat_'.format(self.subject, session, task))
-                  
-            # fslsplit input output_base_name -t
-            cmd = 'fslsplit {} {} -t'.format(nii_in, nii_out_base)
-            print(cmd)
-            results = subprocess.call(cmd, shell=True, bufsize=0)
-            
-            # unzip the compressed nifti files for SPM, overwrites original .gz files
-            for nii in os.listdir(path_subj_sess):
-                file_path = os.path.join(path_subj_sess, nii)
-                cmd = 'gzip -d {}'.format(file_path)
-                print(cmd)
-                results = subprocess.call(cmd, shell=True, bufsize=0)
-                
-            ###################
-            # Delete original EPI to save memory
-            # rm file_path 
-            cmd = 'rm {}'.format(nii_in)
-            print(cmd)
-            results = subprocess.call(cmd, shell=True, bufsize=0)
-
-        print('success: rsa_dcm_split_nifti')    
         
     
     def rsa_combine_events(self, task='rsa'):
@@ -787,6 +734,59 @@ class first_level_class(object):
             print('success: rsa_2x2_fsf {}'.format(fsf_filename))
     
     
+    def rsa_dcm_split_nifti(self, task='rsa', rm_original=False):
+        """Split the concatenated four runs of the RSA task into single images for SPM (DCM analysis) and unzip compressed niftis then delete original EPI (memory).
+        
+        Args:
+            task (str): which task. Default 'rsa'.
+        
+        Notes:
+            See rsa_combine_epi()
+        """
+        
+        preprocessed_tag = 'space-T1w_desc-preproc_bold'
+        
+        for session in ['ses-mri01','ses-mri02']:            
+        
+            # input is the concantenated bold of all runs per session (input to first level)
+            nii_in = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_run-concat_{}_brain.nii.gz'.format(self.subject, session, task, preprocessed_tag))
+            
+            # directory for DCM files using SPM
+            spm_dir = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_SPM'.format(self.subject))
+            
+            # make input_spm/session folders inside SPM directory they don't exist
+            path_subj = os.path.join(spm_dir, '{}_input_spm'.format(self.subject))
+            if not os.path.isdir(path_subj):
+                os.mkdir(path_subj)
+            path_subj_sess = os.path.join(path_subj, session)
+            if not os.path.isdir(path_subj_sess):
+                os.mkdir(path_subj_sess)    
+            
+            nii_out_base = os.path.join(path_subj_sess, '{}_{}_task-{}_run-concat_'.format(self.subject, session, task))
+                  
+            # fslsplit input output_base_name -t
+            cmd = 'fslsplit {} {} -t'.format(nii_in, nii_out_base)
+            print(cmd)
+            results = subprocess.call(cmd, shell=True, bufsize=0)
+            
+            # unzip the compressed nifti files for SPM, overwrites original .gz files
+            for nii in os.listdir(path_subj_sess):
+                file_path = os.path.join(path_subj_sess, nii)
+                cmd = 'gzip -d {}'.format(file_path)
+                print(cmd)
+                results = subprocess.call(cmd, shell=True, bufsize=0)
+                
+            ###################
+            # Delete original EPI to save memory
+            # rm file_path 
+            if rm_original:
+                cmd = 'rm {}'.format(nii_in)
+                print(cmd)
+                results = subprocess.call(cmd, shell=True, bufsize=0)
+
+        print('success: rsa_dcm_split_nifti')
+        
+        
     def loc_match_bold(self):
         """Match the LOC1 and LOC2 bold acquisition (nifti) files to the letters and colors localizer events. 
         """
@@ -1218,17 +1218,16 @@ class first_level_class(object):
     
             Two-step transformation:
         
-            Step 1: MNI to T1w space
-            Step 2: T1w to BOLD space
+            Step 1: MNI152NlLin6Asym-2mm to T1w space
+            Step 2: T1w to BOLD-2mm space
+        
+            Uses _MNI152NlLin6Asym space anatomical images to be consistent with fmriprep output (run transform_mni_atlas_space.py)
         """       
-    
-        import ants
-    
-        # for mask in ['OFG', 'OFG_R', 'OFG_L', 'IPLD', 'VOT_L']:
-        for mask in [ 'OFG_R', 'OFG_L', ]:
+        
+        for mask in ['OFG', 'OFG_R', 'OFG_L', 'IPLD', 'VOT_L']:
         
             ### STEP 1: MNI to T1w ###
-            anat_mask = os.path.join(self.mask_dir, 'anatomical', '{}.nii.gz'.format(mask))
+            anat_mask = os.path.join(self.mask_dir, 'anatomical', '{}_MNI152NlLin6Asym.nii.gz'.format(mask))
             ref_image = os.path.join(self.fmriprep_dir, self.subject, 'anat', '{}_acq-t1mpragesagp2iso10_desc-preproc_T1w.nii.gz'.format(self.subject))
             out_image = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_{}_in_T1w.nii.gz'.format(self.subject, mask))
             transform = os.path.join(self.fmriprep_dir, self.subject, 'anat', '{}_acq-t1mpragesagp2iso10_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5'.format(self.subject))
@@ -1296,12 +1295,12 @@ class first_level_class(object):
             Stats are coming from the second level analysis (average across sessions)
         """       
         # letter, colors
-        thresholds = [2.5, 3.1] # z-stat threshold for masking
-        thresh_name = [25, 31] # for file name
+        thresholds = [3.1, 3.1] # z-stat threshold for masking
+        thresh_name = [31, 31] # for file name
         masks = ['VOT_L', 'OFG_R'] # make sure in same order as localizer loop
         
-        # which contrast to choose for letters and colors:
-        contrasts = ['1', '1']
+        # which contrast to choose for letters and colors, respectively:
+        contrasts = ['2', '1'] # use symbols>letters for letters because letters>symbols failed
         
         for preprocessed_tag in ['space-T1w_desc-preproc_bold']:
             
@@ -1347,23 +1346,16 @@ class first_level_class(object):
         """       
         N = 200
         # # letter, colors
-        # thresholds = [2.5, 3.1] # z-stat threshold for masking
-        # thresh_name = [25, 31] # for file name
-        # masks = ['VOT_L', 'OFG'] # make sure in same order as localizer loop
-        #
-        # # which contrast to choose for letters and colors:
-        # contrasts = ['1', '1']
-        
-        # colors
-        masks = ['OFG_R'] # make sure in same order as localizer loop
-        
+        thresholds = [3.1, 3.1] # z-stat threshold for masking
+        thresh_name = [31, 31] # for file name
+        masks = ['VOT_L', 'OFG'] # make sure in same order as localizer loop
+
         # which contrast to choose for letters and colors:
-        contrasts = ['1']
+        contrasts = ['2', '1'] # use symbols>letters for letters because letters>symbols failed
         
         for preprocessed_tag in ['space-T1w_desc-preproc_bold']:
             
-            # for t,task in enumerate(['letters', 'colors']): # make sure in same order as anatomical mask
-            for t,task in enumerate(['colors']): # make sure in same order as anatomical mask
+            for t,task in enumerate(['letters', 'colors']): # make sure in same order as anatomical mask
                             
                 out_roi = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_roi-{}_top{}voxels.nii.gz'.format(self.subject, task, N))
                 out_roi_data = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_roi-{}_top{}voxels.csv'.format(self.subject, task, N))
@@ -1420,8 +1412,8 @@ class first_level_class(object):
             If you want to start over, delete the old file.
         """       
         # letter, colors (pay attention to order!)
-        thresholds = [2.5, 3.1] # z-stat threshold for masking
-        thresh_name = [25, 31] # for file name
+        thresholds = [3.1, 3.1] # z-stat threshold for masking
+        thresh_name = [31, 31] # for file name
         masks = ['VOT_L', 'OFG'] # make sure in same order as localizer loop
         
         for preprocessed_tag in ['space-T1w_desc-preproc_bold']:

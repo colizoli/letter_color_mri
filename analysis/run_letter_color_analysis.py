@@ -4,7 +4,7 @@
 """
 letter_color_housekeeping.py
 Created by O.Colizoli
-Last update: 12-01-2026
+Last update: 15-04-2026
 Python version 3.9
 
 The following packages need to be installed because they are called from the command line, not imported:
@@ -12,7 +12,6 @@ The following packages need to be installed because they are called from the com
 fsl
 
 Notes:
-Need to use torque on mentat 1 with —mem=64gb to run first_level functions (otherwise get a numpy memory error)
 Slurm memory error OK with: sbash --time=08:00:00 —mem=64G
 
 """
@@ -78,11 +77,11 @@ if run_housekeeping:
             bids_dir        = bids_dir,
             deriv_dir       = deriv_dir,
             )            
-        # housekeeping.rename_behav_logfiles()      # rename behavioral logfile names
+        # housekeeping.rename_behav_logfiles() # rename behavioral logfile names
         # housekeeping.delete_rsa_files()      # delete task-rsa files
-        # housekeeping.delete_rsa_directory()     # delete task-rsa folders
+        # housekeeping.delete_rsa_directory()  # delete task-rsa folders
         # housekeeping.delete_loc_files()      # delete task-letters and/or task-colors files
-        # housekeeping.delete_loc_directory()   # delete directory (gfeat or feat)
+        # housekeeping.delete_loc_directory()  # delete directory (gfeat or feat)
                 
         # shell()
           
@@ -104,12 +103,12 @@ if run_first_level:
         # first_level.rsa_combine_brain_masks()             # make a union of brain masks from RSA runs for all tasks (they are not the same for each run)
         # first_level.rsa_combine_epi()                     # concatenate the 4 runs per session of EPI data to perform a single GLM (RSA task).
         # first_level.rsa_mask_epi()                        # apply brain mask to RSA task
-        first_level.rsa_combine_events()                  # concantenate the events files of all runs and output in first_level directory and add unique identifiers for each color
-        first_level.rsa_nuisance_regressors()             # volume-based physiological components, motion parameters, cosine (low-fres), and run means
-        first_level.rsa_timing_files_oddballs()           # create timing files for oddball stimuli
-        first_level.rsa_timing_files_letters()            # each letter in it's color and black: trained/untrained vs. color/black
-        first_level.rsa_timing_files_2x2()                # simple 2x2 design: trained/untrained vs. color/black
-        first_level.rsa_letters_fsf()                     # generates the first level FSF for the RSA design
+        # first_level.rsa_combine_events()                  # concantenate the events files of all runs and output in first_level directory and add unique identifiers for each color
+        # first_level.rsa_nuisance_regressors()             # volume-based physiological components, motion parameters, cosine (low-fres), and run means
+        # first_level.rsa_timing_files_oddballs()           # create timing files for oddball stimuli
+        # first_level.rsa_timing_files_letters()            # each letter in it's color and black: trained/untrained vs. color/black
+        # first_level.rsa_timing_files_2x2()                # simple 2x2 design: trained/untrained vs. color/black
+        # first_level.rsa_letters_fsf()                     # generates the first level FSF for the RSA design
         ### RUN FIRST LEVEL FEATS (AS JOBS) ###
         # first_level.rsa_2x2_fsf()                         # generates the first level FSF for the 2x2 design
         ### RUN FIRST LEVEL FEATS (AS JOBS ~14 hours per subject) ###
@@ -127,10 +126,10 @@ if run_first_level:
         ### RUN SECOND LEVEL FEATS (AS JOBS) ###
         ## note: reorganize sub-228 to gfeat to match folder structure
         
-        # first_level.transform_anatomical_masks()          # apply reverse transformations from MNI anatomical masks into native-space
-        # first_level.loc_rois_extract_sig_voxels()         # after FEAT is finished, extract ROIs from stats within the anatomical mask of interest
-        # first_level.loc_rois_extract_n_voxels()           # after FEAT is finished, extract ROIs from stats within the anatomical mask of interest
-        # first_level.count_roi_voxels()                    # counts voxels for each ROI and overlap, outputs in single dataframe in derivatives/first_level
+        first_level.transform_anatomical_masks()          # apply reverse transformations from MNI anatomical masks into native-space
+        first_level.loc_rois_extract_sig_voxels()         # after FEAT is finished, extract ROIs from stats within the anatomical mask of interest
+        first_level.loc_rois_extract_n_voxels()           # after FEAT is finished, extract ROIs from stats within the anatomical mask of interest
+        first_level.count_roi_voxels()                    # counts voxels for each ROI and overlap, outputs in single dataframe in derivatives/first_level
         
         # shell() # stop here or repeats ALL subjects!
         
