@@ -88,8 +88,10 @@ class housekeeping_class(object):
 
         folders =[
             '{}_ses-mri01_task-rsa_2x2.feat'.format(self.subject),
-            '{}_ses-mri02_task-rsa_2x2.feat'.format(self.subject)
-        ]
+            '{}_ses-mri02_task-rsa_2x2.feat'.format(self.subject),
+            '{}_ses-mri01_task-rsa_letters.feat'.format(self.subject),
+            '{}_ses-mri02_task-rsa_letters.feat'.format(self.subject),
+            ]
         
         for f in folders:
 
@@ -101,7 +103,7 @@ class housekeeping_class(object):
             print(cmd)
             results = subprocess.call(cmd, shell=True, bufsize=0)
                                         
-        print('success: delete_loc_directory')
+        print('success: delete_rsa_directory')
     
     
     def delete_loc_files(self):
@@ -166,7 +168,37 @@ class housekeeping_class(object):
                     results = subprocess.call(cmd, shell=True, bufsize=0)
                                         
         print('success: delete_loc_directory')
-        
+    
+    
+    def delete_rois(self):
+        """Delete rois in the task-rsa mask directories of each subject
+        """
+
+        rois =[
+            # '{}_roi-colors_31_mask.nii.gz'.format(self.subject),
+            # '{}_roi-colors_31.nii.gz'.format(self.subject),
+            # '{}_roi-colors_top200voxels.csv'.format(self.subject),
+            # '{}_roi-colors_top200voxels.nii.gz'.format(self.subject),
+            # '{}_roi-letters_25_mask.nii.gz'.format(self.subject),
+            # '{}_roi-letters_25.nii.gz'.format(self.subject),
+            # '{}_roi-letters_31_mask.nii.gz'.format(self.subject),
+            # '{}_roi-letters_31.nii.gz'.format(self.subject),
+            # '{}_roi-letters_top200voxels.csv'.format(self.subject),
+            # '{}_roi-letters_top200voxels.nii.gz'.format(self.subject)
+        ]
+    
+        for r in rois:
+
+            file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_masks'.format(self.subject), r)
+            ###################
+            # send command to terminal
+            # rm file_path 
+            cmd = 'rm {}'.format(file_path)
+            print(cmd)
+            results = subprocess.call(cmd, shell=True, bufsize=0)
+                                    
+        print('success: delete_rois')
+    
     #
     # def loc_rename_bold(self):
     #     """Match the LOC1 and LOC2 bold acquisition (nifti) files to the letters and colors localizer events.

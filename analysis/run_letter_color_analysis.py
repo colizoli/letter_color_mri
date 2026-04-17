@@ -61,8 +61,8 @@ run_higher_level    = False    # group-level analyses and statistics
 # -----------------------
 # Participants
 # -----------------------
-# participants    = pd.read_csv(os.path.join(home_dir, 'participants_full_mri.csv'), dtype=str) # open in textmate, not excel!
-participants    = pd.read_csv(os.path.join(home_dir, 'participants_process.csv'), dtype=str) # open in textmate, not excel!
+participants    = pd.read_csv(os.path.join(home_dir, 'participants_full_mri.csv'), dtype=str) # open in textmate, not excel!
+# participants    = pd.read_csv(os.path.join(home_dir, 'participants_process.csv'), dtype=str) # open in textmate, not excel!
 subjects  = participants['subjects']
 
 # -----------------------
@@ -82,6 +82,7 @@ if run_housekeeping:
         # housekeeping.delete_rsa_directory()  # delete task-rsa folders
         # housekeeping.delete_loc_files()      # delete task-letters and/or task-colors files
         # housekeeping.delete_loc_directory()  # delete directory (gfeat or feat)
+        # housekeeping.delete_rois()            # delete old rois out of subj_masks directories
                 
         # shell()
           
@@ -126,9 +127,9 @@ if run_first_level:
         ### RUN SECOND LEVEL FEATS (AS JOBS) ###
         ## note: reorganize sub-228 to gfeat to match folder structure
         
-        first_level.transform_anatomical_masks()          # apply reverse transformations from MNI anatomical masks into native-space
-        first_level.loc_rois_extract_sig_voxels()         # after FEAT is finished, extract ROIs from stats within the anatomical mask of interest
-        first_level.loc_rois_extract_n_voxels()           # after FEAT is finished, extract ROIs from stats within the anatomical mask of interest
+        ### After group-level FEAT has been run on both localizers ###
+        # first_level.define_group_level_rois()             # Define functional ROIs at group level, only need to run once, not for all subjects
+        # first_level.transform_anatomical_masks()          # apply reverse transformations from MNI anatomical masks into native-space
         first_level.count_roi_voxels()                    # counts voxels for each ROI and overlap, outputs in single dataframe in derivatives/first_level
         
         # shell() # stop here or repeats ALL subjects!
