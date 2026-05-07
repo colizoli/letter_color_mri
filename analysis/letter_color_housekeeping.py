@@ -185,6 +185,13 @@ class housekeeping_class(object):
             # '{}_roi-letters_31.nii.gz'.format(self.subject),
             # '{}_roi-letters_top200voxels.csv'.format(self.subject),
             # '{}_roi-letters_top200voxels.nii.gz'.format(self.subject)
+            '{}_colors_OFG_R_in_bold.nii'.format(self.subject),
+            '{}_colors_OFG_R_in_T1w.nii.gz'.format(self.subject),
+            '{}_IPLD_in_bold.nii'.format(self.subject),
+            '{}_IPLD_in_T1w.nii.gz'.format(self.subject),
+            '{}_letters_VOT_L_in_bold.nii'.format(self.subject),
+            '{}_letters_VOT_L_in_T1w.nii.gz'.format(self.subject)
+            
         ]
     
         for r in rois:

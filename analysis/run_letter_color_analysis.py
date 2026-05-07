@@ -82,7 +82,7 @@ if run_housekeeping:
         # housekeeping.delete_rsa_directory()  # delete task-rsa folders
         # housekeeping.delete_loc_files()      # delete task-letters and/or task-colors files
         # housekeeping.delete_loc_directory()  # delete directory (gfeat or feat)
-        # housekeeping.delete_rois()            # delete old rois out of subj_masks directories
+        housekeeping.delete_rois()            # delete old rois out of subj_masks directories
                 
         # shell()
           

@@ -1214,14 +1214,29 @@ class first_level_class(object):
         """Define the group-level ROIs based on the functional localizer higher-level analysis.
 
         Notes:
+            Only need to run once, not for all subjects.
             Delete old ROI images if you want to start over! The output is saved in the mask directory, also saves binary mask.
-        
-            Mask thresholded functional data with pre-defined anatomical regions of interest per localizer.
-            >> fslmaths thresh_zstat1.nii.gz -mas OFG_R_MNI152NlLin6Asym.nii.gz color_31_OFG_R_MNI152NlLin6Asym.nii.gz
-            >> fslmaths thresh_zstat1.nii.gz -mas VOT_L_MNI152NlLin6Asym.nii.gz symbols_31_VOT_L_MNI152NlLin6Asym.nii.gz
-        
             Uses _MNI152NlLin6Asym space anatomical images to be consistent with fmriprep output (run transform_mni_atlas_space.py).
+            
+            First, mask thresholded functional data with pre-defined anatomical regions of interest per localizer.
+            >> fslmaths thresh_zstat1.nii.gz -mas OFG_R_MNI152NlLin6Asym.nii.gz colors_OFG_R_MNI152NlLin6Asym.nii.gz
+            >> fslmaths thresh_zstat1.nii.gz -mas VOT_L_MNI152NlLin6Asym.nii.gz symbols_VOT_L_MNI152NlLin6Asym.nii.gz
+        
+            Second, get a contiguous cluster of significant voxels on thresholded zstat image, sorted by size
+            >> cluster -i thresh_zstat.nii.gz --oindex=clusters_index > cluster_report.txt
+            
+            Then, isolate the largest cluster (cluster index = 1 is the biggest)
+            >> fslmaths clusters_index -thr 1 -uthr 1 -bin top_cluster_mask
+        
+            Third, get exactly top N voxels within largest contiguous cluster. Mask the original zstat with that cluster.
+            >> fslmaths zstat1 -mas largest_cluster_mask zstat1_masked
+            
+            Then threshold by intensity to get top N voxels (find the Nth highest value first using fslstats).
+            >> fslmaths zstat1_masked -thr $THRESH -bin top_N_voxels_mask
         """
+        
+        N = 500 # number of voxels
+        
         # letter, colors
         masks = ['VOT_L', 'OFG_R'] # make sure in same order as localizer loop
         
@@ -1230,22 +1245,61 @@ class first_level_class(object):
             
             output_img = os.path.join(self.mask_dir, 'anatomical', '{}_{}_MNI152NlLin6Asym_zstat.nii.gz'.format(task, masks[t]))
             if not os.path.isfile(output_img):
-            
+                
+                #### First, mask thresholded functional data with pre-defined anatomical regions of interest per localizer.
                 thresh_img = os.path.join(self.deriv_dir, 'higher_level', '{}.gfeat'.format(gfeats[t]), 'cope1.feat', 'thresh_zstat1.nii.gz')
                 anat_mask = os.path.join(self.mask_dir, 'anatomical', '{}_MNI152NlLin6Asym.nii.gz'.format(masks[t]))
-            
                 cmd = 'fslmaths {} -mas {} {}'.format(thresh_img, anat_mask, output_img)
                 print(cmd)
                 results = subprocess.call(cmd, shell=True, bufsize=0)
-                
-                # bin output             
-                bin_output_img = os.path.join(self.mask_dir, 'anatomical', '{}_{}_MNI152NlLin6Asym.nii.gz'.format(task, masks[t]))
-                cmd = 'fslmaths {} -bin {}'.format(output_img, bin_output_img)
+            
+                #### Second, get a contiguous cluster of significant voxels on thresholded zstat image, sorted by size
+                out_index =  os.path.join(self.mask_dir, 'anatomical', '{}_cluster_index.nii.gz'.format(task))
+                out_report = os.path.join(self.mask_dir, 'anatomical', '{}_cluster_report.txt'.format(task))
+                cmd = 'cluster -i {} -t 3.1 --oindex={} > {}'.format(output_img, out_index, out_report)
                 print(cmd)
                 results = subprocess.call(cmd, shell=True, bufsize=0)
+            
+                #### Then, isolate the largest cluster (cluster index = 1 is the biggest)
+                out_cluster_mask = os.path.join(self.mask_dir, 'anatomical', '{}_top_cluster_mask'.format(task))
+                cmd = 'fslmaths {} -thr 1 -uthr 1 -bin {}'.format(out_index, out_cluster_mask)
+                print(cmd)
+                results = subprocess.call(cmd, shell=True, bufsize=0)
+            
+                #### Third, get exactly top N voxels within largest contiguous cluster. Mask the original zstat with that cluster.
+                out_cluster_mask_zstat = os.path.join(self.mask_dir, 'anatomical', '{}_top_cluster_mask_zstat'.format(task))
+                cmd = 'fslmaths {} -mas {} {}'.format(thresh_img, out_cluster_mask, out_cluster_mask_zstat)
+                print(cmd)
+                results = subprocess.call(cmd, shell=True, bufsize=0)
+            
+                #### Then threshold by intensity to get top N voxels
+                ########## FINAL MASKS LOCALIZERS ##########
+                out_topN_mask = os.path.join(self.mask_dir, 'anatomical', '{}_{}_topN_MNI152NlLin6Asym'.format(task, masks[t]))
+                ############################################
+                # Get total voxels in Python
+                result = subprocess.run(
+                    'fslstats {} -V'.format(out_cluster_mask_zstat),
+                    shell=True, capture_output=True, text=True
+                )
+                total_voxels = int(result.stdout.strip().split()[0])
+
+                # Compute percentile in Python
+                percentile = (1 - N / total_voxels) * 100
+
+                # Get threshold value at that percentile
+                result = subprocess.run(
+                    'fslstats {} -P {}'.format(out_cluster_mask_zstat, percentile),
+                    shell=True, capture_output=True, text=True
+                )
+                thresh = float(result.stdout.strip())
+
+                # Apply threshold
+                cmd = 'fslmaths {} -thr {} -bin {}'.format(out_cluster_mask_zstat, thresh, out_topN_mask)
+                print(cmd)
+                subprocess.call(cmd, shell=True, bufsize=0)
             else:
-                print("ROI already exists: {}, skipping".format(output_img))
-        
+                print("ROIs exist, skipping!! Delete if you want to overwrite them.")
+            
         print('success: define_group_level_rois')       
         
 
@@ -1263,7 +1317,8 @@ class first_level_class(object):
             Uses _MNI152NlLin6Asym space anatomical images to be consistent with fmriprep output (run transform_mni_atlas_space.py)
         """       
         
-        for mask in ['letters_VOT_L', 'colors_OFG_R', 'OFG', 'OFG_R', 'OFG_L', 'IPLD', 'VOT_L']:
+        # for mask in ['letters_VOT_L_topN', 'colors_OFG_R_topN', 'OFG', 'OFG_R', 'OFG_L', 'IPLD_R', 'VOT_L']:
+        for mask in ['IPLD_R',]:
         
             ### STEP 1: MNI to T1w ###
             anat_mask = os.path.join(self.mask_dir, 'anatomical', '{}_MNI152NlLin6Asym.nii.gz'.format(mask))
@@ -1340,9 +1395,9 @@ class first_level_class(object):
                 df_counts = pd.read_csv(path_df_counts)
                 df_counts = df_counts.loc[:, ~df_counts.columns.str.contains('^Unnamed')]
             
-            letters_roi = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_letters_VOT_L_in_bold.nii.gz'.format(self.subject))
-            colors_roi = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_colors_OFG_R_in_bold.nii.gz'.format(self.subject))
-            parietal_roi = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_IPLD_in_bold.nii.gz'.format(self.subject))
+            letters_roi = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_letters_VOT_L_topN_in_bold.nii.gz'.format(self.subject))
+            colors_roi = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_colors_OFG_R_topN_in_bold.nii.gz'.format(self.subject))
+            parietal_roi = os.path.join(self.first_level_dir, 'task-rsa', self.subject, '{}_masks'.format(self.subject), '{}_IPLD_R_in_bold.nii.gz'.format(self.subject))
             
             try: 
                 # letters
