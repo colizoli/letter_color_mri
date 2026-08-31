@@ -10,13 +10,19 @@ This script:
 Requirements:
 - FSL installed and FSLDIR environment variable set
 - templateflow Python package: pip install templateflow
+
+Trilinear interpolation computes the transformed voxel's value as a weighted average of the 8 nearest original voxels, weighted by proximity.
 """
 
 import os
 import subprocess
 import shutil
+import pandas as pd
+import numpy as np
+import nibabel as nib
 from pathlib import Path
 from templateflow import api as tflow
+from IPython import embed as shell # for Oly's debugging only
 
 mask_dir = '/project/3018051.01/ruggero/derivatives/masks'
 
@@ -85,9 +91,10 @@ def apply_transform(input_mask, output_mask, binary=True):
     
     run_command(flirt_cmd, f"Transforming {input_mask}")
     print(f"  Output saved: {output_mask}")
-    
+
     
 def main():
+    
     # Check if FSL is installed
     fsl_dir = os.environ.get('FSLDIR')
     if not fsl_dir:
@@ -101,7 +108,7 @@ def main():
     # Define paths
     fsl_template = os.path.join(fsl_dir, "data/standard/MNI152_T1_2mm_brain.nii.gz")
     ho_dir = os.path.join(fsl_dir, "data/atlases/HarvardOxford")
-    output_dir = Path(os.path.join(mask_dir, "harvardoxford_nlin6asym_2mm"))
+    output_dir = Path(os.path.join(mask_dir, "harvardoxford_MNI152NlLin6Asym_2mm"))
     output_dir.mkdir(exist_ok=True)
     
     # Step 1: Get MNI152NLin6Asym template from templateflow
@@ -249,18 +256,51 @@ def main():
     print(f"           your_fmriprep_bold.nii.gz \\")
     print(f"           {output_dir}/HarvardOxford-cort-maxprob-thr25-2mm.nii.gz -cm random")
     print()
+    
 
+
+def flatten_labels_harvard_oxford():
+    """Output the harvardoxford_MNI152NlLin6Asym_2mm labels and probabilities as a vector (or matrix) harvard oxford (sub)cortical atlas.
+    
+    Notes:
+    ------
+        The default atlas from FSL has been transformed to MNI152NlLin6Asym_2mm to match the output from fMRIprep.
+        Subcortical atlas has left/right hemispheres as separate ROIs.
+    """
+
+    # cortical and subcortical?
+    for atlas in ['cort', 'sub']:
+        DFOUT = pd.DataFrame() # 1 file per atlas
+    
+        ho_labels = os.path.join(mask_dir, 'harvardoxford_MNI152NlLin6Asym_2mm', 'HarvardOxford-{}-maxprob-thr0-2mm.nii.gz'.format(atlas))
+        ho_prob = os.path.join(mask_dir, 'harvardoxford_MNI152NlLin6Asym_2mm', 'HarvardOxford-{}-prob-2mm.nii.gz'.format(atlas))
+        
+        # load 
+        mask        = np.array(nib.load(ho_labels).get_fdata(),dtype=bool) # binary mask
+        labels      = np.array(nib.load(ho_labels).get_fdata(),dtype=float) # labels as integers in mask
+        probability = np.array(nib.load(ho_prob).get_fdata(),dtype=float) # ROIs in time axis
+                    
+        # loop through all labels and extract probabilities
+        for this_label in np.arange(np.max(labels)):                
+            roi = probability[:,:,:,int(this_label)] # time axis for current ROI
+            DFOUT['{}_label_{}'.format(atlas, int(this_label+1))]  = roi[mask] # save probabilities as new column
+        DFOUT.to_csv(os.path.join(mask_dir, 'harvardoxford_MNI152NlLin6Asym_2mm', 'harvardoxford_MNI152NlLin6Asym_{}_2mm_probabilities_flattened.csv'.format(atlas)))
+    print('success: flatten_labels_harvard_oxford MNI152NlLin6Asym')
+        
+        
 if __name__ == "__main__":
     try:
-        # main()
+        # main() # apply transform to entire atlas
         
-        # apply transformation to existing masks in anatomical directory
-        masks = ['IPLD.nii.gz', 'OFG_L.nii.gz', 'OFG_R.nii.gz', 'OFG.nii.gz', 'VOT_L.nii.gz']
-
-        for mask in masks:
-            mask = os.path.join(mask_dir, 'anatomical', mask)
-            output = mask.replace('.nii.gz', '_MNI152NlLin6Asym.nii.gz')
-            apply_transform(mask, output)
+        flatten_labels_harvard_oxford() # output labels as flattened vectors in pandas
+        
+        # # apply transformation to existing masks in anatomical directory
+        # masks = ['IPLD_R.nii.gz', 'OFG_L.nii.gz', 'OFG_R.nii.gz', 'OFG.nii.gz', 'VOT_L.nii.gz']
+        #
+        # for mask in masks:
+        #     mask = os.path.join(mask_dir, 'anatomical', mask)
+        #     output = mask.replace('.nii.gz', '_MNI152NlLin6Asym.nii.gz')
+        #     apply_transform(mask, output)
             
     except Exception as e:
         print(f"\nError: {e}")
