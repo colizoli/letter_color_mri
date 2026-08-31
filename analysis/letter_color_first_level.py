@@ -538,7 +538,7 @@ class first_level_class(object):
             fsf_filename = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_letters.fsf'.format(self.subject, session, task)) # save fsf
             output_path = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_letters'.format(self.subject, session, task))
 
-            bold = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_run-concat_{}_brain.nii.gz'.format(self.subject, session, task, preprocessed_tag)) 
+            bold = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_run-concat_{}_brain.nii.gz'.format(self.subject, session, task, preprocessed_tag))
             # calculate size of input data
             nii = nib.load(bold).get_fdata() # only do once
             nr_trs = str(nii.shape[-1])

@@ -1006,3 +1006,51 @@ class higher_level_class(object):
         df_out.to_csv(os.path.join(self.higher_level_dir, 'extract_voxels_rsa_letters_{}_{}.csv'.format(roi, stat)))
         print('success: extract_voxels_rsa_letters')
         
+    
+    def extract_whole_brain_rsa_letters(self, task='rsa'):
+        """Extract the zstats from the WHOLE BRAIN for each letter in the oddball task for all participants.
+        
+        Notes:
+            Outputs a dataframe with all letters per subject as rows and voxel values as columns. Letter-color pairs included as separate column.
+            For SVM, extract zstats.
+        """        
+        
+        # roi = 'harvardoxford_MNI152NlLin6Asym_2mm'
+        stat = 'zstat'
+        # make sure to use the same brain mask used in transform_mni_atlas_space.flatten_labels_harvard_oxford.py
+        brain_mask_path = os.path.join(self.mask_dir, 'harvardoxford_MNI152NlLin6Asym_2mm', 'HarvardOxford-{}-maxprob-thr0-2mm.nii.gz'.format('sub'))
+        mask_data = np.array(nib.load(brain_mask_path).get_fdata(), dtype=bool) # binary mask
+        
+        df_out = pd.DataFrame() # output tstat dataframe for all subjects
+        for session in ['ses-mri01', 'ses-mri02']:
+            
+            for s,subject in enumerate(self.subjects):
+                
+                # path to first level feat directory
+                this_path = os.path.join(self.first_level_dir, 'task-rsa', subject, '{}_{}_task-rsa_letters.feat'.format(subject, session), 'stats')
+            
+                # 52 EVs alphabet in black, then alphabet in color
+                for ev in np.arange(1,53):
+                    bold = os.path.join(this_path, '{}{}.nii.gz'.format(stat, ev)) 
+                    # statistic
+                    nii = nib.load(bold).get_fdata()[mask_data] # flattens
+                    # temporary DF for concatenation
+                    columns1 = ['subject', 'session', 'ev', 'condition', 'stat']
+                    columns2 = [f'voxel_{i}' for i in range(len(nii))]
+                    columns1.extend(columns2) # extends in place
+                    
+                    this_df = pd.DataFrame(columns = columns1)
+                    
+                    # columns
+                    this_df.loc[0, 'subject']   = subject
+                    this_df.loc[0, 'session']   = session
+                    this_df.loc[0, 'ev']        = ev
+                    this_df.loc[0, 'condition'] = self.ev_labels[ev-1]
+                    this_df.loc[0, 'stat']      = stat
+                    this_df.loc[0, columns2]    = nii
+
+                    # concat data frames
+                    df_out = pd.concat([df_out,this_df],axis=0)
+                            
+        df_out.to_csv(os.path.join(self.higher_level_dir, 'extract_voxels_rsa_letters_{}_{}.csv'.format('harvardoxford_MNI152NlLin6Asym_2mm', stat)))
+        print('success: extract_whole_brain_rsa_letters')

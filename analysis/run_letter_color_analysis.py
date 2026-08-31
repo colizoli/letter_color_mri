@@ -61,8 +61,8 @@ run_higher_level    = False    # group-level analyses and statistics
 # -----------------------
 # Participants
 # -----------------------
-participants    = pd.read_csv(os.path.join(home_dir, 'participants_full_mri.csv'), dtype=str) # open in textmate, not excel!
-# participants    = pd.read_csv(os.path.join(home_dir, 'participants_process.csv'), dtype=str) # open in textmate, not excel!
+# participants    = pd.read_csv(os.path.join(home_dir, 'participants_full_mri.csv'), dtype=str) # open in textmate, not excel!
+participants    = pd.read_csv(os.path.join(home_dir, 'participants_process.csv'), dtype=str) # open in textmate, not excel!
 subjects  = participants['subjects']
 
 # -----------------------
@@ -109,7 +109,7 @@ if run_first_level:
         # first_level.rsa_timing_files_oddballs()           # create timing files for oddball stimuli
         # first_level.rsa_timing_files_letters()            # each letter in it's color and black: trained/untrained vs. color/black
         # first_level.rsa_timing_files_2x2()                # simple 2x2 design: trained/untrained vs. color/black
-        # first_level.rsa_letters_fsf()                     # generates the first level FSF for the RSA design
+        first_level.rsa_letters_fsf()                     # generates the first level FSF for the RSA design
         ### RUN FIRST LEVEL FEATS (AS JOBS) ###
         # first_level.rsa_2x2_fsf()                         # generates the first level FSF for the 2x2 design
         ### RUN FIRST LEVEL FEATS (AS JOBS ~14 hours per subject) ###
@@ -130,7 +130,7 @@ if run_first_level:
         ### After group-level FEAT has been run on both localizers ###
         # first_level.define_group_level_rois()             # Define functional ROIs at group level, only need to run once, not for all subjects
         # first_level.transform_anatomical_masks()          # apply reverse transformations from MNI anatomical masks into native-space
-        first_level.count_roi_voxels()                    # counts voxels for each ROI and overlap, outputs in single dataframe in derivatives/first_level
+        # first_level.count_roi_voxels()                    # counts voxels for each ROI and overlap, outputs in single dataframe in derivatives/first_level
         
         # shell() # stop here or repeats ALL subjects!
         
@@ -173,4 +173,12 @@ if run_higher_level:
     # higher_level.rsa_letters_conditions()         # concatenates all subjects events files for letter-color conditions
     # higher_level.rsa_letters_combine_events()     # concatenates all subjects events files trial-wise
     
-    higher_level.extract_voxels_rsa_letters()
+    
+    ### machine learning                
+    # higher_level.extract_voxels_rsa_letters()     # v4 ROI
+    
+    higher_level.extract_whole_brain_rsa_letters()  # extract all voxels for the RSA task in flattened format
+    
+    
+    
+    
