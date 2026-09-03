@@ -515,8 +515,7 @@ class first_level_class(object):
             Run the actual FSF as batch script or from the command line: feat task-rsa_sub-01_ses-01.fsf
         """
         
-        preprocessed_tag = 'space-T1w_desc-preproc_bold'
-        
+        preprocessed_tag = 'space-MNI152NLin6Asym_res-2' # 'space-T1w' #  space-MNI152NLin6Asym_res-2
         template_filename = os.path.join(self.template_dir, 'task-{}_letters_first_level_template.fsf'.format(task))
 
         markers = [
@@ -535,10 +534,10 @@ class first_level_class(object):
         ]
 
         for session in ['ses-mri01','ses-mri02']:
-            fsf_filename = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_letters.fsf'.format(self.subject, session, task)) # save fsf
-            output_path = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_letters'.format(self.subject, session, task))
+            fsf_filename = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_{}_letters.fsf'.format(self.subject, session, task, preprocessed_tag)) # save fsf
+            output_path = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_{}_letters'.format(self.subject, session, task, preprocessed_tag))
 
-            bold = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_run-concat_{}_brain.nii.gz'.format(self.subject, session, task, preprocessed_tag))
+            bold = os.path.join(self.first_level_dir, 'task-{}'.format(task), self.subject, '{}_{}_task-{}_run-concat_{}_desc-preproc_bold_brain.nii.gz'.format(self.subject, session, task, preprocessed_tag))
             # calculate size of input data
             nii = nib.load(bold).get_fdata() # only do once
             nr_trs = str(nii.shape[-1])
