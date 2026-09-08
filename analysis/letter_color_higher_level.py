@@ -1025,15 +1025,17 @@ class higher_level_class(object):
         for session in ['ses-mri01', 'ses-mri02']:
             
             for s,subject in enumerate(self.subjects):
-                
+                print(subject)
                 # path to first level feat directory
-                this_path = os.path.join(self.first_level_dir, 'task-rsa', subject, '{}_{}_task-rsa_letters.feat'.format(subject, session), 'stats')
+                this_path = os.path.join(self.first_level_dir, 'task-rsa', subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(subject, session), 'stats')
             
                 # 52 EVs alphabet in black, then alphabet in color
                 for ev in np.arange(1,53):
+
                     bold = os.path.join(this_path, '{}{}.nii.gz'.format(stat, ev)) 
                     # statistic
                     nii = nib.load(bold).get_fdata()[mask_data] # flattens
+
                     # temporary DF for concatenation
                     columns1 = ['subject', 'session', 'ev', 'condition', 'stat']
                     columns2 = [f'voxel_{i}' for i in range(len(nii))]
@@ -1051,6 +1053,35 @@ class higher_level_class(object):
 
                     # concat data frames
                     df_out = pd.concat([df_out,this_df],axis=0)
-                            
-        df_out.to_csv(os.path.join(self.higher_level_dir, 'extract_voxels_rsa_letters_{}_{}.csv'.format('harvardoxford_MNI152NlLin6Asym_2mm', stat)))
+                    print(ev)
+                df_out.to_csv(os.path.join(self.higher_level_dir, 'extract_voxels_rsa_letters_{}_{}.csv'.format('harvardoxford_MNI152NlLin6Asym_2mm', stat)))
+        
+        ###################################       
+        # Put letter conditions, group info into dataframe
+        
+        # Load data
+        letters = pd.read_csv(os.path.join(self.higher_level_dir, "letter_conditions_subjects.tsv"), sep="\t", index_col=0)
+
+        # Extract the letter from the condition column (e.g., "a_black" -> "a")
+        df_out["letter"] = df_out["condition"].str.split("_").str[0]
+
+        # Extract numeric subject id from "sub-201" -> 201 to match the TSV's subject column
+        df_out["subject_id"] = df_out["subject"].str.replace("sub-", "", regex=False).astype(float)
+
+        # Make sure the TSV subject column is a matching dtype
+        letters["subject"] = letters["subject"].astype(float)
+
+        # Merge on subject + letter
+        merged = df_out.merge(
+            letters,
+            left_on=["subject_id", "letter"],
+            right_on=["subject", "letter"],
+            suffixes=("", "_letterinfo")
+        )
+
+        print(merged.shape)
+        merged.head()
+        
+        merged.to_csv(os.path.join(self.higher_level_dir, 'extract_voxels_rsa_letters_{}_{}_merged.csv'.format('harvardoxford_MNI152NlLin6Asym_2mm', stat)))
+        
         print('success: extract_whole_brain_rsa_letters')

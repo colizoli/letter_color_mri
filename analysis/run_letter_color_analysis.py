@@ -82,7 +82,9 @@ if run_housekeeping:
         # housekeeping.delete_rsa_directory()  # delete task-rsa folders
         # housekeeping.delete_loc_files()      # delete task-letters and/or task-colors files
         # housekeeping.delete_loc_directory()  # delete directory (gfeat or feat)
-        housekeeping.delete_rois()            # delete old rois out of subj_masks directories
+        # housekeeping.delete_rois()           # delete old rois out of subj_masks directories
+        # housekeeping.delete_higher_niftis()     # delete old rois out of subj_masks directories
+        
                 
         # shell()
           
@@ -109,9 +111,9 @@ if run_first_level:
         # first_level.rsa_timing_files_oddballs()           # create timing files for oddball stimuli
         # first_level.rsa_timing_files_letters()            # each letter in it's color and black: trained/untrained vs. color/black
         # first_level.rsa_timing_files_2x2()                # simple 2x2 design: trained/untrained vs. color/black
-        first_level.rsa_letters_fsf()                     # generates the first level FSF for the RSA design
+        # first_level.rsa_letters_fsf()                     # generates the first level FSF for the RSA design
         ### RUN FIRST LEVEL FEATS (AS JOBS) ###
-        # first_level.rsa_2x2_fsf()                         # generates the first level FSF for the 2x2 design
+        first_level.rsa_2x2_fsf()                         # generates the first level FSF for the 2x2 design
         ### RUN FIRST LEVEL FEATS (AS JOBS ~14 hours per subject) ###
         # first_level.rsa_dcm_split_nifti()                 # for spm, split the four-run concatenated nifti into single volume images and unzip
         

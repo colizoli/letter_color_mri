@@ -73,7 +73,120 @@ class housekeeping_class(object):
             # derivatives/first_level/task-rsa/sub-xxx/sub-xxx_ses-mri0x_task-rsa_run-concat_space-MNI152NLin6Asym_res-2_desc-preproc_bold.nii.gz
             # rm file_path 
             ###################
-            file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_run-concat_space-MNI152NLin6Asym_res-2_desc-preproc_bold.nii.gz'.format(self.subject, session))
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_run-concat_space-MNI152NLin6Asym_res-2_desc-preproc_bold.nii.gz'.format(self.subject, session))
+            
+            ## filtered_func_data is more than 1 GB each and unused
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'filtered_func_data.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'filtered_func_data.nii.gz')
+            
+            ## copes and pe1 are identical in this design matrix
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope1.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope2.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope3.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope4.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope5.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope6.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope7.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope8.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope9.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope10.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope11.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope12.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope13.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope14.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope15.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope16.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope17.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope18.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope19.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope20.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope21.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope22.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope23.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope24.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope25.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope26.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope27.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope28.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope29.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope30.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope31.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope32.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope33.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope34.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope35.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope36.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope37.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope38.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope39.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope40.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope41.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope42.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope43.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope44.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope45.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope46.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope47.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope48.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope49.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope50.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope51.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(self.subject, session), 'stats', 'cope52.nii.gz')
+            #
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope1.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope2.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope3.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope4.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope5.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope6.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope7.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope8.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope9.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope10.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope11.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope12.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope13.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope14.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope15.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope16.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope17.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope18.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope19.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope20.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope21.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope22.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope23.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope24.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope25.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope26.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope27.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope28.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope29.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope30.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope31.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope32.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope33.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope34.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope35.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope36.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope37.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope38.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope39.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope40.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope41.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope42.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope43.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope44.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope45.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope46.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope47.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope48.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope49.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope50.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope51.nii.gz')
+            # file_path = os.path.join(self.deriv_dir, 'first_level', 'task-rsa', self.subject, '{}_{}_task-rsa_letters.feat'.format(self.subject, session), 'stats', 'cope52.nii.gz')
+            
+    
             # send command to terminal
             cmd = 'rm {}'.format(file_path)
             print(cmd)
@@ -206,7 +319,50 @@ class housekeeping_class(object):
                                     
         print('success: delete_rois')
     
-    #
+    
+    def delete_higher_niftis(self):
+        """Delete nifti files in higher_level subject folders (memory)
+        """
+        
+        for session in ['ses-mri01', 'ses-mri02']:
+            ###################
+            # rm file_path 
+            ###################
+            dir_path = os.path.join(self.deriv_dir, self.subject, session, 'func')
+            # niftis
+            for f in glob.glob(os.path.join(dir_path, "*.nii.gz")):
+                
+                # send command to terminal
+                cmd = 'rm {}'.format(f)
+                print(cmd)
+                results = subprocess.call(cmd, shell=True, bufsize=0)
+            
+            # json
+            for f in glob.glob(os.path.join(dir_path, "*.json")):
+                
+                # send command to terminal
+                cmd = 'rm {}'.format(f)
+                print(cmd)
+                results = subprocess.call(cmd, shell=True, bufsize=0)
+                
+            # fmap
+            dir_path = os.path.join(self.deriv_dir, self.subject, session, 'fmap')                            
+            # send command to terminal
+            cmd = 'rm -r {}'.format(dir_path)
+            print(cmd)
+            results = subprocess.call(cmd, shell=True, bufsize=0)
+            
+            # anat
+            dir_path = os.path.join(self.deriv_dir, self.subject, session, 'anat')                            
+            # send command to terminal
+            cmd = 'rm -r {}'.format(dir_path)
+            print(cmd)
+            results = subprocess.call(cmd, shell=True, bufsize=0)
+                                                    
+            print('success: delete_higher_niftis')
+            
+            
+            
     # def loc_rename_bold(self):
     #     """Match the LOC1 and LOC2 bold acquisition (nifti) files to the letters and colors localizer events.
     #         Rename nifti files to include localizer name.
