@@ -1066,56 +1066,46 @@ class higher_level_class(object):
         
         
     def add_letter_conditions_whole_brain_rsa_letters(self, ):
-        """Extract the zstats from the WHOLE BRAIN for each letter in the oddball task for all participants.
+        """Matches the flattened whole brain data to the letter conditions per subject.
         
         Notes:
-            Outputs a dataframe with all letters per subject as rows and voxel values as columns. Letter-color pairs included as separate column.
-            For SVM, extract zstats.
+            Output overwrites the original dataframe with additional columns.
         """        
         ###################################       
         # Put letter conditions, group info into dataframe
         stat = 'zstat'
         machine_dir = os.path.join(self.higher_level_dir, 'machine_learning')
-        
-        # Load data
-        all_letters = pd.read_csv(os.path.join(self.higher_level_dir, "letter_conditions_subjects.tsv"), sep="\t", index_col=0)
-        all_letters = all_letters.loc[:, ~all_letters.columns.str.contains('^Unnamed')]
-        
+                
         for s,subject in enumerate(self.subjects):
             
+            # load flattened mri data
             df = pd.read_csv(os.path.join(machine_dir, '{}_extract_voxels_rsa_letters_{}_{}.csv'.format(subject, 'harvardoxford_MNI152NlLin6Asym_2mm', stat)))
             df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
-            
-            letters = all_letters[all_letters['subject'] == float(subject.split('-')[1])].copy()
-            
-            # Extract the letter from the condition column (e.g., "a_black" -> "a")
+            df.drop('stat', axis=1, inplace=True)
+            # Extract the letter and color condition from the condition column (e.g., "a_black" -> "a")
             df["letter"] = df["condition"].str.split("_").str[0]
-
-            # Extract numeric subject id from "sub-201" -> 201 to match the TSV's subject column
-            df["subject_id"] = df["subject"].str.replace("sub-", "", regex=False).astype(float)
-
-            # Make sure the TSV subject column is a matching dtype
-            letters["subject"] = letters["subject"].astype(float)
-
-            # Merge on subject + letter
-            merged = df.merge(
-                letters,
-                left_on=["subject_id", "letter"],
-                right_on=["subject", "letter"],
-                suffixes=("", "_letterinfo")
-            )
+            df["trial_type_color"] = df["condition"].str.split("_").str[1]
             
-            # drop redundant columns
-            merged.drop(['subject_id', 'subject_letterinfo'], axis=1, inplace=True)
+            # load rsa logfiles per session and concantenate (only load 1 session as stimuli were identical)
+            letters = pd.read_csv(os.path.join(self.first_level_dir, 'task-rsa', subject, '{}_{}_task-rsa_run-concat_events.tsv'.format(subject, 'ses-mri01')) , sep='\t')
+            letters = letters.loc[:, ~letters.columns.str.contains('^Unnamed')]
+
+            # get columns of interest and only unique values (black and color alwasy the same for each letter per subject)
+            letters_subset = letters[['letter', 'trial_type_color', 'trial_type_letter', 'color_name']].drop_duplicates()
             
+            # Merge on letter + black/color
+            merged = df.merge(letters_subset, on=['letter', 'trial_type_color'], how='left')
+            
+            # add column for group
+            merged['group'] = np.where(merged['subject'].str.extract(r'(\d+)').astype(int)[0] < 200, 1, 2)
             # move meaningful columns to front
-            cols_to_move = ['subject', 'session', 'ev', 'condition', 'letter', 'trained', 'colorcode', 'r', 'g', 'b', 'group', 'stat' ]
+            cols_to_move = ['group', 'subject', 'session', 'ev', 'condition', 'letter', 'trial_type_letter', 'trial_type_color', 'color_name']
             new_order = cols_to_move + [col for col in merged.columns if col not in cols_to_move]
             merged = merged[new_order]
-            
+                                                
             print(merged.shape)
-            merged.head()            
-            merged.to_csv(os.path.join(machine_dir, '{}_extract_voxels_rsa_letters_{}_{}.csv'.format(subject, 'harvardoxford_MNI152NlLin6Asym_2mm', stat)))
+            merged.head()       
+            merged.to_csv(os.path.join(machine_dir, '{}_extract_voxels_rsa_letters_{}_{}.csv'.format(subject, 'harvardoxford_MNI152NlLin6Asym_2mm', stat)), index=False)
             print(subject)
             
         print('success: add_letter_conditions_whole_brain_rsa_letters')
