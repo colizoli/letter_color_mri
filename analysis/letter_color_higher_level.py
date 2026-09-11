@@ -194,18 +194,18 @@ class higher_level_class(object):
         # PA score = projector - associator
         
         flip_scores = ['7', '15', '5', '6', '8', '16'] # flip the response direction of the Likert scale from 5 to 1 for these questions
-        associator = ['7', '15', '5', '6', '8', '16', '10', '3', '14', '12', '18', '1'] # include the "not" questions
-        projector = ['7', '15', '5', '6', '8', '16', '17', '2', '9', '11', '4', '13']
+        # associator = ['7', '15', '5', '6', '8', '16', '10', '3', '14', '12', '18', '1'] # include the "not" questions
+        # projector = ['7', '15', '5', '6', '8', '16', '17', '2', '9', '11', '4', '13']
         
         ## use original scoring:
-        # associator = [ '10', '3', '14', '12', '18', '1']
-        # projector = ['17', '2', '9', '11', '4', '13']
+        associator = [ '10', '3', '14', '12', '18', '1']
+        projector = ['17', '2', '9', '11', '4', '13']
 
         DF = pd.read_csv(os.path.join(self.higher_level_dir, 'task-questionnaires', 'participants_qualia.tsv'))
         DF = DF.loc[:, ~DF.columns.str.contains('^Unnamed')] # remove all unnamed columns
         
         DF2 = DF.copy()
-        DF2[flip_scores] = np.max(DF[flip_scores]) + 1 - DF[flip_scores] # flip the likert scale
+        # DF2[flip_scores] = np.max(DF[flip_scores]) + 1 - DF[flip_scores] # flip the likert scale
         
         DF2['associator'] = np.mean(DF[associator],axis=1)
         DF2['projector'] = np.mean(DF[projector],axis=1)
@@ -1015,16 +1015,23 @@ class higher_level_class(object):
             For SVM, extract zstats.
         """        
         
+        # write unix commands to job to run in parallel
+        machine_dir = os.path.join(self.higher_level_dir, 'machine_learning')
+        if not os.path.isdir(machine_dir):
+            os.mkdir(machine_dir)
+        
         # roi = 'harvardoxford_MNI152NlLin6Asym_2mm'
         stat = 'zstat'
         # make sure to use the same brain mask used in transform_mni_atlas_space.flatten_labels_harvard_oxford.py
         brain_mask_path = os.path.join(self.mask_dir, 'harvardoxford_MNI152NlLin6Asym_2mm', 'HarvardOxford-{}-maxprob-thr0-2mm.nii.gz'.format('sub'))
         mask_data = np.array(nib.load(brain_mask_path).get_fdata(), dtype=bool) # binary mask
+
         
-        df_out = pd.DataFrame() # output tstat dataframe for all subjects
-        for session in ['ses-mri01', 'ses-mri02']:
+        for s,subject in enumerate(self.subjects):
+            df_out = pd.DataFrame() # output tstat dataframe for each subject because of size of dataframe
             
-            for s,subject in enumerate(self.subjects):
+            for session in ['ses-mri01', 'ses-mri02']:
+            
                 print(subject)
                 # path to first level feat directory
                 this_path = os.path.join(self.first_level_dir, 'task-rsa', subject, '{}_{}_task-rsa_space-MNI152NLin6Asym_res-2_letters.feat'.format(subject, session), 'stats')
@@ -1054,34 +1061,61 @@ class higher_level_class(object):
                     # concat data frames
                     df_out = pd.concat([df_out,this_df],axis=0)
                     print(ev)
-                df_out.to_csv(os.path.join(self.higher_level_dir, 'extract_voxels_rsa_letters_{}_{}.csv'.format('harvardoxford_MNI152NlLin6Asym_2mm', stat)))
+            df_out.to_csv(os.path.join(machine_dir, '{}_extract_voxels_rsa_letters_{}_{}.csv'.format(subject, 'harvardoxford_MNI152NlLin6Asym_2mm', stat)), index=False)        
+        print('success: extract_whole_brain_rsa_letters')
         
+        
+    def add_letter_conditions_whole_brain_rsa_letters(self, ):
+        """Extract the zstats from the WHOLE BRAIN for each letter in the oddball task for all participants.
+        
+        Notes:
+            Outputs a dataframe with all letters per subject as rows and voxel values as columns. Letter-color pairs included as separate column.
+            For SVM, extract zstats.
+        """        
         ###################################       
         # Put letter conditions, group info into dataframe
+        stat = 'zstat'
+        machine_dir = os.path.join(self.higher_level_dir, 'machine_learning')
         
         # Load data
-        letters = pd.read_csv(os.path.join(self.higher_level_dir, "letter_conditions_subjects.tsv"), sep="\t", index_col=0)
-
-        # Extract the letter from the condition column (e.g., "a_black" -> "a")
-        df_out["letter"] = df_out["condition"].str.split("_").str[0]
-
-        # Extract numeric subject id from "sub-201" -> 201 to match the TSV's subject column
-        df_out["subject_id"] = df_out["subject"].str.replace("sub-", "", regex=False).astype(float)
-
-        # Make sure the TSV subject column is a matching dtype
-        letters["subject"] = letters["subject"].astype(float)
-
-        # Merge on subject + letter
-        merged = df_out.merge(
-            letters,
-            left_on=["subject_id", "letter"],
-            right_on=["subject", "letter"],
-            suffixes=("", "_letterinfo")
-        )
-
-        print(merged.shape)
-        merged.head()
+        all_letters = pd.read_csv(os.path.join(self.higher_level_dir, "letter_conditions_subjects.tsv"), sep="\t", index_col=0)
+        all_letters = all_letters.loc[:, ~all_letters.columns.str.contains('^Unnamed')]
         
-        merged.to_csv(os.path.join(self.higher_level_dir, 'extract_voxels_rsa_letters_{}_{}_merged.csv'.format('harvardoxford_MNI152NlLin6Asym_2mm', stat)))
-        
-        print('success: extract_whole_brain_rsa_letters')
+        for s,subject in enumerate(self.subjects):
+            
+            df = pd.read_csv(os.path.join(machine_dir, '{}_extract_voxels_rsa_letters_{}_{}.csv'.format(subject, 'harvardoxford_MNI152NlLin6Asym_2mm', stat)))
+            df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+            
+            letters = all_letters[all_letters['subject'] == float(subject.split('-')[1])].copy()
+            
+            # Extract the letter from the condition column (e.g., "a_black" -> "a")
+            df["letter"] = df["condition"].str.split("_").str[0]
+
+            # Extract numeric subject id from "sub-201" -> 201 to match the TSV's subject column
+            df["subject_id"] = df["subject"].str.replace("sub-", "", regex=False).astype(float)
+
+            # Make sure the TSV subject column is a matching dtype
+            letters["subject"] = letters["subject"].astype(float)
+
+            # Merge on subject + letter
+            merged = df.merge(
+                letters,
+                left_on=["subject_id", "letter"],
+                right_on=["subject", "letter"],
+                suffixes=("", "_letterinfo")
+            )
+            
+            # drop redundant columns
+            merged.drop(['subject_id', 'subject_letterinfo'], axis=1, inplace=True)
+            
+            # move meaningful columns to front
+            cols_to_move = ['subject', 'session', 'ev', 'condition', 'letter', 'trained', 'colorcode', 'r', 'g', 'b', 'group', 'stat' ]
+            new_order = cols_to_move + [col for col in merged.columns if col not in cols_to_move]
+            merged = merged[new_order]
+            
+            print(merged.shape)
+            merged.head()            
+            merged.to_csv(os.path.join(machine_dir, '{}_extract_voxels_rsa_letters_{}_{}.csv'.format(subject, 'harvardoxford_MNI152NlLin6Asym_2mm', stat)))
+            print(subject)
+            
+        print('success: add_letter_conditions_whole_brain_rsa_letters')
